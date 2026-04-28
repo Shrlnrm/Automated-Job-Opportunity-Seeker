@@ -10,6 +10,14 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
+// Serve static files from root
+app.use(express.static(__dirname));
+
+// Explicitly serve index.html for the root route
+app.get('/', (req, res) => {
+  res.sendFile(__dirname + '/index.html');
+});
+
 // Scrape Helper
 async function scrapeWebsite(url) {
   try {
