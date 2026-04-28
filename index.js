@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const fetch = require('node-fetch');
 const cheerio = require('cheerio');
+const path = require('path');
 require('dotenv').config();
 
 const app = express();
@@ -9,6 +10,14 @@ const PORT = process.env.PORT || 3000;
 
 app.use(cors());
 app.use(express.json());
+
+// Serve static files from the 'public' folder
+app.use(express.static(path.join(__dirname, 'public')));
+
+// Fallback for the root and any other routes to serve index.html
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
 
 // Scrape Helper
 async function scrapeWebsite(url) {
