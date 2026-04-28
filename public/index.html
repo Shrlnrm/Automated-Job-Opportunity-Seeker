@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Automated Job Opportunity Seeker</title>
+  <link rel="stylesheet" href="style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="background-blob"></div>
+  <div class="background-blob blob-2"></div>
+  
+  <main class="container">
+    <header>
+      <h1>Automated Job <span class="gradient-text">Opportunity Seeker</span></h1>
+      <p>Secure, high-performance lead extraction and automated outreach.</p>
+    </header>
+
+    <div class="search-panel glass">
+      <div class="input-group">
+        <label for="industry">Industry</label>
+        <input type="text" id="industry" placeholder="e.g. Software, Marketing..." />
+      </div>
+      <div class="input-group">
+        <label for="location">Location</label>
+        <input type="text" id="location" placeholder="e.g. New York, London..." />
+      </div>
+      <button id="searchBtn" class="primary-btn">Search First 20</button>
+      <button id="nextBtn" class="secondary-btn" disabled>Next 20</button>
+    </div>
+
+    <div class="table-container glass">
+      <div class="table-header">
+        <h2>Results</h2>
+        <span id="statusText" class="status-text">Ready</span>
+      </div>
+      <div class="table-wrapper">
+        <table id="resultsTable">
+          <thead>
+            <tr>
+              <th>Company</th>
+              <th>Industry</th>
+              <th>Address</th>
+              <th>Website</th>
+              <th>Contacts</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <!-- Rows will be injected here -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+    
+    <!-- Modal for Email Draft -->
+    <div id="emailModal" class="modal">
+      <div class="modal-content glass">
+        <span class="close-btn">&times;</span>
+        <h2>AI Email Draft</h2>
+        <p class="subtitle" id="modalSubtitle"></p>
+        <div class="draft-container">
+          <textarea id="draftTextarea" readonly></textarea>
+        </div>
+        <button id="copyBtn" class="primary-btn">Copy to Clipboard</button>
+      </div>
+    </div>
+
+  </main>
+  <script src="script.js"></script>
+</body>
+</html>
