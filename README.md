@@ -4,9 +4,9 @@ A standalone Node.js web application for automated lead generation and cold outr
 
 ## Features
 - **Secure Backend**: API keys are stored on the server side in a `.env` file, keeping them hidden from end users.
-- **Real-time Scraping**: Automatically extracts emails, phone numbers, and social media links from company websites.
-- **AI-Powered Drafts**: Generates highly effective, personalized cold emails using OpenRouter AI.
-- **Premium UI**: Modern, glassmorphic dark-mode interface.
+- **Real time Scraping**: Automatically extracts emails, phone numbers, and social media links from company websites.
+- **AI Powered Drafts**: Generates highly effective, personalized cold emails using OpenRouter AI.
+- **Premium UI**: Modern, glassmorphic dark mode interface.
 
 ## Setup
 
@@ -38,6 +38,6 @@ A standalone Node.js web application for automated lead generation and cold outr
    Navigate to `http://localhost:3000`
 
 ## Tech Stack
-- **Backend**: Node.js, Express, Cheerio, Node-Fetch
+- **Backend**: Node.js, Express, Cheerio, Node Fetch
 - **Frontend**: Vanilla HTML5, Vanilla CSS3 (Glassmorphism), Vanilla JavaScript
-- **APIs**: Google Places API (New), OpenRouter AI (Auto-model selection)
+- **APIs**: Google Places API (New), OpenRouter AI (Auto model selection)
