@@ -148,11 +148,12 @@ async function addPlaceRow(place, defaultIndustry) {
   // Background scrape
   let contactsHTML = '';
 
-  // Validate email: reject IP-based domains, numeric-only domains, short/missing TLDs
+  // Validate email: reject IP-based, placeholder, and platform-internal addresses
   function isValidEmail(email) {
-    const parts = email.split('@');
+    const e = email.toLowerCase().trim();
+    const parts = e.split('@');
     if (parts.length !== 2) return false;
-    const domain = parts[1];
+    const [local, domain] = parts;
     if (!domain || domain.length < 3) return false;
     // Reject IP-address domains (all digits and dots)
     if (/^[\d.]+$/.test(domain)) return false;
@@ -160,7 +161,17 @@ async function addPlaceRow(place, defaultIndustry) {
     const tld = domain.split('.').pop();
     if (!tld || tld.length < 2 || !/^[a-zA-Z]+$/.test(tld)) return false;
     // Basic format check
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return false;
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)) return false;
+    // Reject known junk / platform-internal domains
+    const junkDomains = ['example.com','example.org','test.com','sentry.io',
+      'sentry.wixpress.com','wixpress.com','localhost','email.com'];
+    if (junkDomains.some(j => domain === j || domain.endsWith('.' + j))) return false;
+    // Reject domains starting with 'sentry'
+    if (domain.startsWith('sentry')) return false;
+    // Reject placeholder local parts
+    const junkLocals = ['email','test','user','admin','example','name',
+      'your','info@example','noreply','no-reply'];
+    if (junkLocals.includes(local)) return false;
     return true;
   }
 
@@ -344,7 +355,7 @@ function printTable() {
       1: { cellWidth: 28 },
       2: { cellWidth: 55 },
       3: { cellWidth: 45, textColor: [26, 86, 219] },
-      4: { cellWidth: 'auto' },
+      4: { cellWidth: 'auto', textColor: [26, 86, 219] },
     },
     didDrawCell: (data) => {
       if (data.section !== 'body') return;
@@ -355,22 +366,14 @@ function printTable() {
         if (url) doc.link(data.cell.x, data.cell.y, data.cell.width, data.cell.height, { url });
       }
 
-      // Contacts column - add clickable links AND draw social lines in blue
+      // Contacts column - add clickable link annotations for social URLs
       if (data.column.index === 4) {
         const items = contactsData[data.row.index] || [];
         items.forEach((item, lineIdx) => {
+          if (!item.href) return;
           const linkY = data.cell.y + padTop + lineIdx * lineH;
           if (linkY + lineH > data.cell.y + data.cell.height) return;
-
-          if (item.href) {
-            // Draw blue text over the default black text for social links
-            doc.setFontSize(8);
-            doc.setTextColor(26, 86, 219);
-            doc.text(item.text, data.cell.x + 4, linkY + lineH * 0.7);
-            doc.setTextColor(30, 30, 30); // reset
-
-            doc.link(data.cell.x, linkY, data.cell.width, lineH, { url: item.href });
-          }
+          doc.link(data.cell.x, linkY, data.cell.width, lineH, { url: item.href });
         });
       }
     },
