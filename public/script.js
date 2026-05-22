@@ -239,157 +239,95 @@ function printTable() {
     return;
   }
 
-  const tableRows = [];
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+
+  // Collect table data
+  const tableData   = [];
+  const websiteUrls = []; // parallel array: website URL per data row
 
   rows.forEach(tr => {
     const tds = tr.querySelectorAll('td');
     if (tds.length < 6) return;
 
-    // Company
-    const company = tds[0].querySelector('.company-name')?.textContent.trim() || '';
-
-    // Industry (strip tag styling, just text)
+    const company  = tds[0].querySelector('.company-name')?.textContent.trim() || '';
     const industry = tds[1].querySelector('.tag')?.textContent.trim() || tds[1].textContent.trim();
+    const address  = tds[2].textContent.trim();
 
-    // Address
-    const address = tds[2].textContent.trim();
-
-    // Website
     const websiteEl = tds[3].querySelector('a.external-link');
     const website   = websiteEl ? websiteEl.href : '';
 
-    // Contacts: strip SVGs, preserve links
+    // Contacts: strip SVG icons, join as plain text lines
     const chips = tds[4].querySelectorAll('.contact-chip');
-    const contacts = [];
+    const contactLines = [];
     chips.forEach(chip => {
       const clone = chip.cloneNode(true);
       clone.querySelectorAll('svg').forEach(s => s.remove());
-      const link = chip.querySelector('a');
       const text = clone.textContent.trim();
-      if (link) {
-        contacts.push({ text: text || link.href, href: link.href });
-      } else if (text) {
-        contacts.push({ text, href: null });
-      }
+      if (text) contactLines.push(text);
     });
 
-    tableRows.push({ company, industry, address, website, contacts });
+    tableData.push([company, industry, address, website, contactLines.join('\n')]);
+    websiteUrls.push(website);
   });
 
-  // Build contacts cell HTML (plain links, no chips)
-  function contactsCellHTML(contacts) {
-    if (!contacts.length) return '<span style="color:#999">—</span>';
-    return contacts.map(c =>
-      c.href
-        ? `<a href="${c.href}" target="_blank">${c.text || c.href}</a>`
-        : c.text
-    ).join('<br>');
-  }
+  // ── Document header ──────────────────────────────────────
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(13);
+  doc.setTextColor(20, 20, 20);
+  doc.text('AJOS / Companies', 14, 13);
 
-  const rowsHTML = tableRows.map(r => `
-    <tr>
-      <td>${r.company}</td>
-      <td>${r.industry}</td>
-      <td>${r.address}</td>
-      <td>${r.website ? `<a href="${r.website}" target="_blank">${r.website}</a>` : ''}</td>
-      <td>${contactsCellHTML(r.contacts)}</td>
-    </tr>`).join('');
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(8.5);
+  doc.setTextColor(120, 120, 120);
+  doc.text(`Exported: ${new Date().toLocaleString()}   |   ${tableData.length} companies`, 14, 19);
+  doc.setTextColor(0, 0, 0);
 
-  const exportedAt = new Date().toLocaleString();
+  // ── Table ────────────────────────────────────────────────
+  doc.autoTable({
+    startY: 24,
+    head: [['Company', 'Industry', 'Address', 'Website', 'Contacts']],
+    body: tableData,
+    styles: {
+      font: 'helvetica',
+      fontSize: 8,
+      cellPadding: { top: 3, bottom: 3, left: 4, right: 4 },
+      valign: 'top',
+      overflow: 'linebreak',
+      textColor: [30, 30, 30],
+      lineColor: [210, 210, 210],
+      lineWidth: 0.3,
+    },
+    headStyles: {
+      fillColor: [242, 242, 242],
+      textColor: [40, 40, 40],
+      fontStyle: 'bold',
+      fontSize: 8,
+    },
+    alternateRowStyles: {
+      fillColor: [250, 250, 250],
+    },
+    columnStyles: {
+      0: { cellWidth: 38 },
+      1: { cellWidth: 28 },
+      2: { cellWidth: 58 },
+      3: { cellWidth: 48, textColor: [26, 86, 219] },
+      4: { cellWidth: 'auto' },
+    },
+    // Add clickable link on website column cells
+    didDrawCell: (data) => {
+      if (data.section === 'body' && data.column.index === 3) {
+        const url = websiteUrls[data.row.index];
+        if (url) {
+          doc.link(data.cell.x, data.cell.y, data.cell.width, data.cell.height, { url });
+        }
+      }
+    },
+    margin: { left: 14, right: 14 },
+  });
 
-  const html = `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>AJOS Export</title>
-  <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
-      font-size: 11px;
-      color: #111;
-      padding: 28px 32px;
-    }
-    .doc-header { margin-bottom: 18px; }
-    .doc-header h1 { font-size: 15px; font-weight: 700; letter-spacing: -0.3px; }
-    .doc-header p  { font-size: 10.5px; color: #666; margin-top: 3px; }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      table-layout: fixed;
-    }
-    col.c-company  { width: 14%; }
-    col.c-industry { width: 11%; }
-    col.c-address  { width: 24%; }
-    col.c-website  { width: 18%; }
-    col.c-contacts { width: 33%; }
-    th {
-      background: #f2f2f2;
-      border: 1px solid #ccc;
-      padding: 6px 8px;
-      font-size: 10px;
-      font-weight: 700;
-      text-align: left;
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-      color: #333;
-    }
-    td {
-      border: 1px solid #ddd;
-      padding: 6px 8px;
-      font-size: 10.5px;
-      vertical-align: top;
-      line-height: 1.5;
-      word-break: break-word;
-    }
-    tbody tr:nth-child(even) td { background: #fafafa; }
-    a { color: #1a56db; text-decoration: none; }
-    a:hover { text-decoration: underline; }
-    @media print {
-      body { padding: 0; }
-      @page { margin: 1.2cm; size: A4 landscape; }
-      thead { display: table-header-group; }
-    }
-  </style>
-</head>
-<body>
-  <div class="doc-header">
-    <h1>AJOS / Companies</h1>
-    <p>Exported: ${exportedAt} &nbsp;|&nbsp; ${tableRows.length} companies</p>
-  </div>
-  <table>
-    <colgroup>
-      <col class="c-company">
-      <col class="c-industry">
-      <col class="c-address">
-      <col class="c-website">
-      <col class="c-contacts">
-    </colgroup>
-    <thead>
-      <tr>
-        <th>Company</th>
-        <th>Industry</th>
-        <th>Address</th>
-        <th>Website</th>
-        <th>Contacts</th>
-      </tr>
-    </thead>
-    <tbody>
-      ${rowsHTML}
-    </tbody>
-  </table>
-</body>
-</html>`;
-
-  const win = window.open('', '_blank');
-  if (!win) {
-    alert('Popup blocked. Please allow popups for this page and try again.');
-    return;
-  }
-  win.document.write(html);
-  win.document.close();
-  win.focus();
-  // Small delay so the content renders before print dialog opens
-  setTimeout(() => win.print(), 600);
+  // ── Trigger download ─────────────────────────────────────
+  const dateStr = new Date().toISOString().slice(0, 10);
+  doc.save(`AJOS_Export_${dateStr}.pdf`);
 }
 
