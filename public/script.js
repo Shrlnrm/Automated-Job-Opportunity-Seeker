@@ -117,39 +117,39 @@ async function addPlaceRow(place, defaultIndustry) {
   const mapPhone = place.nationalPhoneNumber || '';
 
   const tagClass = getTagClass(industry);
-  const av       = initials(name);
 
   const tr = document.createElement('tr');
   tr.innerHTML = `
-    <td>
-      <div class="company-cell">
-        <div class="company-avatar">${av}</div>
-        <span class="company-name" title="${name}">${name}</span>
-      </div>
-    </td>
+    <td><span class="company-name">${name}</span></td>
     <td><span class="tag ${tagClass}">${industry}</span></td>
     <td>${address}</td>
     <td>
       ${website
         ? `<a href="${website}" target="_blank" rel="noopener noreferrer" class="external-link">
-             Visit ↗
+             Visit
            </a>`
         : '<span style="color:var(--text-muted)">N/A</span>'}
     </td>
     <td class="contacts-cell"><span class="loader"></span></td>
     <td>
-      <button class="draft-btn" onclick="generateDraft('${name.replace(/'/g,"\\'")}','${industry.replace(/'/g,"\\'")}')\" disabled>
-        Draft email
+      <button class="draft-btn" onclick="generateDraft('${name.replace(/'/g,"\\'")}',' ${industry.replace(/'/g,"\\'")}'  )" disabled>
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 1 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>
+        Draft
       </button>
     </td>
   `;
   tbody.appendChild(tr);
 
+  // SVG icons (Lucide-style, 12px)
+  const iconPhone = `<svg class="chip-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.79 19.79 0 0 1 2.12 4.18 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.362 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.338 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>`;
+  const iconMail = `<svg class="chip-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>`;
+  const iconLink = `<svg class="chip-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>`;
+
   // Background scrape
   let contactsHTML = '';
 
   if (mapPhone) {
-    contactsHTML += `<div class="contact-chip"><span class="chip-icon">📞</span>${mapPhone}</div>`;
+    contactsHTML += `<div class="contact-chip">${iconPhone}${mapPhone}</div>`;
   }
 
   if (website) {
@@ -162,16 +162,16 @@ async function addPlaceRow(place, defaultIndustry) {
       const scrapeData = await scrapeRes.json();
 
       scrapeData.emails.forEach(e => {
-        contactsHTML += `<div class="contact-chip"><span class="chip-icon">✉</span>${e}</div>`;
+        contactsHTML += `<div class="contact-chip">${iconMail}${e}</div>`;
       });
 
       scrapeData.phones.filter(p => p !== mapPhone).forEach(p => {
-        contactsHTML += `<div class="contact-chip"><span class="chip-icon">📞</span>${p}</div>`;
+        contactsHTML += `<div class="contact-chip">${iconPhone}${p}</div>`;
       });
 
       scrapeData.socials.forEach(s => {
         const host = new URL(s).hostname.replace('www.', '');
-        contactsHTML += `<div class="contact-chip"><span class="chip-icon">↗</span><a href="${s}" target="_blank" rel="noopener noreferrer" class="social-link">${host}</a></div>`;
+        contactsHTML += `<div class="contact-chip">${iconLink}<a href="${s}" target="_blank" rel="noopener noreferrer" class="social-link">${host}</a></div>`;
       });
 
     } catch (e) {

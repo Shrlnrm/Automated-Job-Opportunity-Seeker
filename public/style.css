@@ -251,18 +251,11 @@ th {
 .col-actions   { width: 100px; min-width: 90px; }
 
 td {
-  padding: 6px 16px;
+  padding: 8px 16px;
   border-bottom: 1px solid var(--border);
   font-size: var(--font-size-sm);
   color: var(--text-secondary);
-  vertical-align: middle;
-}
-
-/* Let the contacts cell grow as tall as needed */
-td.contacts-cell {
   vertical-align: top;
-  padding-top: 8px;
-  padding-bottom: 8px;
 }
 
 tbody tr {
@@ -273,27 +266,6 @@ tbody tr:hover {
   background: var(--surface-2);
 }
 
-.company-cell {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.company-avatar {
-  width: 20px;
-  height: 20px;
-  border-radius: 4px;
-  background: var(--surface-2);
-  border: 1px solid var(--border);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 10px;
-  font-weight: 600;
-  color: var(--text-muted);
-  flex-shrink: 0;
-  text-transform: uppercase;
-}
 
 .company-name {
   font-size: var(--font-size-sm);
@@ -344,9 +316,10 @@ tbody tr:hover {
 }
 
 .contact-chip .chip-icon {
-  font-style: normal;
-  font-size: 10px;
-  opacity: 0.7;
+  flex-shrink: 0;
+  color: var(--text-muted);
+  display: inline-block;
+  vertical-align: middle;
 }
 
 a.social-link,
@@ -380,27 +353,41 @@ a.external-link:hover {
 .draft-btn {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  height: 24px;
-  padding: 0 10px;
-  border-radius: var(--radius-sm);
+  gap: 5px;
+  height: 28px;
+  padding: 0 12px;
+  border-radius: var(--radius-md);
   font-family: var(--font);
   font-size: var(--font-size-xs);
   font-weight: 500;
   cursor: pointer;
-  background: var(--accent);
-  color: #fff;
-  border: 1px solid transparent;
-  transition: background 0.15s, opacity 0.15s;
+  background: transparent;
+  color: var(--accent);
+  border: 1px solid rgba(94, 106, 210, 0.3);
+  white-space: nowrap;
+  transition: all 0.2s ease;
+}
+
+.draft-btn svg {
+  flex-shrink: 0;
+  opacity: 0.7;
+  transition: opacity 0.2s;
 }
 
 .draft-btn:disabled {
-  opacity: 0.3;
+  opacity: 0.25;
   cursor: not-allowed;
 }
 
 .draft-btn:hover:not(:disabled) {
-  background: var(--accent-hover);
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+  box-shadow: 0 0 12px rgba(94, 106, 210, 0.25);
+}
+
+.draft-btn:hover:not(:disabled) svg {
+  opacity: 1;
 }
 
 /* ── Table Empty State ──────────────────────────────────── */
