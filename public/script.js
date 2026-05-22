@@ -148,6 +148,22 @@ async function addPlaceRow(place, defaultIndustry) {
   // Background scrape
   let contactsHTML = '';
 
+  // Validate email: reject IP-based domains, numeric-only domains, short/missing TLDs
+  function isValidEmail(email) {
+    const parts = email.split('@');
+    if (parts.length !== 2) return false;
+    const domain = parts[1];
+    if (!domain || domain.length < 3) return false;
+    // Reject IP-address domains (all digits and dots)
+    if (/^[\d.]+$/.test(domain)) return false;
+    // Must have a TLD of at least 2 alpha chars
+    const tld = domain.split('.').pop();
+    if (!tld || tld.length < 2 || !/^[a-zA-Z]+$/.test(tld)) return false;
+    // Basic format check
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return false;
+    return true;
+  }
+
   if (mapPhone) {
     contactsHTML += `<div class="contact-chip">${iconPhone}${mapPhone}</div>`;
   }
@@ -161,7 +177,8 @@ async function addPlaceRow(place, defaultIndustry) {
       });
       const scrapeData = await scrapeRes.json();
 
-      scrapeData.emails.forEach(e => {
+      // Filter valid emails only
+      scrapeData.emails.filter(isValidEmail).forEach(e => {
         contactsHTML += `<div class="contact-chip">${iconMail}${e}</div>`;
       });
 
@@ -169,9 +186,15 @@ async function addPlaceRow(place, defaultIndustry) {
         contactsHTML += `<div class="contact-chip">${iconPhone}${p}</div>`;
       });
 
+      // Deduplicate socials by hostname (one per platform)
+      const seenHosts = new Set();
       scrapeData.socials.forEach(s => {
-        const host = new URL(s).hostname.replace('www.', '');
-        contactsHTML += `<div class="contact-chip">${iconLink}<a href="${s}" target="_blank" rel="noopener noreferrer" class="social-link">${host}</a></div>`;
+        try {
+          const host = new URL(s).hostname.replace('www.', '');
+          if (seenHosts.has(host)) return;
+          seenHosts.add(host);
+          contactsHTML += `<div class="contact-chip">${iconLink}<a href="${s}" target="_blank" rel="noopener noreferrer" class="social-link">${host}</a></div>`;
+        } catch (_) { /* skip malformed URLs */ }
       });
 
     } catch (e) {
@@ -326,21 +349,28 @@ function printTable() {
     didDrawCell: (data) => {
       if (data.section !== 'body') return;
 
-      // Website column — entire cell is one clickable link
+      // Website column - entire cell is one clickable link
       if (data.column.index === 3) {
         const url = websiteUrls[data.row.index];
         if (url) doc.link(data.cell.x, data.cell.y, data.cell.width, data.cell.height, { url });
       }
 
-      // Contacts column — add link per line that has a URL
+      // Contacts column - add clickable links AND draw social lines in blue
       if (data.column.index === 4) {
         const items = contactsData[data.row.index] || [];
         items.forEach((item, lineIdx) => {
-          if (!item.href) return;
           const linkY = data.cell.y + padTop + lineIdx * lineH;
-          // Guard: don't draw link beyond cell bottom
           if (linkY + lineH > data.cell.y + data.cell.height) return;
-          doc.link(data.cell.x, linkY, data.cell.width, lineH, { url: item.href });
+
+          if (item.href) {
+            // Draw blue text over the default black text for social links
+            doc.setFontSize(8);
+            doc.setTextColor(26, 86, 219);
+            doc.text(item.text, data.cell.x + 4, linkY + lineH * 0.7);
+            doc.setTextColor(30, 30, 30); // reset
+
+            doc.link(data.cell.x, linkY, data.cell.width, lineH, { url: item.href });
+          }
         });
       }
     },
