@@ -243,8 +243,10 @@ function printTable() {
   const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
 
   // Collect table data
-  const tableData   = [];
-  const websiteUrls = []; // parallel array: website URL per data row
+  // contactsData[i] = array of { text, href|null } for row i
+  const tableData    = [];
+  const websiteUrls  = [];
+  const contactsData = [];
 
   rows.forEach(tr => {
     const tds = tr.querySelectorAll('td');
@@ -257,18 +259,20 @@ function printTable() {
     const websiteEl = tds[3].querySelector('a.external-link');
     const website   = websiteEl ? websiteEl.href : '';
 
-    // Contacts: strip SVG icons, join as plain text lines
+    // Contacts: preserve {text, href} per chip
     const chips = tds[4].querySelectorAll('.contact-chip');
-    const contactLines = [];
+    const items = [];
     chips.forEach(chip => {
       const clone = chip.cloneNode(true);
       clone.querySelectorAll('svg').forEach(s => s.remove());
-      const text = clone.textContent.trim();
-      if (text) contactLines.push(text);
+      const linkEl = chip.querySelector('a');
+      const text   = clone.textContent.trim();
+      if (text) items.push({ text, href: linkEl ? linkEl.href : null });
     });
 
-    tableData.push([company, industry, address, website, contactLines.join('\n')]);
+    tableData.push([company, industry, address, website, items.map(i => i.text).join('\n')]);
     websiteUrls.push(website);
+    contactsData.push(items);
   });
 
   // ── Document header ──────────────────────────────────────
@@ -283,6 +287,11 @@ function printTable() {
   doc.text(`Exported: ${new Date().toLocaleString()}   |   ${tableData.length} companies`, 14, 19);
   doc.setTextColor(0, 0, 0);
 
+  // Line height in mm for fontSize 8 with lineHeightFactor ~1.5
+  // 8pt * 0.3528mm/pt * 1.5 ≈ 4.23mm per line
+  const lineH   = 8 * 0.3528 * 1.5;
+  const padTop  = 3; // matches cellPadding top
+
   // ── Table ────────────────────────────────────────────────
   doc.autoTable({
     startY: 24,
@@ -291,7 +300,7 @@ function printTable() {
     styles: {
       font: 'helvetica',
       fontSize: 8,
-      cellPadding: { top: 3, bottom: 3, left: 4, right: 4 },
+      cellPadding: { top: padTop, bottom: 3, left: 4, right: 4 },
       valign: 'top',
       overflow: 'linebreak',
       textColor: [30, 30, 30],
@@ -310,17 +319,29 @@ function printTable() {
     columnStyles: {
       0: { cellWidth: 38 },
       1: { cellWidth: 28 },
-      2: { cellWidth: 58 },
-      3: { cellWidth: 48, textColor: [26, 86, 219] },
+      2: { cellWidth: 55 },
+      3: { cellWidth: 45, textColor: [26, 86, 219] },
       4: { cellWidth: 'auto' },
     },
-    // Add clickable link on website column cells
     didDrawCell: (data) => {
-      if (data.section === 'body' && data.column.index === 3) {
+      if (data.section !== 'body') return;
+
+      // Website column — entire cell is one clickable link
+      if (data.column.index === 3) {
         const url = websiteUrls[data.row.index];
-        if (url) {
-          doc.link(data.cell.x, data.cell.y, data.cell.width, data.cell.height, { url });
-        }
+        if (url) doc.link(data.cell.x, data.cell.y, data.cell.width, data.cell.height, { url });
+      }
+
+      // Contacts column — add link per line that has a URL
+      if (data.column.index === 4) {
+        const items = contactsData[data.row.index] || [];
+        items.forEach((item, lineIdx) => {
+          if (!item.href) return;
+          const linkY = data.cell.y + padTop + lineIdx * lineH;
+          // Guard: don't draw link beyond cell bottom
+          if (linkY + lineH > data.cell.y + data.cell.height) return;
+          doc.link(data.cell.x, linkY, data.cell.width, lineH, { url: item.href });
+        });
       }
     },
     margin: { left: 14, right: 14 },
@@ -330,4 +351,3 @@ function printTable() {
   const dateStr = new Date().toISOString().slice(0, 10);
   doc.save(`AJOS_Export_${dateStr}.pdf`);
 }
-
