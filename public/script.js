@@ -62,7 +62,7 @@ async function performSearch(isNextPage = false) {
   const origText   = isNextPage ? 'Load more' : 'Search';
 
   setLoading(targetBtn, true, origText);
-  setStatus(isNextPage ? 'Fetching next page…' : 'Fetching…', true);
+  setStatus(isNextPage ? 'Fetching next page...' : 'Fetching...', true);
 
   if (!isNextPage) {
     tbody.innerHTML = '';
@@ -112,7 +112,7 @@ async function addPlaceRow(place, defaultIndustry) {
   rowCount++;
   const name     = place.displayName?.text || 'Unknown';
   const industry = place.primaryTypeDisplayName?.text || defaultIndustry;
-  const address  = place.formattedAddress || '—';
+  const address  = place.formattedAddress || '';
   const website  = place.websiteUri || '';
   const mapPhone = place.nationalPhoneNumber || '';
 
@@ -128,13 +128,13 @@ async function addPlaceRow(place, defaultIndustry) {
       </div>
     </td>
     <td><span class="tag ${tagClass}">${industry}</span></td>
-    <td title="${address}" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:260px;">${address}</td>
+    <td>${address}</td>
     <td>
       ${website
         ? `<a href="${website}" target="_blank" rel="noopener noreferrer" class="external-link">
              Visit ↗
            </a>`
-        : '<span style="color:var(--text-muted)">—</span>'}
+        : '<span style="color:var(--text-muted)">N/A</span>'}
     </td>
     <td class="contacts-cell"><span class="loader"></span></td>
     <td>
@@ -190,8 +190,8 @@ async function addPlaceRow(place, defaultIndustry) {
 // Email Draft
 window.generateDraft = async function(companyName, industry) {
   modal.classList.add('show');
-  modalSubtitle.textContent = `Generating draft for ${companyName}…`;
-  draftTextarea.value = 'AI is drafting…\nThis usually takes 3–5 seconds.';
+  modalSubtitle.textContent = `Generating draft for: ${companyName}`;
+  draftTextarea.value = 'AI is drafting...\nThis usually takes 3-5 seconds.';
   copyBtn.disabled = true;
 
   try {
@@ -204,7 +204,7 @@ window.generateDraft = async function(companyName, industry) {
     if (data.error) throw new Error(data.error);
 
     draftTextarea.value = data.draft;
-    modalSubtitle.textContent = `Ready — ${companyName}`;
+    modalSubtitle.textContent = `Ready | ${companyName}`;
     copyBtn.disabled = false;
 
   } catch (error) {
