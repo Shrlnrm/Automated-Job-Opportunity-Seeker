@@ -1,18 +1,29 @@
-# Automated Job Opportunity Seeker
+# AJOS (Automated Job Opportunity Seeker)
 
 A standalone Node.js web application for automated lead generation and cold outreach. This tool searches for companies using the Google Places API, scrapes contact information from their websites, and generates personalized cold emails using AI.
 
-## Features
-- **Secure Backend**: API keys are stored on the server side in a `.env` file, keeping them hidden from end users.
-- **Real time Scraping**: Automatically extracts emails, phone numbers, and social media links from company websites.
-- **AI Powered Drafts**: Generates highly effective, personalized cold emails using OpenRouter AI.
-- **Premium UI**: Modern, glassmorphic dark mode interface.
+## Live Application
 
-## Setup
+You can run the application directly in your browser without any setup:
+
+👉 **[Launch AJOS on Vercel](https://automated-job-opportunity-seeker.vercel.app/)**
+
+---
+
+## Features
+- **Secure Backend**: API keys are handled securely on the server side.
+- **Real-time Scraping**: Automatically extracts emails, phone numbers, and social media links from company websites.
+- **AI-Powered Drafts**: Generates highly effective, personalized cold emails using OpenRouter AI.
+- **Minimalist UI**: Clean, high-density dark mode interface inspired by Attio CRM.
+- **PDF Export**: Export generated tables to clean, printable PDFs with clickable links.
+
+## Local Development (Optional)
+
+If you wish to run the project locally:
 
 1. **Clone the repository**:
    ```bash
-   git clone https://github.com/YOUR_USERNAME/Automated-Job-Opportunity-Seeker.git
+   git clone https://github.com/Shrlnrm/Automated-Job-Opportunity-Seeker.git
    cd Automated-Job-Opportunity-Seeker
    ```
 
@@ -38,6 +49,7 @@ A standalone Node.js web application for automated lead generation and cold outr
    Navigate to `http://localhost:3000`
 
 ## Tech Stack
-- **Backend**: Node.js, Express, Cheerio, Node Fetch
-- **Frontend**: Vanilla HTML5, Vanilla CSS3 (Glassmorphism), Vanilla JavaScript
-- **APIs**: Google Places API (New), OpenRouter AI (Auto model selection)
+- **Backend**: Node.js, Express, Cheerio, Node-Fetch
+- **Frontend**: HTML5, Vanilla CSS, Vanilla JavaScript
+- **APIs**: Google Places API, OpenRouter AI
+

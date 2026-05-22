@@ -293,13 +293,11 @@ tbody tr:hover {
 .tag-4 { background: rgba(251,189,35,0.10); color: #c9a020; border-color: rgba(251,189,35,0.2); }
 
 /* ── Contact Chips ──────────────────────────────────────── */
-.contacts-cell {
+.contacts-inner {
   display: flex;
   flex-wrap: wrap;
   gap: 4px;
-  align-items: center;
-  padding-top: 4px;
-  padding-bottom: 4px;
+  align-items: flex-start;
 }
 
 .contact-chip {

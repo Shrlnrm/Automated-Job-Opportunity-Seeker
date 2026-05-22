@@ -183,7 +183,7 @@ async function addPlaceRow(place, defaultIndustry) {
     contactsHTML = '<span style="color:var(--text-muted);font-size:11px;">No contacts found</span>';
   }
 
-  tr.querySelector('.contacts-cell').innerHTML = contactsHTML;
+  tr.querySelector('.contacts-cell').innerHTML = `<div class="contacts-inner">${contactsHTML}</div>`;
   tr.querySelector('.draft-btn').disabled = false;
 }
 
@@ -228,3 +228,168 @@ copyBtn.addEventListener('click', () => {
   copyBtn.textContent = 'Copied!';
   setTimeout(() => copyBtn.textContent = orig, 2000);
 });
+
+// Export PDF
+document.getElementById('printBtn').addEventListener('click', printTable);
+
+function printTable() {
+  const rows = tbody.querySelectorAll('tr');
+  if (rows.length === 0) {
+    alert('No results to export. Please search first.');
+    return;
+  }
+
+  const tableRows = [];
+
+  rows.forEach(tr => {
+    const tds = tr.querySelectorAll('td');
+    if (tds.length < 6) return;
+
+    // Company
+    const company = tds[0].querySelector('.company-name')?.textContent.trim() || '';
+
+    // Industry (strip tag styling, just text)
+    const industry = tds[1].querySelector('.tag')?.textContent.trim() || tds[1].textContent.trim();
+
+    // Address
+    const address = tds[2].textContent.trim();
+
+    // Website
+    const websiteEl = tds[3].querySelector('a.external-link');
+    const website   = websiteEl ? websiteEl.href : '';
+
+    // Contacts: strip SVGs, preserve links
+    const chips = tds[4].querySelectorAll('.contact-chip');
+    const contacts = [];
+    chips.forEach(chip => {
+      const clone = chip.cloneNode(true);
+      clone.querySelectorAll('svg').forEach(s => s.remove());
+      const link = chip.querySelector('a');
+      const text = clone.textContent.trim();
+      if (link) {
+        contacts.push({ text: text || link.href, href: link.href });
+      } else if (text) {
+        contacts.push({ text, href: null });
+      }
+    });
+
+    tableRows.push({ company, industry, address, website, contacts });
+  });
+
+  // Build contacts cell HTML (plain links, no chips)
+  function contactsCellHTML(contacts) {
+    if (!contacts.length) return '<span style="color:#999">—</span>';
+    return contacts.map(c =>
+      c.href
+        ? `<a href="${c.href}" target="_blank">${c.text || c.href}</a>`
+        : c.text
+    ).join('<br>');
+  }
+
+  const rowsHTML = tableRows.map(r => `
+    <tr>
+      <td>${r.company}</td>
+      <td>${r.industry}</td>
+      <td>${r.address}</td>
+      <td>${r.website ? `<a href="${r.website}" target="_blank">${r.website}</a>` : ''}</td>
+      <td>${contactsCellHTML(r.contacts)}</td>
+    </tr>`).join('');
+
+  const exportedAt = new Date().toLocaleString();
+
+  const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>AJOS Export</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+      font-size: 11px;
+      color: #111;
+      padding: 28px 32px;
+    }
+    .doc-header { margin-bottom: 18px; }
+    .doc-header h1 { font-size: 15px; font-weight: 700; letter-spacing: -0.3px; }
+    .doc-header p  { font-size: 10.5px; color: #666; margin-top: 3px; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: fixed;
+    }
+    col.c-company  { width: 14%; }
+    col.c-industry { width: 11%; }
+    col.c-address  { width: 24%; }
+    col.c-website  { width: 18%; }
+    col.c-contacts { width: 33%; }
+    th {
+      background: #f2f2f2;
+      border: 1px solid #ccc;
+      padding: 6px 8px;
+      font-size: 10px;
+      font-weight: 700;
+      text-align: left;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: #333;
+    }
+    td {
+      border: 1px solid #ddd;
+      padding: 6px 8px;
+      font-size: 10.5px;
+      vertical-align: top;
+      line-height: 1.5;
+      word-break: break-word;
+    }
+    tbody tr:nth-child(even) td { background: #fafafa; }
+    a { color: #1a56db; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    @media print {
+      body { padding: 0; }
+      @page { margin: 1.2cm; size: A4 landscape; }
+      thead { display: table-header-group; }
+    }
+  </style>
+</head>
+<body>
+  <div class="doc-header">
+    <h1>AJOS / Companies</h1>
+    <p>Exported: ${exportedAt} &nbsp;|&nbsp; ${tableRows.length} companies</p>
+  </div>
+  <table>
+    <colgroup>
+      <col class="c-company">
+      <col class="c-industry">
+      <col class="c-address">
+      <col class="c-website">
+      <col class="c-contacts">
+    </colgroup>
+    <thead>
+      <tr>
+        <th>Company</th>
+        <th>Industry</th>
+        <th>Address</th>
+        <th>Website</th>
+        <th>Contacts</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${rowsHTML}
+    </tbody>
+  </table>
+</body>
+</html>`;
+
+  const win = window.open('', '_blank');
+  if (!win) {
+    alert('Popup blocked. Please allow popups for this page and try again.');
+    return;
+  }
+  win.document.write(html);
+  win.document.close();
+  win.focus();
+  // Small delay so the content renders before print dialog opens
+  setTimeout(() => win.print(), 600);
+}
+
