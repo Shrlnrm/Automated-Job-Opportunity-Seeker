@@ -12,6 +12,8 @@ You can run the application directly in your browser without any setup:
 
 ## Features
 - **Secure Backend**: API keys are handled securely on the server side.
+- **Industry Search**: Search for multiple companies by industry and location (e.g. "Software in London").
+- **Company Lookup**: Switch to Lookup mode and search by company name directly (e.g. "Stripe") to instantly scrape contact info for a specific company you already know.
 - **Real-time Scraping**: Automatically extracts emails, phone numbers, and social media links from company websites.
 - **AI-Powered Drafts**: Generates highly effective, personalized cold emails using OpenRouter AI.
 - **Minimalist UI**: Clean, high-density dark mode interface inspired by Attio CRM.

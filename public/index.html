@@ -32,13 +32,26 @@
   <!-- Search Toolbar -->
   <div class="toolbar">
     <div class="toolbar-left">
-      <div class="field-group">
+      <!-- Mode Toggle -->
+      <div class="mode-toggle" id="modeToggle">
+        <button class="mode-btn active" data-mode="industry">Industry</button>
+        <button class="mode-btn" data-mode="lookup">Lookup</button>
+      </div>
+
+      <!-- Industry mode fields (default) -->
+      <div class="field-group" id="fieldIndustry">
         <label for="industry">Industry</label>
         <input type="text" id="industry" placeholder="e.g. Software, Marketing" autocomplete="off"/>
       </div>
-      <div class="field-group">
+      <div class="field-group" id="fieldLocation">
         <label for="location">Location</label>
         <input type="text" id="location" placeholder="e.g. New York, London" autocomplete="off"/>
+      </div>
+
+      <!-- Lookup mode field (hidden by default) -->
+      <div class="field-group" id="fieldCompany" style="display:none;">
+        <label for="companyName">Company</label>
+        <input type="text" id="companyName" placeholder="e.g. Stripe, Tesla, Notion" autocomplete="off"/>
       </div>
     </div>
     <div class="toolbar-right">
@@ -69,7 +82,7 @@
       </tbody>
     </table>
     <div class="table-empty" id="tableEmpty">
-      <p>Enter an industry and location above to find companies.</p>
+      <p id="emptyText">Enter an industry and location above to find companies.</p>
     </div>
   </div>
 

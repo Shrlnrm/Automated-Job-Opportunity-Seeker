@@ -7,6 +7,14 @@ const nextBtn     = document.getElementById('nextBtn');
 const statusText  = document.getElementById('statusText');
 const tbody       = document.querySelector('#resultsTable tbody');
 const tableEmpty  = document.getElementById('tableEmpty');
+const emptyText   = document.getElementById('emptyText');
+
+// Mode toggle elements
+const modeToggle    = document.getElementById('modeToggle');
+const fieldIndustry = document.getElementById('fieldIndustry');
+const fieldLocation = document.getElementById('fieldLocation');
+const fieldCompany  = document.getElementById('fieldCompany');
+let searchMode = 'industry'; // 'industry' or 'lookup'
 
 // Modal Elements
 const modal         = document.getElementById('emailModal');
@@ -53,18 +61,51 @@ function setStatus(text, active = false) {
   statusText.classList.toggle('active', active);
 }
 
+// Mode toggle logic
+modeToggle.addEventListener('click', (e) => {
+  const btn = e.target.closest('.mode-btn');
+  if (!btn || btn.classList.contains('active')) return;
+
+  modeToggle.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  searchMode = btn.dataset.mode;
+
+  if (searchMode === 'lookup') {
+    fieldIndustry.style.display = 'none';
+    fieldLocation.style.display = 'none';
+    fieldCompany.style.display = 'flex';
+    emptyText.textContent = 'Enter a company name above to look up its details.';
+  } else {
+    fieldIndustry.style.display = 'flex';
+    fieldLocation.style.display = 'flex';
+    fieldCompany.style.display = 'none';
+    emptyText.textContent = 'Enter an industry and location above to find companies.';
+  }
+});
+
 // Search
 async function performSearch(isNextPage = false) {
-  const industryInput = document.getElementById('industry').value.trim();
-  const locationInput = document.getElementById('location').value.trim();
+  let query;
 
-  if (!industryInput || !locationInput) {
-    alert('Please enter both Industry and Location.');
-    return;
+  if (searchMode === 'lookup') {
+    const companyInput = document.getElementById('companyName').value.trim();
+    if (!companyInput) {
+      alert('Please enter a company name.');
+      return;
+    }
+    query = companyInput;
+    currentIndustry = '';
+  } else {
+    const industryInput = document.getElementById('industry').value.trim();
+    const locationInput = document.getElementById('location').value.trim();
+    if (!industryInput || !locationInput) {
+      alert('Please enter both Industry and Location.');
+      return;
+    }
+    currentIndustry = industryInput;
+    query = `${industryInput} in ${locationInput}`;
   }
 
-  currentIndustry = industryInput;
-  const query = `${industryInput} in ${locationInput}`;
   const targetBtn  = isNextPage ? nextBtn : searchBtn;
   const origText   = isNextPage ? 'Load more' : 'Search';
 
@@ -92,14 +133,15 @@ async function performSearch(isNextPage = false) {
     let places = (data.places || []).slice(0, 20);
 
     if (places.length === 0) {
-      setStatus('No more results.');
+      setStatus('No results found.');
       if (!isNextPage) tableEmpty.style.display = 'block';
       setLoading(targetBtn, false, origText);
       return;
     }
 
     nextPageToken = data.nextPageToken || '';
-    nextBtn.disabled = !nextPageToken;
+    // Disable load-more in lookup mode (looking for one specific company)
+    nextBtn.disabled = searchMode === 'lookup' ? true : !nextPageToken;
 
     for (const place of places) {
       await addPlaceRow(place, currentIndustry);
@@ -266,6 +308,13 @@ window.generateDraft = async function(companyName, industry) {
 // Event Listeners
 searchBtn.addEventListener('click', () => performSearch(false));
 nextBtn.addEventListener('click',   () => performSearch(true));
+
+// Enter key triggers search in all input fields
+['industry', 'location', 'companyName'].forEach(id => {
+  document.getElementById(id).addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') performSearch(false);
+  });
+});
 
 closeBtn.addEventListener('click', () => modal.classList.remove('show'));
 window.addEventListener('click', e => {

@@ -121,6 +121,39 @@ html, body {
   flex-wrap: wrap;
 }
 
+/* ── Mode Toggle (Industry / Lookup) ───────────────────── */
+.mode-toggle {
+  display: inline-flex;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 2px;
+  gap: 2px;
+}
+
+.mode-btn {
+  font-family: var(--font);
+  font-size: var(--font-size-xs);
+  font-weight: 500;
+  padding: 3px 10px;
+  border: none;
+  border-radius: calc(var(--radius-md) - 2px);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  white-space: nowrap;
+}
+
+.mode-btn:hover:not(.active) {
+  color: var(--text-secondary);
+}
+
+.mode-btn.active {
+  background: var(--accent);
+  color: #fff;
+}
+
 .toolbar-right {
   display: flex;
   align-items: center;
