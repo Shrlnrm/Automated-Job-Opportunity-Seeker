@@ -27,6 +27,13 @@ function getTagClass(label) {
   return tagColorMap[label];
 }
 
+// HTML-escape to prevent XSS when injecting dynamic text via innerHTML
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
 function initials(name) {
   return name.split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase();
 }
@@ -118,26 +125,36 @@ async function addPlaceRow(place, defaultIndustry) {
 
   const tagClass = getTagClass(industry);
 
+  const safeName     = escapeHtml(name);
+  const safeIndustry = escapeHtml(industry);
+  const safeAddress  = escapeHtml(address);
+  const safeWebsite  = escapeHtml(website);
+
   const tr = document.createElement('tr');
   tr.innerHTML = `
-    <td><span class="company-name">${name}</span></td>
-    <td><span class="tag ${tagClass}">${industry}</span></td>
-    <td>${address}</td>
+    <td><span class="company-name">${safeName}</span></td>
+    <td><span class="tag ${tagClass}">${safeIndustry}</span></td>
+    <td>${safeAddress}</td>
     <td>
       ${website
-        ? `<a href="${website}" target="_blank" rel="noopener noreferrer" class="external-link">
+        ? `<a href="${safeWebsite}" target="_blank" rel="noopener noreferrer" class="external-link">
              Visit
            </a>`
         : '<span style="color:var(--text-muted)">N/A</span>'}
     </td>
     <td class="contacts-cell"><span class="loader"></span></td>
     <td>
-      <button class="draft-btn" onclick="generateDraft('${name.replace(/'/g,"\\'")}',' ${industry.replace(/'/g,"\\'")}'  )" disabled>
+      <button class="draft-btn" data-company="${safeName}" data-industry="${safeIndustry}" disabled>
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 1 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>
         Draft
       </button>
     </td>
   `;
+  // Attach click handler safely via JS instead of inline onclick
+  const draftBtn = tr.querySelector('.draft-btn');
+  draftBtn.addEventListener('click', () => {
+    generateDraft(name, industry);
+  });
   tbody.appendChild(tr);
 
   // SVG icons (Lucide-style, 12px)
@@ -176,7 +193,7 @@ async function addPlaceRow(place, defaultIndustry) {
   }
 
   if (mapPhone) {
-    contactsHTML += `<div class="contact-chip">${iconPhone}${mapPhone}</div>`;
+    contactsHTML += `<div class="contact-chip">${iconPhone}${escapeHtml(mapPhone)}</div>`;
   }
 
   if (website) {
@@ -190,11 +207,11 @@ async function addPlaceRow(place, defaultIndustry) {
 
       // Filter valid emails only
       scrapeData.emails.filter(isValidEmail).forEach(e => {
-        contactsHTML += `<div class="contact-chip">${iconMail}${e}</div>`;
+        contactsHTML += `<div class="contact-chip">${iconMail}${escapeHtml(e)}</div>`;
       });
 
       scrapeData.phones.filter(p => p !== mapPhone).forEach(p => {
-        contactsHTML += `<div class="contact-chip">${iconPhone}${p}</div>`;
+        contactsHTML += `<div class="contact-chip">${iconPhone}${escapeHtml(p)}</div>`;
       });
 
       // Deduplicate socials by hostname (one per platform)
@@ -204,7 +221,7 @@ async function addPlaceRow(place, defaultIndustry) {
           const host = new URL(s).hostname.replace('www.', '');
           if (seenHosts.has(host)) return;
           seenHosts.add(host);
-          contactsHTML += `<div class="contact-chip">${iconLink}<a href="${s}" target="_blank" rel="noopener noreferrer" class="social-link">${host}</a></div>`;
+          contactsHTML += `<div class="contact-chip">${iconLink}<a href="${escapeHtml(s)}" target="_blank" rel="noopener noreferrer" class="social-link">${escapeHtml(host)}</a></div>`;
         } catch (_) { /* skip malformed URLs */ }
       });
 
@@ -255,9 +272,14 @@ window.addEventListener('click', e => {
   if (e.target === modal) modal.classList.remove('show');
 });
 
-copyBtn.addEventListener('click', () => {
-  draftTextarea.select();
-  document.execCommand('copy');
+copyBtn.addEventListener('click', async () => {
+  try {
+    await navigator.clipboard.writeText(draftTextarea.value);
+  } catch {
+    // Fallback for older browsers or non-HTTPS contexts
+    draftTextarea.select();
+    document.execCommand('copy');
+  }
   const orig = copyBtn.textContent;
   copyBtn.textContent = 'Copied!';
   setTimeout(() => copyBtn.textContent = orig, 2000);
