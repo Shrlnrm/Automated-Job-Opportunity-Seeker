@@ -42,7 +42,7 @@ If you wish to run the project locally:
 
 4. **Start the server**:
    ```bash
-   node server.js
+   node index.js
    ```
 
 5. **Open in Browser**:
@@ -50,6 +50,7 @@ If you wish to run the project locally:
 
 ## Tech Stack
 - **Backend**: Node.js, Express, Cheerio, Node-Fetch
+- **Security**: Helmet, express-rate-limit, SSRF protection, input sanitisation
 - **Frontend**: HTML5, Vanilla CSS, Vanilla JavaScript
 - **APIs**: Google Places API, OpenRouter AI
 
