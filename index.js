@@ -222,6 +222,32 @@ function parseJobDetails(title, link, snippet) {
   return { jobTitle, companyName, location, site };
 }
 
+// Route: Debug – shows env var presence and tests Google API (remove after debugging)
+app.get('/api/debug', async (req, res) => {
+  const apiKey = process.env.GOOGLE_SEARCH_API_KEY;
+  const cx = process.env.GOOGLE_SEARCH_CX;
+  const info = {
+    hasApiKey: !!apiKey,
+    hasCx: !!cx,
+    apiKeyPrefix: apiKey ? apiKey.slice(0, 8) + '...' : null,
+    cxValue: cx || null,
+  };
+  // Make a minimal test call
+  if (apiKey && cx) {
+    try {
+      const testUrl = `https://www.googleapis.com/customsearch/v1?key=${apiKey}&cx=${cx}&q=test&num=1`;
+      const r = await fetch(testUrl);
+      const d = await r.json();
+      info.googleStatus = r.status;
+      info.googleError = d.error || null;
+      info.googleOk = !d.error;
+    } catch (e) {
+      info.googleError = e.message;
+    }
+  }
+  res.json(info);
+});
+
 // Route: Search Job Listings via Google Custom Search
 app.post('/api/search', async (req, res) => {
   const query = sanitise(req.body.query, 200);
@@ -246,7 +272,9 @@ app.post('/api/search', async (req, res) => {
     const data = await response.json();
 
     if (data.error) {
-      throw new Error(data.error.message);
+      const googleMsg = data.error.message || JSON.stringify(data.error);
+      console.error('Google API error:', data.error);
+      return res.status(500).json({ error: `Google API error: ${googleMsg}` });
     }
 
     const items = data.items || [];
@@ -271,7 +299,7 @@ app.post('/api/search', async (req, res) => {
     });
   } catch (error) {
     console.error('Google Custom Search error:', error);
-    res.status(500).json({ error: 'Job search failed. Please verify API limits/keys.' });
+    res.status(500).json({ error: `Job search failed: ${error.message}` });
   }
 });
 
