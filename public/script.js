@@ -10,11 +10,12 @@ const tableEmpty  = document.getElementById('tableEmpty');
 const emptyText   = document.getElementById('emptyText');
 
 // Mode toggle elements
-const modeToggle    = document.getElementById('modeToggle');
-const fieldIndustry = document.getElementById('fieldIndustry');
-const fieldLocation = document.getElementById('fieldLocation');
-const fieldCompany  = document.getElementById('fieldCompany');
-let searchMode = 'industry'; // 'industry' or 'lookup'
+const modeToggle       = document.getElementById('modeToggle');
+const fieldJobTitle    = document.getElementById('fieldJobTitle');
+const fieldJobLocation = document.getElementById('fieldJobLocation');
+const fieldIndustry    = document.getElementById('fieldIndustry');
+const fieldLocation    = document.getElementById('fieldLocation');
+let searchMode = 'jobs'; // 'jobs' or 'companies'
 
 // Modal Elements
 const modal         = document.getElementById('emailModal');
@@ -70,31 +71,61 @@ modeToggle.addEventListener('click', (e) => {
   btn.classList.add('active');
   searchMode = btn.dataset.mode;
 
-  if (searchMode === 'lookup') {
+  const thead = document.querySelector('#resultsTable thead');
+
+  if (searchMode === 'jobs') {
+    fieldJobTitle.style.display = 'flex';
+    fieldJobLocation.style.display = 'flex';
     fieldIndustry.style.display = 'none';
     fieldLocation.style.display = 'none';
-    fieldCompany.style.display = 'flex';
-    emptyText.textContent = 'Enter a company name above to look up its details.';
+    emptyText.innerHTML = '<img src="flag.png" alt="Malaysia" class="flag-icon" /> Enter a job title and city above to find opportunities in Malaysia.';
+    document.querySelector('.page-name').textContent = 'Jobs (Malaysia Only)';
+    thead.innerHTML = `
+      <tr>
+        <th class="col-company">Job Title</th>
+        <th class="col-industry">Company</th>
+        <th class="col-address">Location</th>
+        <th class="col-website">Platform</th>
+        <th class="col-contacts">Job Link</th>
+        <th class="col-actions">AI Cover Letter</th>
+      </tr>
+    `;
   } else {
+    fieldJobTitle.style.display = 'none';
+    fieldJobLocation.style.display = 'none';
     fieldIndustry.style.display = 'flex';
     fieldLocation.style.display = 'flex';
-    fieldCompany.style.display = 'none';
-    emptyText.textContent = 'Enter an industry and location above to find companies.';
+    emptyText.textContent = 'Enter an industry and location above to find company leads.';
+    document.querySelector('.page-name').textContent = 'Companies';
+    thead.innerHTML = `
+      <tr>
+        <th class="col-company">Company</th>
+        <th class="col-industry">Industry</th>
+        <th class="col-address">Address</th>
+        <th class="col-website">Website</th>
+        <th class="col-contacts">Contacts</th>
+        <th class="col-actions">Cold Email</th>
+      </tr>
+    `;
   }
+  tbody.innerHTML = '';
 });
 
 // Search
 async function performSearch(isNextPage = false) {
   let query;
+  let endpoint = '/api/search';
 
-  if (searchMode === 'lookup') {
-    const companyInput = document.getElementById('companyName').value.trim();
-    if (!companyInput) {
-      alert('Please enter a company name.');
+  if (searchMode === 'jobs') {
+    const jobTitleInput = document.getElementById('jobTitle').value.trim();
+    const jobLocInput   = document.getElementById('jobLocation').value.trim();
+    if (!jobTitleInput) {
+      alert('Please enter a Job Title.');
       return;
     }
-    query = companyInput;
-    currentIndustry = '';
+    currentIndustry = jobTitleInput;
+    query = jobLocInput ? `"${jobTitleInput}" "${jobLocInput}"` : `"${jobTitleInput}"`;
+    endpoint = '/api/search';
   } else {
     const industryInput = document.getElementById('industry').value.trim();
     const locationInput = document.getElementById('location').value.trim();
@@ -104,6 +135,7 @@ async function performSearch(isNextPage = false) {
     }
     currentIndustry = industryInput;
     query = `${industryInput} in ${locationInput}`;
+    endpoint = '/api/search-companies';
   }
 
   const targetBtn  = isNextPage ? nextBtn : searchBtn;
@@ -121,7 +153,7 @@ async function performSearch(isNextPage = false) {
   }
 
   try {
-    const response = await fetch('/api/search', {
+    const response = await fetch(endpoint, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ query, pageToken: isNextPage ? nextPageToken : '' })
@@ -130,24 +162,43 @@ async function performSearch(isNextPage = false) {
     const data = await response.json();
     if (data.error) throw new Error(data.error);
 
-    let places = (data.places || []).slice(0, 20);
+    if (searchMode === 'jobs') {
+      let jobs = data.jobs || [];
 
-    if (places.length === 0) {
-      setStatus('No results found.');
-      if (!isNextPage) tableEmpty.style.display = 'block';
-      setLoading(targetBtn, false, origText);
-      return;
+      if (jobs.length === 0) {
+        setStatus('No results found.');
+        if (!isNextPage) tableEmpty.style.display = 'block';
+        setLoading(targetBtn, false, origText);
+        return;
+      }
+
+      nextPageToken = data.nextPageToken || '';
+      nextBtn.disabled = !nextPageToken;
+
+      for (const job of jobs) {
+        addJobRow(job);
+      }
+
+      setStatus(`${rowCount} job listings`, false);
+    } else {
+      let places = (data.places || []).slice(0, 20);
+
+      if (places.length === 0) {
+        setStatus('No results found.');
+        if (!isNextPage) tableEmpty.style.display = 'block';
+        setLoading(targetBtn, false, origText);
+        return;
+      }
+
+      nextPageToken = data.nextPageToken || '';
+      nextBtn.disabled = !nextPageToken;
+
+      for (const place of places) {
+        await addCompanyRow(place, currentIndustry);
+      }
+
+      setStatus(`${rowCount} companies`, false);
     }
-
-    nextPageToken = data.nextPageToken || '';
-    // Disable load-more in lookup mode (looking for one specific company)
-    nextBtn.disabled = searchMode === 'lookup' ? true : !nextPageToken;
-
-    for (const place of places) {
-      await addPlaceRow(place, currentIndustry);
-    }
-
-    setStatus(`${rowCount} companies`, false);
 
   } catch (error) {
     alert('Search Error: ' + error.message);
@@ -157,7 +208,49 @@ async function performSearch(isNextPage = false) {
   }
 }
 
-async function addPlaceRow(place, defaultIndustry) {
+function addJobRow(job) {
+  rowCount++;
+  const title       = job.title || 'Unknown Title';
+  const companyName = job.companyName || 'Unknown Company';
+  const location    = job.location || 'Malaysia';
+  const site        = job.site || 'Other';
+  const link        = job.link || '#';
+
+  const tagClass = getTagClass(site);
+
+  const safeTitle   = escapeHtml(title);
+  const safeCompany = escapeHtml(companyName);
+  const safeLoc     = escapeHtml(location);
+  const safeSite    = escapeHtml(site);
+  const safeLink    = escapeHtml(link);
+
+  const tr = document.createElement('tr');
+  tr.innerHTML = `
+    <td><span class="job-title company-name">${safeTitle}</span></td>
+    <td>${safeCompany}</td>
+    <td>${safeLoc}</td>
+    <td><span class="tag ${tagClass}">${safeSite}</span></td>
+    <td>
+      <a href="${safeLink}" target="_blank" rel="noopener noreferrer" class="external-link">
+        View Job
+      </a>
+    </td>
+    <td>
+      <button class="draft-btn" data-company="${safeCompany}" data-title="${safeTitle}">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 1 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>
+        Draft
+      </button>
+    </td>
+  `;
+
+  const draftBtn = tr.querySelector('.draft-btn');
+  draftBtn.addEventListener('click', () => {
+    generateDraft(companyName, title);
+  });
+  tbody.appendChild(tr);
+}
+
+async function addCompanyRow(place, defaultIndustry) {
   rowCount++;
   const name     = place.displayName?.text || 'Unknown';
   const industry = place.primaryTypeDisplayName?.text || defaultIndustry;
@@ -192,7 +285,7 @@ async function addPlaceRow(place, defaultIndustry) {
       </button>
     </td>
   `;
-  // Attach click handler safely via JS instead of inline onclick
+
   const draftBtn = tr.querySelector('.draft-btn');
   draftBtn.addEventListener('click', () => {
     generateDraft(name, industry);
@@ -204,30 +297,22 @@ async function addPlaceRow(place, defaultIndustry) {
   const iconMail = `<svg class="chip-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>`;
   const iconLink = `<svg class="chip-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>`;
 
-  // Background scrape
   let contactsHTML = '';
 
-  // Validate email: reject IP-based, placeholder, and platform-internal addresses
   function isValidEmail(email) {
     const e = email.toLowerCase().trim();
     const parts = e.split('@');
     if (parts.length !== 2) return false;
     const [local, domain] = parts;
     if (!domain || domain.length < 3) return false;
-    // Reject IP-address domains (all digits and dots)
     if (/^[\d.]+$/.test(domain)) return false;
-    // Must have a TLD of at least 2 alpha chars
     const tld = domain.split('.').pop();
     if (!tld || tld.length < 2 || !/^[a-zA-Z]+$/.test(tld)) return false;
-    // Basic format check
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)) return false;
-    // Reject known junk / platform-internal domains
     const junkDomains = ['example.com','example.org','test.com','sentry.io',
       'sentry.wixpress.com','wixpress.com','localhost','email.com'];
     if (junkDomains.some(j => domain === j || domain.endsWith('.' + j))) return false;
-    // Reject domains starting with 'sentry'
     if (domain.startsWith('sentry')) return false;
-    // Reject placeholder local parts
     const junkLocals = ['email','test','user','admin','example','name',
       'your','info@example','noreply','no-reply'];
     if (junkLocals.includes(local)) return false;
@@ -247,7 +332,6 @@ async function addPlaceRow(place, defaultIndustry) {
       });
       const scrapeData = await scrapeRes.json();
 
-      // Filter valid emails only
       scrapeData.emails.filter(isValidEmail).forEach(e => {
         contactsHTML += `<div class="contact-chip">${iconMail}${escapeHtml(e)}</div>`;
       });
@@ -256,7 +340,6 @@ async function addPlaceRow(place, defaultIndustry) {
         contactsHTML += `<div class="contact-chip">${iconPhone}${escapeHtml(p)}</div>`;
       });
 
-      // Deduplicate socials by hostname (one per platform)
       const seenHosts = new Set();
       scrapeData.socials.forEach(s => {
         try {
@@ -264,7 +347,7 @@ async function addPlaceRow(place, defaultIndustry) {
           if (seenHosts.has(host)) return;
           seenHosts.add(host);
           contactsHTML += `<div class="contact-chip">${iconLink}<a href="${escapeHtml(s)}" target="_blank" rel="noopener noreferrer" class="social-link">${escapeHtml(host)}</a></div>`;
-        } catch (_) { /* skip malformed URLs */ }
+        } catch (_) {}
       });
 
     } catch (e) {
@@ -280,10 +363,13 @@ async function addPlaceRow(place, defaultIndustry) {
   tr.querySelector('.draft-btn').disabled = false;
 }
 
-// Email Draft
-window.generateDraft = async function(companyName, industry) {
+// Email / Cover Letter Draft
+window.generateDraft = async function(companyName, jobTitleOrIndustry) {
   modal.classList.add('show');
-  modalSubtitle.textContent = `Generating draft for: ${companyName}`;
+  const isCompanyMode = searchMode === 'companies';
+  modalSubtitle.textContent = isCompanyMode
+    ? `Generating cold email for: ${companyName}`
+    : `Generating cover letter for: ${companyName}`;
   draftTextarea.value = 'AI is drafting...\nThis usually takes 3-5 seconds.';
   copyBtn.disabled = true;
 
@@ -291,7 +377,12 @@ window.generateDraft = async function(companyName, industry) {
     const res  = await fetch('/api/draft', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ companyName, industry })
+      body: JSON.stringify({
+        companyName,
+        jobTitle: isCompanyMode ? undefined : jobTitleOrIndustry,
+        industry: isCompanyMode ? jobTitleOrIndustry : undefined,
+        mode: searchMode
+      })
     });
     const data = await res.json();
     if (data.error) throw new Error(data.error);
@@ -310,10 +401,13 @@ searchBtn.addEventListener('click', () => performSearch(false));
 nextBtn.addEventListener('click',   () => performSearch(true));
 
 // Enter key triggers search in all input fields
-['industry', 'location', 'companyName'].forEach(id => {
-  document.getElementById(id).addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') performSearch(false);
-  });
+['jobTitle', 'jobLocation', 'industry', 'location'].forEach(id => {
+  const el = document.getElementById(id);
+  if (el) {
+    el.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') performSearch(false);
+    });
+  }
 });
 
 closeBtn.addEventListener('click', () => modal.classList.remove('show'));
@@ -348,64 +442,68 @@ function printTable() {
   const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
 
   // Collect table data
-  // contactsData[i] = array of { text, href|null } for row i
-  const tableData    = [];
-  const websiteUrls  = [];
-  const contactsData = [];
+  const tableData = [];
+  const urls      = [];
+  const isJobs    = searchMode === 'jobs';
 
   rows.forEach(tr => {
     const tds = tr.querySelectorAll('td');
     if (tds.length < 6) return;
 
-    const company  = tds[0].querySelector('.company-name')?.textContent.trim() || '';
-    const industry = tds[1].querySelector('.tag')?.textContent.trim() || tds[1].textContent.trim();
-    const address  = tds[2].textContent.trim();
+    if (isJobs) {
+      const jobTitle = tds[0].querySelector('.job-title')?.textContent.trim() || tds[0].textContent.trim();
+      const company  = tds[1].textContent.trim();
+      const location = tds[2].textContent.trim();
+      const platform = tds[3].querySelector('.tag')?.textContent.trim() || tds[3].textContent.trim();
+      const linkEl   = tds[4].querySelector('a');
+      const jobLink  = linkEl ? linkEl.href : '';
 
-    const websiteEl = tds[3].querySelector('a.external-link');
-    const website   = websiteEl ? websiteEl.href : '';
+      tableData.push([jobTitle, company, location, platform, jobLink]);
+      urls.push(jobLink);
+    } else {
+      const company  = tds[0].querySelector('.company-name')?.textContent.trim() || tds[0].textContent.trim();
+      const industry = tds[1].querySelector('.tag')?.textContent.trim() || tds[1].textContent.trim();
+      const address  = tds[2].textContent.trim();
+      const websiteEl = tds[3].querySelector('a.external-link');
+      const website   = websiteEl ? websiteEl.href : '';
 
-    // Contacts: preserve {text, href} per chip
-    const chips = tds[4].querySelectorAll('.contact-chip');
-    const items = [];
-    chips.forEach(chip => {
-      const clone = chip.cloneNode(true);
-      clone.querySelectorAll('svg').forEach(s => s.remove());
-      const linkEl = chip.querySelector('a');
-      const text   = clone.textContent.trim();
-      if (text) items.push({ text, href: linkEl ? linkEl.href : null });
-    });
+      const chips = tds[4].querySelectorAll('.contact-chip');
+      const contacts = [];
+      chips.forEach(chip => {
+        const clone = chip.cloneNode(true);
+        clone.querySelectorAll('svg').forEach(s => s.remove());
+        const txt = clone.textContent.trim();
+        if (txt) contacts.push(txt);
+      });
 
-    tableData.push([company, industry, address, website, items.map(i => i.text).join('\n')]);
-    websiteUrls.push(website);
-    contactsData.push(items);
+      tableData.push([company, industry, address, website, contacts.join('\n')]);
+      urls.push(website);
+    }
   });
 
   // ── Document header ──────────────────────────────────────
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(13);
   doc.setTextColor(20, 20, 20);
-  doc.text('AJOS / Companies', 14, 13);
+  doc.text(isJobs ? 'AJOS / Malaysia Job Listings' : 'AJOS / Company Leads', 14, 13);
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(8.5);
   doc.setTextColor(120, 120, 120);
-  doc.text(`Exported: ${new Date().toLocaleString()}   |   ${tableData.length} companies`, 14, 19);
+  doc.text(`Exported: ${new Date().toLocaleString()}   |   ${tableData.length} ${isJobs ? 'listings' : 'companies'}`, 14, 19);
   doc.setTextColor(0, 0, 0);
-
-  // Line height in mm for fontSize 8 with lineHeightFactor ~1.5
-  // 8pt * 0.3528mm/pt * 1.5 ≈ 4.23mm per line
-  const lineH   = 8 * 0.3528 * 1.5;
-  const padTop  = 3; // matches cellPadding top
 
   // ── Table ────────────────────────────────────────────────
   doc.autoTable({
     startY: 24,
-    head: [['Company', 'Industry', 'Address', 'Website', 'Contacts']],
+    head: isJobs 
+      ? [['Job Title', 'Company', 'Location', 'Platform', 'Job Link']]
+      : [['Company', 'Industry', 'Address', 'Website', 'Contacts']],
     body: tableData,
     styles: {
       font: 'helvetica',
       fontSize: 8,
-      cellPadding: { top: padTop, bottom: 3, left: 4, right: 4 },
+      cellPadding: { top: 3, bottom: 3, left: 4, right: 4 },
       valign: 'top',
       overflow: 'linebreak',
       textColor: [30, 30, 30],
@@ -421,31 +519,30 @@ function printTable() {
     alternateRowStyles: {
       fillColor: [250, 250, 250],
     },
-    columnStyles: {
-      0: { cellWidth: 38 },
-      1: { cellWidth: 28 },
-      2: { cellWidth: 55 },
-      3: { cellWidth: 45, textColor: [26, 86, 219] },
-      4: { cellWidth: 'auto', textColor: [26, 86, 219] },
-    },
+    columnStyles: isJobs
+      ? {
+          0: { cellWidth: 60 },
+          1: { cellWidth: 50 },
+          2: { cellWidth: 50 },
+          3: { cellWidth: 25 },
+          4: { cellWidth: 'auto', textColor: [26, 86, 219] },
+        }
+      : {
+          0: { cellWidth: 45 },
+          1: { cellWidth: 35 },
+          2: { cellWidth: 60 },
+          3: { cellWidth: 50, textColor: [26, 86, 219] },
+          4: { cellWidth: 'auto', textColor: [26, 86, 219] },
+        },
     didDrawCell: (data) => {
       if (data.section !== 'body') return;
 
-      // Website column - entire cell is one clickable link
-      if (data.column.index === 3) {
-        const url = websiteUrls[data.row.index];
+      if (isJobs && data.column.index === 4) {
+        const url = urls[data.row.index];
         if (url) doc.link(data.cell.x, data.cell.y, data.cell.width, data.cell.height, { url });
-      }
-
-      // Contacts column - add clickable link annotations for social URLs
-      if (data.column.index === 4) {
-        const items = contactsData[data.row.index] || [];
-        items.forEach((item, lineIdx) => {
-          if (!item.href) return;
-          const linkY = data.cell.y + padTop + lineIdx * lineH;
-          if (linkY + lineH > data.cell.y + data.cell.height) return;
-          doc.link(data.cell.x, linkY, data.cell.width, lineH, { url: item.href });
-        });
+      } else if (!isJobs && data.column.index === 3) {
+        const url = urls[data.row.index];
+        if (url) doc.link(data.cell.x, data.cell.y, data.cell.width, data.cell.height, { url });
       }
     },
     margin: { left: 14, right: 14 },
@@ -453,5 +550,27 @@ function printTable() {
 
   // ── Trigger download ─────────────────────────────────────
   const dateStr = new Date().toISOString().slice(0, 10);
-  doc.save(`AJOS_Export_${dateStr}.pdf`);
+  doc.save(isJobs ? `AJOS_Jobs_Export_${dateStr}.pdf` : `AJOS_Companies_Export_${dateStr}.pdf`);
 }
+
+// ── Theme Toggle & Persistence ───────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  const themeToggleBtn = document.getElementById('themeToggleBtn');
+  const storedTheme = localStorage.getItem('theme');
+  const prefersLight = window.matchMedia('(prefers-color-scheme: light)').matches;
+
+  // Resolve active theme: explicit preference or system default
+  const activeTheme = storedTheme || (prefersLight ? 'light' : 'dark');
+
+  if (activeTheme === 'light') {
+    document.body.classList.add('light-theme');
+  } else {
+    document.body.classList.remove('light-theme');
+  }
+
+  themeToggleBtn.addEventListener('click', () => {
+    const isLight = document.body.classList.toggle('light-theme');
+    localStorage.setItem('theme', isLight ? 'light' : 'dark');
+  });
+});
+

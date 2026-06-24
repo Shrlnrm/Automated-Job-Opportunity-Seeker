@@ -22,10 +22,28 @@
       </div>
       <span class="app-name">AJOS</span>
       <span class="divider">/</span>
-      <span class="page-name">Companies</span>
+      <span class="page-name">Jobs (Malaysia Only)</span>
     </div>
     <div class="topbar-right">
       <span id="statusText" class="status-badge">Ready</span>
+      <button id="themeToggleBtn" class="theme-toggle-btn" aria-label="Toggle theme">
+        <!-- Sun icon -->
+        <svg class="sun-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="5"></circle>
+          <line x1="12" y1="1" x2="12" y2="3"></line>
+          <line x1="12" y1="21" x2="12" y2="23"></line>
+          <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+          <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+          <line x1="1" y1="12" x2="3" y2="12"></line>
+          <line x1="21" y1="12" x2="23" y2="12"></line>
+          <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+          <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+        </svg>
+        <!-- Moon icon -->
+        <svg class="moon-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+        </svg>
+      </button>
     </div>
   </header>
 
@@ -34,24 +52,28 @@
     <div class="toolbar-left">
       <!-- Mode Toggle -->
       <div class="mode-toggle" id="modeToggle">
-        <button class="mode-btn active" data-mode="industry">Industry</button>
-        <button class="mode-btn" data-mode="lookup">Lookup</button>
+        <button class="mode-btn active" data-mode="jobs">Job Search</button>
+        <button class="mode-btn" data-mode="companies">Company Search</button>
       </div>
 
-      <!-- Industry mode fields (default) -->
-      <div class="field-group" id="fieldIndustry">
+      <!-- Job Search fields (default) -->
+      <div class="field-group" id="fieldJobTitle">
+        <label for="jobTitle">Job Title</label>
+        <input type="text" id="jobTitle" placeholder="e.g. Software Engineer, Designer" autocomplete="off"/>
+      </div>
+      <div class="field-group" id="fieldJobLocation">
+        <label for="jobLocation">City in Malaysia (Optional)</label>
+        <input type="text" id="jobLocation" placeholder="e.g. Kuala Lumpur, Penang" autocomplete="off"/>
+      </div>
+
+      <!-- Company Search fields (hidden by default) -->
+      <div class="field-group" id="fieldIndustry" style="display:none;">
         <label for="industry">Industry</label>
         <input type="text" id="industry" placeholder="e.g. Software, Marketing" autocomplete="off"/>
       </div>
-      <div class="field-group" id="fieldLocation">
+      <div class="field-group" id="fieldLocation" style="display:none;">
         <label for="location">Location</label>
-        <input type="text" id="location" placeholder="e.g. New York, London" autocomplete="off"/>
-      </div>
-
-      <!-- Lookup mode field (hidden by default) -->
-      <div class="field-group" id="fieldCompany" style="display:none;">
-        <label for="companyName">Company</label>
-        <input type="text" id="companyName" placeholder="e.g. Stripe, Tesla, Notion" autocomplete="off"/>
+        <input type="text" id="location" placeholder="e.g. Kuala Lumpur, London" autocomplete="off"/>
       </div>
     </div>
     <div class="toolbar-right">
@@ -69,12 +91,12 @@
     <table id="resultsTable">
       <thead>
         <tr>
-          <th class="col-company">Company</th>
-          <th class="col-industry">Industry</th>
-          <th class="col-address">Address</th>
-          <th class="col-website">Website</th>
-          <th class="col-contacts">Contacts</th>
-          <th class="col-actions">Cold Email</th>
+          <th class="col-company">Job Title</th>
+          <th class="col-industry">Company</th>
+          <th class="col-address">Location</th>
+          <th class="col-website">Platform</th>
+          <th class="col-contacts">Job Link</th>
+          <th class="col-actions">AI Cover Letter</th>
         </tr>
       </thead>
       <tbody>
@@ -82,7 +104,7 @@
       </tbody>
     </table>
     <div class="table-empty" id="tableEmpty">
-      <p id="emptyText">Enter an industry and location above to find companies.</p>
+      <p id="emptyText"><img src="flag.png" alt="Malaysia" class="flag-icon" /> Enter a job title and city above to find opportunities in Malaysia.</p>
     </div>
   </div>
 
