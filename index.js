@@ -18,17 +18,34 @@ app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", "'unsafe-inline'", "https://cdnjs.cloudflare.com"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "https://cdnjs.cloudflare.com", "https://cse.google.com"],
       styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
       fontSrc: ["'self'", "https://fonts.gstatic.com"],
-      connectSrc: ["'self'"],
-      imgSrc: ["'self'", "data:"],
+      connectSrc: ["'self'", "https://www.googleapis.com"],
+      imgSrc: ["'self'", "data:", "https:"],
+      frameSrc: ["https://cse.google.com"],
     }
   }
 }));
 
+// Allow localhost for local dev, plus any Vercel deployment URL
+const allowedOrigins = [
+  `http://localhost:${PORT}`,
+  `http://localhost:3000`,
+];
+if (process.env.ALLOWED_ORIGIN) {
+  allowedOrigins.push(process.env.ALLOWED_ORIGIN);
+}
+
 app.use(cors({
-  origin: process.env.ALLOWED_ORIGIN || `http://localhost:${PORT}`,
+  origin: function (origin, callback) {
+    // Allow requests with no origin (curl, Postman, server-side)
+    if (!origin) return callback(null, true);
+    // Allow any vercel.app domain (preview + production deployments)
+    if (/\.vercel\.app$/.test(origin)) return callback(null, true);
+    if (allowedOrigins.includes(origin)) return callback(null, true);
+    callback(new Error('CORS: origin not allowed'));
+  },
   methods: ['GET', 'POST'],
 }));
 
