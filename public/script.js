@@ -4,7 +4,7 @@ let rowCount = 0;
 
 const searchBtn   = document.getElementById('searchBtn');
 const nextBtn     = document.getElementById('nextBtn');
-const statusText  = document.getElementById('statusText');
+const resetBtn    = document.getElementById('resetBtn');
 const tbody       = document.querySelector('#resultsTable tbody');
 const tableEmpty  = document.getElementById('tableEmpty');
 const emptyText   = document.getElementById('emptyText');
@@ -15,6 +15,7 @@ const fieldJobTitle    = document.getElementById('fieldJobTitle');
 const fieldJobLocation = document.getElementById('fieldJobLocation');
 const fieldIndustry    = document.getElementById('fieldIndustry');
 const fieldLocation    = document.getElementById('fieldLocation');
+const fieldCompanyName = document.getElementById('fieldCompanyName');
 let searchMode = 'jobs'; // 'jobs' or 'companies'
 
 // Modal Elements
@@ -58,8 +59,7 @@ function setLoading(button, isLoading, originalText) {
 }
 
 function setStatus(text, active = false) {
-  statusText.textContent = text;
-  statusText.classList.toggle('active', active);
+  // no-op since status badge was removed
 }
 
 // Mode toggle logic
@@ -76,8 +76,10 @@ modeToggle.addEventListener('click', (e) => {
   if (searchMode === 'jobs') {
     fieldJobTitle.style.display = 'flex';
     fieldJobLocation.style.display = 'flex';
+    fieldCompanyName.style.display = 'none';
     fieldIndustry.style.display = 'none';
     fieldLocation.style.display = 'none';
+    nextBtn.style.display = 'none';
     emptyText.innerHTML = '<img src="flag.png" alt="Malaysia" class="flag-icon" /> Enter a job title and city above to find opportunities in Malaysia.';
     document.querySelector('.page-name').textContent = 'Jobs (Malaysia Only)';
     thead.innerHTML = `
@@ -93,9 +95,11 @@ modeToggle.addEventListener('click', (e) => {
   } else {
     fieldJobTitle.style.display = 'none';
     fieldJobLocation.style.display = 'none';
+    fieldCompanyName.style.display = 'flex';
     fieldIndustry.style.display = 'flex';
     fieldLocation.style.display = 'flex';
-    emptyText.textContent = 'Enter an industry and location above to find company leads.';
+    nextBtn.style.display = 'inline-flex';
+    emptyText.textContent = 'Enter a company name, industry, or location above to find company leads.';
     document.querySelector('.page-name').textContent = 'Companies';
     thead.innerHTML = `
       <tr>
@@ -108,6 +112,7 @@ modeToggle.addEventListener('click', (e) => {
       </tr>
     `;
   }
+  localStorage.setItem('searchMode', searchMode);
   tbody.innerHTML = '';
 });
 
@@ -127,14 +132,26 @@ async function performSearch(isNextPage = false) {
     query = jobLocInput ? `"${jobTitleInput}" "${jobLocInput}"` : `"${jobTitleInput}"`;
     endpoint = '/api/search';
   } else {
+    const companyInput  = document.getElementById('companyName').value.trim();
     const industryInput = document.getElementById('industry').value.trim();
     const locationInput = document.getElementById('location').value.trim();
-    if (!industryInput || !locationInput) {
-      alert('Please enter both Industry and Location.');
+    
+    if (!companyInput && !industryInput && !locationInput) {
+      alert('Please enter at least one of: Company Name, Industry, or Location.');
       return;
     }
-    currentIndustry = industryInput;
-    query = `${industryInput} in ${locationInput}`;
+    
+    currentIndustry = industryInput || companyInput || 'Unknown';
+    
+    const parts = [];
+    if (companyInput) parts.push(companyInput);
+    if (industryInput) parts.push(industryInput);
+    if (locationInput) {
+      if (parts.length > 0) parts.push(`in ${locationInput}`);
+      else parts.push(locationInput);
+    }
+    
+    query = parts.join(' ');
     endpoint = '/api/search-companies';
   }
 
@@ -168,12 +185,11 @@ async function performSearch(isNextPage = false) {
       if (jobs.length === 0) {
         setStatus('No results found.');
         if (!isNextPage) tableEmpty.style.display = 'block';
-        setLoading(targetBtn, false, origText);
+        nextPageToken = '';
         return;
       }
 
       nextPageToken = data.nextPageToken || '';
-      nextBtn.disabled = !nextPageToken;
 
       for (const job of jobs) {
         addJobRow(job);
@@ -186,12 +202,11 @@ async function performSearch(isNextPage = false) {
       if (places.length === 0) {
         setStatus('No results found.');
         if (!isNextPage) tableEmpty.style.display = 'block';
-        setLoading(targetBtn, false, origText);
+        nextPageToken = '';
         return;
       }
 
       nextPageToken = data.nextPageToken || '';
-      nextBtn.disabled = !nextPageToken;
 
       for (const place of places) {
         await addCompanyRow(place, currentIndustry);
@@ -205,6 +220,7 @@ async function performSearch(isNextPage = false) {
     setStatus('Error occurred.');
   } finally {
     setLoading(targetBtn, false, origText);
+    nextBtn.disabled = !nextPageToken;
   }
 }
 
@@ -215,21 +231,24 @@ function addJobRow(job) {
   const location    = job.location || 'Malaysia';
   const site        = job.site || 'Other';
   const link        = job.link || '#';
+  // 'via' is the platform label from Google Jobs (e.g. "Indeed", "LinkedIn", "JobStreet")
+  // Fall back to site if via not available
+  const platform    = job.via || site;
 
-  const tagClass = getTagClass(site);
+  const tagClass = getTagClass(platform);
 
-  const safeTitle   = escapeHtml(title);
-  const safeCompany = escapeHtml(companyName);
-  const safeLoc     = escapeHtml(location);
-  const safeSite    = escapeHtml(site);
-  const safeLink    = escapeHtml(link);
+  const safeTitle    = escapeHtml(title);
+  const safeCompany  = escapeHtml(companyName);
+  const safeLoc      = escapeHtml(location);
+  const safePlatform = escapeHtml(platform);
+  const safeLink     = escapeHtml(link);
 
   const tr = document.createElement('tr');
   tr.innerHTML = `
     <td><span class="job-title company-name">${safeTitle}</span></td>
     <td>${safeCompany}</td>
     <td>${safeLoc}</td>
-    <td><span class="tag ${tagClass}">${safeSite}</span></td>
+    <td><span class="tag ${tagClass}">${safePlatform}</span></td>
     <td>
       <a href="${safeLink}" target="_blank" rel="noopener noreferrer" class="external-link">
         View Job
@@ -242,6 +261,7 @@ function addJobRow(job) {
       </button>
     </td>
   `;
+
 
   const draftBtn = tr.querySelector('.draft-btn');
   draftBtn.addEventListener('click', () => {
@@ -399,9 +419,20 @@ window.generateDraft = async function(companyName, jobTitleOrIndustry) {
 // Event Listeners
 searchBtn.addEventListener('click', () => performSearch(false));
 nextBtn.addEventListener('click',   () => performSearch(true));
+resetBtn.addEventListener('click',  () => {
+  document.getElementById('jobTitle').value = '';
+  document.getElementById('jobLocation').value = '';
+  document.getElementById('companyName').value = '';
+  document.getElementById('industry').value = '';
+  document.getElementById('location').value = '';
+  tbody.innerHTML = '';
+  nextBtn.disabled = true;
+  nextPageToken = '';
+  rowCount = 0;
+});
 
 // Enter key triggers search in all input fields
-['jobTitle', 'jobLocation', 'industry', 'location'].forEach(id => {
+['jobTitle', 'jobLocation', 'companyName', 'industry', 'location'].forEach(id => {
   const el = document.getElementById(id);
   if (el) {
     el.addEventListener('keydown', (e) => {
@@ -572,5 +603,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const isLight = document.body.classList.toggle('light-theme');
     localStorage.setItem('theme', isLight ? 'light' : 'dark');
   });
+
+  // Restore active search mode tab
+  const savedSearchMode = localStorage.getItem('searchMode');
+  if (savedSearchMode && savedSearchMode !== 'jobs') {
+    const btnToClick = document.querySelector(`.mode-btn[data-mode="${savedSearchMode}"]`);
+    if (btnToClick) {
+      document.querySelector('.mode-btn.active').classList.remove('active');
+      btnToClick.click();
+    }
+  }
 });
 

@@ -170,26 +170,44 @@ async function scrapeWebsite(url) {
   }
 }
 
-// Helper to parse Google search results for JobStreet, Indeed, and LinkedIn
+// Helper to parse search results for JobStreet, Indeed, and LinkedIn
 function parseJobDetails(title, link, snippet) {
   let jobTitle = title || 'Unknown Title';
   let companyName = 'Unknown Company';
   let location = 'Malaysia';
   let site = 'Other';
 
-  if (link.includes('jobstreet.com')) {
-    site = 'JobStreet';
-  } else if (link.includes('indeed.com')) {
-    site = 'Indeed';
-  } else if (link.includes('linkedin.com')) {
-    site = 'LinkedIn';
-  }
+  // Detect site from URL
+  if (link.includes('jobstreet.com')) site = 'JobStreet';
+  else if (link.includes('indeed.com')) site = 'Indeed';
+  else if (link.includes('linkedin.com')) site = 'LinkedIn';
+  else if (link.includes('jobsdb.com')) site = 'JobsDB';
 
   const cleanTitle = title
-    ? title.replace(/ \| JobStreet| - Indeed| \| LinkedIn/gi, '').trim()
+    ? title.replace(/ \| JobStreet| - Indeed| \| LinkedIn| \| JobsDB/gi, '').trim()
     : '';
 
-  if (site === 'JobStreet' || site === 'Indeed') {
+  if (site === 'Indeed') {
+    // Indeed titles: "Job Title - City" or "Job Title - Company Name"
+    const parts = cleanTitle.split(' - ');
+    if (parts.length >= 2) {
+      jobTitle = parts.slice(0, parts.length - 1).join(' - ').trim();
+      const lastPart = parts[parts.length - 1].trim();
+      // If last part looks like a location (e.g. "Kuala Lumpur"), use it as location
+      if (/kuala lumpur|selangor|penang|johor|malaysia|petaling|subang|puchong|kl|cyberjaya|shah alam/i.test(lastPart)) {
+        location = lastPart;
+      } else {
+        // Otherwise treat as company
+        companyName = lastPart;
+      }
+    }
+    // Try to get company from snippet: "Apply at [Company]" or "... at Company..."
+    if (companyName === 'Unknown Company' && snippet) {
+      const atMatch = snippet.match(/at\s+([A-Z][^\.\,\n]{2,40})[\.\,\s]/);
+      if (atMatch) companyName = atMatch[1].trim();
+    }
+
+  } else if (site === 'JobStreet') {
     const parts = cleanTitle.split(' - ');
     if (parts.length >= 3) {
       jobTitle = parts[0].trim();
@@ -198,57 +216,82 @@ function parseJobDetails(title, link, snippet) {
     } else if (parts.length === 2) {
       jobTitle = parts[0].trim();
       companyName = parts[1].trim();
+    } else {
+      jobTitle = cleanTitle;
     }
+
   } else if (site === 'LinkedIn') {
     if (cleanTitle.includes(' hiring ')) {
       const parts = cleanTitle.split(' hiring ');
       companyName = parts[0].trim();
       const subParts = parts[1].split(' in ');
       jobTitle = subParts[0].trim();
-      if (subParts[1]) {
-        location = subParts[1].split(',')[0].split(';')[0].trim();
-      }
+      if (subParts[1]) location = subParts[1].split(',')[0].trim();
     } else if (cleanTitle.includes(' at ')) {
       const parts = cleanTitle.split(' at ');
       jobTitle = parts[0].trim();
       companyName = parts[1].trim();
+    } else {
+      jobTitle = cleanTitle;
+    }
+
+  } else if (site === 'JobsDB') {
+    const parts = cleanTitle.split(' - ');
+    if (parts.length >= 2) {
+      jobTitle = parts[0].trim();
+      companyName = parts[1].trim();
+    } else {
+      jobTitle = cleanTitle;
     }
   }
 
+  // Cleanup
   jobTitle = jobTitle.replace(/[\x00-\x1f\x7f]/g, '').trim();
   companyName = companyName.replace(/[\x00-\x1f\x7f]/g, '').trim();
   location = location.replace(/[\x00-\x1f\x7f]/g, '').trim();
 
+  // Prevent dates from becoming company names
+  if (/^(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s20\d\d$/.test(companyName)) {
+    companyName = 'Unknown Company';
+  }
+
   return { jobTitle, companyName, location, site };
 }
 
-// Route: Debug – shows env var presence and tests Google API (remove after debugging)
+// Route: Debug Environment Variables
 app.get('/api/debug', async (req, res) => {
-  const apiKey = process.env.GOOGLE_SEARCH_API_KEY;
-  const cx = process.env.GOOGLE_SEARCH_CX;
   const info = {
-    hasApiKey: !!apiKey,
-    hasCx: !!cx,
-    apiKeyPrefix: apiKey ? apiKey.slice(0, 8) + '...' : null,
-    cxValue: cx || null,
+    hasBraveKey: !!process.env.BRAVE_SEARCH_API_KEY,
+    braveKeyPrefix: process.env.BRAVE_SEARCH_API_KEY ? process.env.BRAVE_SEARCH_API_KEY.substring(0, 8) + '...' : null,
+    braveStatus: null,
+    braveError: null,
+    braveOk: false
   };
+
+  const apiKey = process.env.BRAVE_SEARCH_API_KEY;
+
   // Make a minimal test call
-  if (apiKey && cx) {
+  if (apiKey) {
     try {
-      const testUrl = `https://www.googleapis.com/customsearch/v1?key=${apiKey}&cx=${cx}&q=test&num=1`;
-      const r = await fetch(testUrl);
+      const testUrl = `https://api.search.brave.com/res/v1/web/search?q=test&count=1`;
+      const r = await fetch(testUrl, {
+        headers: {
+          'Accept': 'application/json',
+          'X-Subscription-Token': apiKey
+        }
+      });
       const d = await r.json();
-      info.googleStatus = r.status;
-      info.googleError = d.error || null;
-      info.googleOk = !d.error;
+      info.braveStatus = r.status;
+      info.braveError = d.message || null;
+      info.braveOk = r.ok;
     } catch (e) {
-      info.googleError = e.message;
+      info.braveError = e.message;
     }
   }
   res.json(info);
 });
 
-// Route: Search Job Listings via Google Custom Search
+// Route: Search Job Listings via SerpAPI Google Jobs engine
 app.post('/api/search', async (req, res) => {
   const query = sanitise(req.body.query, 200);
   const pageToken = sanitise(req.body.pageToken, 50);
@@ -257,48 +300,53 @@ app.post('/api/search', async (req, res) => {
     return res.status(400).json({ error: 'A search query is required.' });
   }
 
-  const apiKey = process.env.GOOGLE_SEARCH_API_KEY;
-  const cx = process.env.GOOGLE_SEARCH_CX;
+  const apiKey = process.env.SERP_API_KEY;
+  if (!apiKey) return res.status(500).json({ error: 'SerpAPI is not configured.' });
 
-  if (!apiKey || !cx) {
-    return res.status(500).json({ error: 'Google Custom Search is not configured.' });
-  }
-
-  const startIndex = pageToken ? parseInt(pageToken, 10) : 1;
-  const searchUrl = `https://www.googleapis.com/customsearch/v1?key=${apiKey}&cx=${cx}&q=${encodeURIComponent(query)}&start=${startIndex}`;
+  const startIndex = pageToken ? parseInt(pageToken, 10) : 0;
+  // Google Jobs engine — returns structured listings with company names & location
+  const searchUrl = `https://serpapi.com/search.json?engine=google_jobs&q=${encodeURIComponent(query)}&location=Malaysia&start=${startIndex}&api_key=${apiKey}`;
 
   try {
     const response = await fetch(searchUrl);
     const data = await response.json();
 
     if (data.error) {
-      const googleMsg = data.error.message || JSON.stringify(data.error);
-      console.error('Google API error:', data.error);
-      return res.status(500).json({ error: `Google API error: ${googleMsg}` });
+      console.error('SerpAPI error:', data.error);
+      return res.status(500).json({ error: `SerpAPI error: ${data.error}` });
     }
 
-    const items = data.items || [];
+    const items = data.jobs_results || [];
     const jobs = items.map(item => {
-      const parsed = parseJobDetails(item.title, item.link, item.snippet);
+      // Detect site from apply_options links
+      let site = 'Other';
+      let link = `https://www.google.com/search?q=${encodeURIComponent((item.title || '') + ' ' + (item.company_name || ''))}`;
+      if (item.apply_options && item.apply_options.length > 0) {
+        const applyUrl = (item.apply_options[0].link || '').toLowerCase();
+        if (applyUrl.includes('jobstreet')) site = 'JobStreet';
+        else if (applyUrl.includes('indeed')) site = 'Indeed';
+        else if (applyUrl.includes('linkedin')) site = 'LinkedIn';
+        else if (applyUrl.includes('jobsdb')) site = 'JobsDB';
+        link = item.apply_options[0].link;
+      }
+
       return {
-        title: parsed.jobTitle,
-        companyName: parsed.companyName,
-        location: parsed.location,
-        site: parsed.site,
-        link: item.link
+        title: item.title || 'Unknown Title',
+        companyName: item.company_name || 'Unknown Company',
+        location: item.location || 'Malaysia',
+        site,
+        link,
+        via: item.via || null   // e.g. "via Indeed", "via LinkedIn"
       };
     });
 
-    const nextPageIndex = data.queries && data.queries.nextPage && data.queries.nextPage[0]
-      ? data.queries.nextPage[0].startIndex
-      : null;
-
+    const nextPageIndex = startIndex + 10;
     res.json({
       jobs,
-      nextPageToken: nextPageIndex ? String(nextPageIndex) : ''
+      nextPageToken: (items.length >= 10 && nextPageIndex < 100) ? String(nextPageIndex) : ''
     });
   } catch (error) {
-    console.error('Google Custom Search error:', error);
+    console.error('SerpAPI error:', error);
     res.status(500).json({ error: `Job search failed: ${error.message}` });
   }
 });
@@ -306,7 +354,7 @@ app.post('/api/search', async (req, res) => {
 // Route: Search Places (Company Leads)
 app.post('/api/search-companies', async (req, res) => {
   const query = sanitise(req.body.query, 200);
-  const pageToken = sanitise(req.body.pageToken, 500);
+  const pageToken = sanitise(req.body.pageToken, 3000);
 
   if (!query) {
     return res.status(400).json({ error: 'A search query is required.' });

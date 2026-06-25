@@ -123,6 +123,14 @@ html, body {
   gap: 8px;
 }
 
+.logo-link {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  cursor: pointer;
+}
+
 .app-icon {
   display: flex;
   align-items: center;
@@ -190,18 +198,25 @@ html, body {
 /* ── Mode Toggle (Industry / Lookup) ───────────────────── */
 .mode-toggle {
   display: inline-flex;
+  align-items: center;
+  height: 30px;
   background: var(--surface-2);
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
   padding: 2px;
   gap: 2px;
+  box-sizing: border-box;
 }
 
 .mode-btn {
   font-family: var(--font);
   font-size: var(--font-size-xs);
   font-weight: 500;
-  padding: 3px 10px;
+  padding: 0 10px;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   border: none;
   border-radius: calc(var(--radius-md) - 2px);
   background: transparent;
