@@ -837,7 +837,9 @@ body.dark-theme .moon-icon { display: none; }
   }
   .topbar-right {
     width: 100%;
-    justify-content: space-between;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+    gap: 8px;
   }
   .toolbar {
     padding: 12px;
@@ -845,16 +847,22 @@ body.dark-theme .moon-icon { display: none; }
   }
   .toolbar-left, .toolbar-right {
     width: 100%;
+    flex-wrap: wrap;
   }
   .field-group {
     width: 100%;
-    flex: 1;
+    flex: 1 1 100%;
   }
   .field-group input {
     width: 100%;
   }
   .sub-toolbar {
     padding: 12px;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .sub-toolbar-left {
+    flex-wrap: wrap;
   }
   .table-wrapper {
     height: calc(100vh - 220px);
