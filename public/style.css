@@ -824,28 +824,5 @@ body, .topbar, .toolbar, .mode-toggle, .field-group, .btn, table, th, td, tbody 
   color: var(--text);
 }
 
-.theme-toggle-btn svg {
-  position: absolute;
-  transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.4s ease;
-}
-
-/* Rotate / scale theme icons depending on class */
-body:not(.light-theme) .sun-icon {
-  opacity: 1;
-  transform: rotate(0deg) scale(1);
-}
-body:not(.light-theme) .moon-icon {
-  opacity: 0;
-  transform: rotate(90deg) scale(0);
-}
-
-body.light-theme .sun-icon {
-  opacity: 0;
-  transform: rotate(-90deg) scale(0);
-}
-body.light-theme .moon-icon {
-  opacity: 1;
-  transform: rotate(0deg) scale(1);
-}
-
-
+body:not(.dark-theme) .sun-icon { display: none; }
+body.dark-theme .moon-icon { display: none; }
