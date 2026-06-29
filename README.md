@@ -1,58 +1,26 @@
 # AJOS (Automated Job Opportunity Seeker)
 
-A standalone Node.js web application for automated lead generation and cold outreach. This tool searches for companies using the Google Places API, scrapes contact information from their websites, and generates personalized cold emails using AI.
+A powerful, secure Node.js web application for automated job hunting, lead generation, and cold outreach. AJOS searches for jobs (via Google Jobs) and companies (via Google Places), scrapes contact information directly from websites, and generates highly personalized cold emails using AI.
 
 ## Live Application
 
-You can run the application directly in your browser without any setup:
+The application is deployed securely on Vercel and requires an authorized account to access.
 
 👉 **[Launch AJOS on Vercel](https://automated-job-opportunity-seeker.vercel.app/)**
 
 ---
 
 ## Features
-- **Secure Backend**: API keys are handled securely on the server side.
-- **Industry Search**: Search for multiple companies by industry and location (e.g. "Software in London").
-- **Company Lookup**: Switch to Lookup mode and search by company name directly (e.g. "Stripe") to instantly scrape contact info for a specific company you already know.
+- **Job Search Engine**: Find relevant job listings using Google Jobs (powered by SerpAPI).
+- **Company Lead Generation**: Search for businesses by industry and location to instantly build lead lists.
 - **Real-time Scraping**: Automatically extracts emails, phone numbers, and social media links from company websites.
-- **AI-Powered Drafts**: Generates highly effective, personalized cold emails using OpenRouter AI.
-- **Minimalist UI**: Clean, high-density dark mode interface inspired by Attio CRM.
-- **PDF Export**: Export generated tables to clean, printable PDFs with clickable links.
-
-## Local Development (Optional)
-
-If you wish to run the project locally:
-
-1. **Clone the repository**:
-   ```bash
-   git clone https://github.com/Shrlnrm/Automated-Job-Opportunity-Seeker.git
-   cd Automated-Job-Opportunity-Seeker
-   ```
-
-2. **Install dependencies**:
-   ```bash
-   npm install
-   ```
-
-3. **Configure Environment Variables**:
-   Create a `.env` file in the root directory and add your API keys:
-   ```env
-   PLACES_API_KEY=your_google_places_key
-   OPENROUTER_API_KEY=your_openrouter_key
-   PORT=3000
-   ```
-
-4. **Start the server**:
-   ```bash
-   node index.js
-   ```
-
-5. **Open in Browser**:
-   Navigate to `http://localhost:3000`
+- **AI-Powered Drafts**: Generates highly effective, personalized cold emails tailored to specific jobs or companies using OpenRouter AI.
+- **Secure Authentication**: Firebase Authentication with email verification, "Remember Me" functionality, and Cloudflare Turnstile bot protection.
+- **Enterprise-Grade Security**: Strict CORS policies, per-user monthly search quotas, global daily rate limits, SSRF protection, and zero client-side API key exposure.
+- **Modern UI**: Clean, high-density dark mode interface with premium animations and responsive design.
 
 ## Tech Stack
-- **Backend**: Node.js, Express, Cheerio, Node-Fetch
-- **Security**: Helmet, express-rate-limit, SSRF protection, input sanitisation
-- **Frontend**: HTML5, Vanilla CSS, Vanilla JavaScript
-- **APIs**: Google Places API, OpenRouter AI
-
+- **Backend**: Node.js, Express, Cheerio, Firebase Admin SDK
+- **Security**: Helmet, express-rate-limit, Cloudflare Turnstile
+- **Frontend**: HTML5, Vanilla CSS, Vanilla JavaScript, Firebase Auth
+- **APIs**: SerpAPI (Jobs), Google Places API (Companies), OpenRouter (AI Drafts)

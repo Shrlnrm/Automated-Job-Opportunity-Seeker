@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Privacy Policy - AJOS</title>
+  <link rel="stylesheet" href="auth.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    .policy-container {
+      max-width: 680px;
+      margin: 3rem auto;
+      padding: 2rem;
+      text-align: left;
+      line-height: 1.7;
+    }
+    .policy-container h1 { font-size: 1.75rem; margin-bottom: 0.25rem; }
+    .policy-container .updated { font-size: 0.8rem; color: var(--text-muted); margin-bottom: 2rem; display: block; }
+    .policy-container h2 { font-size: 1.1rem; font-weight: 600; margin-top: 2rem; margin-bottom: 0.5rem; }
+    .policy-container p, .policy-container li { font-size: 0.9rem; color: var(--text-muted); }
+    .policy-container ul { padding-left: 1.25rem; }
+    .policy-container a { color: var(--text-main); }
+  </style>
+</head>
+<body>
+
+  <a href="index.html" class="auth-logo">
+    <svg width="24" height="24" viewBox="0 0 16 16" fill="none">
+      <rect width="16" height="16" rx="4" fill="#5e6ad2"/>
+      <circle cx="8" cy="8" r="3" fill="white"/>
+    </svg>
+    AJOS
+  </a>
+
+  <div class="policy-container">
+    <h1>Privacy Policy</h1>
+    <span class="updated">Last updated: June 2026</span>
+
+    <p>AJOS ("we", "our", "the platform") is committed to protecting your personal data in accordance with the Personal Data Protection Act 2010 (PDPA Malaysia). This policy explains what data we collect, why, and your rights.</p>
+
+    <h2>1. What We Collect</h2>
+    <ul>
+      <li><strong>Email address</strong> — for account creation, authentication, and platform access.</li>
+      <li><strong>Usage data</strong> — job search queries and company search queries are stored temporarily (up to 2 hours) to restore your last session. They are automatically overwritten on your next search.</li>
+      <li><strong>Account metadata</strong> — your remaining monthly search limits and account creation date, used to enforce fair usage.</li>
+    </ul>
+
+    <h2>2. What We Do NOT Collect</h2>
+    <ul>
+      <li>We do not collect your name, phone number, location, or payment information.</li>
+      <li>We do not sell or share your data with third parties for advertising purposes.</li>
+      <li>We do not store permanent search history.</li>
+    </ul>
+
+    <h2>3. How We Use Your Data</h2>
+    <p>Your email and account data are used solely to:</p>
+    <ul>
+      <li>Authenticate you securely via Firebase Authentication.</li>
+      <li>Enforce your monthly search quota.</li>
+      <li>Restore your most recent search session upon re-login.</li>
+    </ul>
+
+    <h2>4. Data Retention</h2>
+    <p>Your account data is retained for as long as your account exists. Temporary search data is overwritten every 2 hours. You may request full deletion at any time (see Section 6).</p>
+
+    <h2>5. Third-Party Services</h2>
+    <p>We use the following third-party services which have their own privacy policies:</p>
+    <ul>
+      <li><strong>Firebase / Google</strong> — authentication and database storage.</li>
+      <li><strong>Cloudflare Turnstile</strong> — bot protection on login and registration.</li>
+      <li><strong>SerpAPI</strong> — fetching job listings from Google Jobs.</li>
+      <li><strong>Google Places API</strong> — fetching company location data.</li>
+      <li><strong>OpenRouter</strong> — generating email draft suggestions.</li>
+    </ul>
+
+    <h2>6. Your Rights (PDPA Malaysia)</h2>
+    <p>You have the right to:</p>
+    <ul>
+      <li><strong>Access</strong> — request a copy of the data we hold about you.</li>
+      <li><strong>Correction</strong> — update your email address via Firebase account settings.</li>
+      <li><strong>Erasure</strong> — permanently delete your account and all associated data by contacting us. We will process your request within 14 days.</li>
+    </ul>
+
+    <h2>7. Security</h2>
+    <p>We enforce HTTPS on all connections, use Firebase security rules to restrict data access to authenticated users only, and apply rate limiting and bot protection on all endpoints.</p>
+
+    <h2>8. Contact</h2>
+    <p>For any data-related requests or questions, please contact the platform owner directly.</p>
+
+    <p style="margin-top:2rem;"><a href="index.html">← Back to Home</a></p>
+  </div>
+
+</body>
+</html>

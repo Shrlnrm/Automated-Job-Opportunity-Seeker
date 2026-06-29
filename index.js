@@ -10,6 +10,20 @@ const net = require('net');
 const { URL } = require('url');
 require('dotenv').config();
 
+// Firebase Admin Initialization
+const { initializeApp, applicationDefault, cert } = require('firebase-admin/app');
+const { getFirestore, FieldValue } = require('firebase-admin/firestore');
+const { getAuth } = require('firebase-admin/auth');
+
+// On Vercel there is no filesystem — credentials come from an env var JSON string.
+// Locally, fall back to GOOGLE_APPLICATION_CREDENTIALS file path as usual.
+const credential = process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON
+  ? cert(JSON.parse(process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON))
+  : applicationDefault();
+
+initializeApp({ credential });
+const db = getFirestore();
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -18,17 +32,20 @@ app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", "'unsafe-inline'", "https://cdnjs.cloudflare.com", "https://cse.google.com"],
-      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https://cdnjs.cloudflare.com", "https://cse.google.com", "https://www.gstatic.com", "https://challenges.cloudflare.com", "https://apis.google.com", "https://*.firebaseapp.com", "https://accounts.google.com", "https://www.googletagmanager.com"],
+      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com", "https://accounts.google.com"],
       fontSrc: ["'self'", "https://fonts.gstatic.com"],
-      connectSrc: ["'self'", "https://www.googleapis.com"],
-      imgSrc: ["'self'", "data:", "https:"],
-      frameSrc: ["https://cse.google.com"],
+      connectSrc: ["'self'", "https://www.googleapis.com", "https://identitytoolkit.googleapis.com", "https://securetoken.googleapis.com", "https://*.firebaseio.com", "wss://*.firebaseio.com", "https://*.firebasedatabase.app", "wss://*.firebasedatabase.app", "https://*.firebaseapp.com", "https://ajos-544d6.firebaseapp.com", "https://apis.google.com", "https://accounts.google.com", "https://firestore.googleapis.com", "https://firebaseinstallations.googleapis.com"],
+      imgSrc: ["'self'", "data:", "https:", "https://lh3.googleusercontent.com"],
+      frameSrc: ["'self'", "https://cse.google.com", "https://challenges.cloudflare.com", "https://*.firebaseapp.com", "https://ajos-544d6.firebaseapp.com", "https://accounts.google.com", "https://content-identitytoolkit.googleapis.com"],
     }
-  }
+  },
+  crossOriginOpenerPolicy: false,
+  crossOriginEmbedderPolicy: false,
+  crossOriginResourcePolicy: false,
 }));
 
-// Allow localhost for local dev, plus any Vercel deployment URL
+// be3: In production, lock CORS strictly to ALLOWED_ORIGIN only.
 const allowedOrigins = [
   `http://localhost:${PORT}`,
   `http://localhost:3000`,
@@ -39,22 +56,26 @@ if (process.env.ALLOWED_ORIGIN) {
 
 app.use(cors({
   origin: function (origin, callback) {
-    // Allow requests with no origin (curl, Postman, server-side)
-    if (!origin) return callback(null, true);
-    // Allow any vercel.app domain (preview + production deployments)
+    if (!origin) return callback(null, true); // curl / server-to-server
+    if (process.env.NODE_ENV === 'production') {
+      // Production: only exact ALLOWED_ORIGIN
+      if (process.env.ALLOWED_ORIGIN && origin === process.env.ALLOWED_ORIGIN) return callback(null, true);
+      return callback(new Error('CORS: origin not allowed'));
+    }
+    // Development: allow localhost + any vercel.app preview
     if (/\.vercel\.app$/.test(origin)) return callback(null, true);
     if (allowedOrigins.includes(origin)) return callback(null, true);
     callback(new Error('CORS: origin not allowed'));
   },
-  methods: ['GET', 'POST'],
+  methods: ['GET', 'POST', 'DELETE'],
 }));
 
 app.use(express.json({ limit: '10kb' }));
 
-// General rate limit: 100 requests per 15 min per IP
+// General rate limit: 1000 requests per 15 min per IP
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 100,
+  max: 1000,
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: 'Too many requests, please try again later.' }
@@ -68,6 +89,172 @@ const draftLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: 'Draft limit reached. Please wait a minute.' }
+});
+
+// ── Duplicate request protection (rl8) ──────────────────────
+// ponytail: in-memory map is fine for single-instance server; upgrade to Redis if scaling
+const recentRequests = new Map();
+function isDuplicate(userId, query) {
+  const key = `${userId}:${query}`;
+  const last = recentRequests.get(key);
+  const now = Date.now();
+  if (last && now - last < 5000) return true;
+  recentRequests.set(key, now);
+  // Prune old entries to prevent memory leak
+  if (recentRequests.size > 1000) {
+    const cutoff = now - 10000;
+    for (const [k, t] of recentRequests) {
+      if (t < cutoff) recentRequests.delete(k);
+    }
+  }
+  return false;
+}
+
+// ── Auth & Limits Middleware ─────────────────────────────────
+async function requireAuthAndCheckLimits(req, res, next) {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({ error: 'Unauthorized: No token provided' });
+  }
+
+  const idToken = authHeader.split('Bearer ')[1];
+  try {
+    const decodedToken = await getAuth().verifyIdToken(idToken);
+
+    // au4: Enforce email verification
+    if (!decodedToken.email_verified) {
+      return res.status(403).json({ error: 'Please verify your email before using the app.' });
+    }
+
+    req.user = decodedToken;
+    
+    // Fetch limits from Firestore
+    const userRef = db.collection('users').doc(req.user.uid);
+    const doc = await userRef.get();
+    
+    if (!doc.exists) {
+      return res.status(403).json({ error: 'Account not fully initialized. Please reload.' });
+    }
+
+    const userData = doc.data();
+    req.userData = userData;
+    req.userRef = userRef;
+
+    // Check if Owner
+    if (userData.role === 'owner') {
+      return next();
+    }
+
+    // Lazy Evaluation: Check if we need to reset limits
+    const now = new Date();
+    const resetDate = new Date(userData.nextLimitResetDate);
+    
+    if (now >= resetDate) {
+      const nextReset = new Date(resetDate);
+      while (nextReset <= now) {
+        nextReset.setMonth(nextReset.getMonth() + 1);
+      }
+      
+      await userRef.update({
+        jobSearchesRemaining: 10,
+        companyLoadsRemaining: 3000,
+        nextLimitResetDate: nextReset.toISOString()
+      });
+      
+      req.userData.jobSearchesRemaining = 10;
+      req.userData.companyLoadsRemaining = 3000;
+      req.userData.nextLimitResetDate = nextReset.toISOString();
+    }
+
+    next();
+  } catch (error) {
+    console.error('Auth Error:', error);
+    return res.status(401).json({ error: 'Unauthorized: Invalid token' });
+  }
+}
+
+// Route: Get Current User Limits
+app.get('/api/user-limits', requireAuthAndCheckLimits, (req, res) => {
+  res.json({
+    role: req.userData.role,
+    jobSearchesRemaining: req.userData.jobSearchesRemaining,
+    companyLoadsRemaining: req.userData.companyLoadsRemaining
+  });
+});
+
+
+
+// Route: Initialize New User & Verify Turnstile
+app.post('/api/init-user', async (req, res) => {
+  const { turnstileToken, idToken } = req.body;
+  if (!turnstileToken || !idToken) {
+    return res.status(400).json({ error: 'Missing tokens' });
+  }
+
+  try {
+    // 1. Verify Firebase Token first to get UID
+    const decodedToken = await getAuth().verifyIdToken(idToken);
+    const uid = decodedToken.uid;
+    const email = decodedToken.email;
+
+    // 2. Turnstile / Bot Verification
+    if (turnstileToken === 'google_bypass') {
+      // Securely check if the user actually signed in via Google
+      const userRecord = await getAuth().getUser(uid);
+      const isGoogle = userRecord.providerData.some(p => p.providerId === 'google.com');
+      if (!isGoogle) {
+        return res.status(403).json({ error: 'Bot verification failed. Invalid Google auth.' });
+      }
+    } else {
+      // Normal Turnstile validation
+      const formData = new URLSearchParams();
+      formData.append('secret', process.env.TURNSTILE_SECRET_KEY);
+      formData.append('response', turnstileToken);
+      
+      const turnstileRes = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
+        method: 'POST',
+        body: formData
+      });
+      const turnstileOutcome = await turnstileRes.json();
+      if (!turnstileOutcome.success) {
+        return res.status(403).json({ error: 'Bot verification failed' });
+      }
+    }
+
+    // 3. Check User Limit before creating Firestore Doc
+    const userRef = db.collection('users').doc(uid);
+    const doc = await userRef.get();
+    
+    if (!doc.exists) {
+      // It's a new user. Enforce the 21 user maximum limit.
+      const snapshot = await db.collection('users').count().get();
+      const totalUsers = snapshot.data().count;
+      
+      if (totalUsers >= 21) {
+        // Limit reached. Delete their Auth account so they aren't a ghost user.
+        await getAuth().deleteUser(uid);
+        return res.status(403).json({ error: 'Registration closed: Maximum user capacity reached.' });
+      }
+
+      const now = new Date();
+      const nextReset = new Date(now);
+      nextReset.setMonth(nextReset.getMonth() + 1);
+
+      await userRef.set({
+        email: email,
+        jobSearchesRemaining: 10,
+        companyLoadsRemaining: 3000,
+        createdAt: now.toISOString(),
+        nextLimitResetDate: nextReset.toISOString(),
+        role: email === 'aminmod06@gmail.com' ? 'owner' : 'user'
+      });
+    }
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Init user error:', err);
+    res.status(500).json({ error: 'Failed to initialize user' });
+  }
 });
 
 // ── SSRF protection helper ──────────────────────────────────
@@ -292,20 +479,55 @@ app.get('/api/debug', async (req, res) => {
 });
 
 // Route: Search Job Listings via SerpAPI Google Jobs engine
-app.post('/api/search', async (req, res) => {
+app.post('/api/search', requireAuthAndCheckLimits, async (req, res) => {
+  res.setHeader('Cache-Control', 'private, no-store'); // be10
   const query = sanitise(req.body.query, 200);
   const pageToken = sanitise(req.body.pageToken, 50);
+  const dateFilter = sanitise(req.body.dateFilter, 50);
+  const inputs = req.body.inputs || {};
 
-  if (!query) {
-    return res.status(400).json({ error: 'A search query is required.' });
+  // rl7: Minimum query length
+  if (!query || query.length < 3) {
+    return res.status(400).json({ error: 'Search query must be at least 3 characters.' });
+  }
+
+  // rl8: Duplicate request guard
+  if (isDuplicate(req.user.uid, query)) {
+    return res.status(429).json({ error: 'Duplicate request. Please wait a moment.' });
+  }
+
+  // Check Limits (if not owner)
+  if (req.userData.role !== 'owner') {
+    if (req.userData.jobSearchesRemaining <= 0) {
+      return res.status(429).json({ error: 'Monthly job search limit reached.' });
+    }
   }
 
   const apiKey = process.env.SERP_API_KEY;
-  if (!apiKey) return res.status(500).json({ error: 'SerpAPI is not configured.' });
+  if (!apiKey) return res.status(500).json({ error: 'Search service is temporarily unavailable.' });
+
+  // rl2: Global daily SERP cap
+  const dailyCounterRef = db.collection('globalCounters').doc('daily');
+  try {
+    const counterDoc = await dailyCounterRef.get();
+    const today = new Date().toISOString().slice(0, 10);
+    const counterData = counterDoc.exists ? counterDoc.data() : {};
+    const dayCount = counterData.date === today ? (counterData.serpCalls || 0) : 0;
+    if (dayCount >= (parseInt(process.env.SERP_DAILY_CAP) || 480)) {
+      return res.status(503).json({ error: 'Daily search capacity reached. Please try again tomorrow.' });
+    }
+    await dailyCounterRef.set({ date: today, serpCalls: dayCount + 1 }, { merge: true });
+  } catch (capErr) {
+    console.error('Global cap check error:', capErr);
+    // ponytail: fail open on counter errors to avoid blocking users; upgrade to transaction if count accuracy critical
+  }
 
   const startIndex = pageToken ? parseInt(pageToken, 10) : 0;
-  // Google Jobs engine — returns structured listings with company names & location
-  const searchUrl = `https://serpapi.com/search.json?engine=google_jobs&q=${encodeURIComponent(query)}&location=Malaysia&start=${startIndex}&api_key=${apiKey}`;
+  // Google Jobs engine – returns structured listings with company names & location
+  let searchUrl = `https://serpapi.com/search.json?engine=google_jobs&q=${encodeURIComponent(query)}&location=Malaysia&start=${startIndex}&api_key=${apiKey}`;
+
+  const expiresAt = new Date();
+  expiresAt.setHours(expiresAt.getHours() + 2);
 
   try {
     const response = await fetch(searchUrl);
@@ -327,7 +549,17 @@ app.post('/api/search', async (req, res) => {
         else if (applyUrl.includes('indeed')) site = 'Indeed';
         else if (applyUrl.includes('linkedin')) site = 'LinkedIn';
         else if (applyUrl.includes('jobsdb')) site = 'JobsDB';
-        link = item.apply_options[0].link;
+        
+        try {
+          const urlObj = new URL(item.apply_options[0].link);
+          // Strip UTM tracking parameters which trigger auto-apply forms on some sites
+          urlObj.searchParams.delete('utm_campaign');
+          urlObj.searchParams.delete('utm_source');
+          urlObj.searchParams.delete('utm_medium');
+          link = urlObj.toString();
+        } catch (e) {
+          link = item.apply_options[0].link;
+        }
       }
 
       return {
@@ -336,32 +568,61 @@ app.post('/api/search', async (req, res) => {
         location: item.location || 'Malaysia',
         site,
         link,
-        via: item.via || null   // e.g. "via Indeed", "via LinkedIn"
+        via: item.via || null
       };
     });
 
-    const nextPageIndex = startIndex + 10;
-    res.json({
-      jobs,
-      nextPageToken: (items.length >= 10 && nextPageIndex < 100) ? String(nextPageIndex) : ''
+    // Deduct limit if jobs found
+    if (req.userData.role !== 'owner' && items.length > 0) {
+      await req.userRef.update({
+        jobSearchesRemaining: FieldValue.increment(-1)
+      });
+    }
+
+    await req.userRef.update({
+      jobSearchTemp: {
+        query: query,
+        inputs: inputs,
+        jobs: jobs,
+        status: 'completed',
+        createdAt: FieldValue.serverTimestamp(),
+        expiresAt: expiresAt.toISOString(),
+        nextPageToken: data.serpapi_pagination?.next ? (startIndex + 10).toString() : null
+      }
     });
+
+    res.json({ success: true, jobs: jobs });
   } catch (error) {
-    console.error('SerpAPI error:', error);
-    res.status(500).json({ error: `Job search failed: ${error.message}` });
+    console.error('Job search error:', error);
+    res.status(500).json({ error: 'Job search failed. Please try again.' }); // be6
   }
 });
 
 // Route: Search Places (Company Leads)
-app.post('/api/search-companies', async (req, res) => {
+app.post('/api/search-companies', requireAuthAndCheckLimits, async (req, res) => {
+  res.setHeader('Cache-Control', 'private, no-store'); // be10
   const query = sanitise(req.body.query, 200);
   const pageToken = sanitise(req.body.pageToken, 3000);
+  const inputs = req.body.inputs || {};
 
-  if (!query) {
-    return res.status(400).json({ error: 'A search query is required.' });
+  // rl7: Minimum query length
+  if (!query || query.length < 3) {
+    return res.status(400).json({ error: 'Search query must be at least 3 characters.' });
+  }
+
+  // rl8: Duplicate request guard
+  if (isDuplicate(req.user.uid, query)) {
+    return res.status(429).json({ error: 'Duplicate request. Please wait a moment.' });
   }
   
   if (!process.env.PLACES_API_KEY) {
     return res.status(500).json({ error: 'Places search service is not configured.' });
+  }
+
+  // Check Limits (if not owner)
+  // For companies, we deduct based on how many companies are returned. We'll deduct them after fetching.
+  if (req.userData.role !== 'owner' && req.userData.companyLoadsRemaining <= 0) {
+    return res.status(429).json({ error: 'Monthly company loads limit reached.' });
   }
 
   const searchUrl = 'https://places.googleapis.com/v1/places:searchText';
@@ -380,15 +641,42 @@ app.post('/api/search-companies', async (req, res) => {
     });
     
     const data = await response.json();
-    res.json(data);
+
+    // Deduct limits based on places loaded
+    if (req.userData.role !== 'owner' && data.places) {
+      const placesLoaded = data.places.length;
+      await req.userRef.update({
+        companyLoadsRemaining: FieldValue.increment(-placesLoaded)
+      });
+    }
+
+    const places = data.places || [];
+    const expiresAt = new Date();
+    expiresAt.setHours(expiresAt.getHours() + 2);
+
+    // FIX: Storing temp search in the users document to bypass restrictive security rules (2026-06-26)
+    await req.userRef.update({
+      companySearchTemp: {
+        query: query,
+        inputs: inputs || {},
+        places: places,
+        status: 'completed',
+        createdAt: FieldValue.serverTimestamp(),
+        nextPageToken: data.nextPageToken || null,
+        expiresAt: expiresAt.toISOString()
+      }
+    });
+
+    res.json({ success: true, places: places, nextPageToken: data.nextPageToken || null });
   } catch (error) {
     console.error('Company search error:', error);
-    res.status(500).json({ error: 'Company search failed. Please try again.' });
+    res.status(500).json({ error: 'Company search failed. Please try again.' }); // be6
   }
 });
 
 // Route: Scrape Website (SSRF-protected)
-app.post('/api/scrape', async (req, res) => {
+app.post('/api/scrape', requireAuthAndCheckLimits, async (req, res) => {
+  res.setHeader('Cache-Control', 'private, no-store'); // be10
   const { website } = req.body;
   const emptyResult = { emails: [], phones: [], socials: [] };
   if (!website || typeof website !== 'string') return res.json(emptyResult);
@@ -402,7 +690,8 @@ app.post('/api/scrape', async (req, res) => {
   res.json(scrapedData);
 });
 
-app.post('/api/draft', draftLimiter, async (req, res) => {
+app.post('/api/draft', draftLimiter, requireAuthAndCheckLimits, async (req, res) => {
+  res.setHeader('Cache-Control', 'private, no-store'); // be10
   const companyName = sanitise(req.body.companyName, 100);
   const jobTitleOrIndustry = sanitise(req.body.jobTitle || req.body.industry, 100);
   const mode = req.body.mode === 'companies' ? 'companies' : 'jobs';
@@ -511,6 +800,27 @@ Industry: """${jobTitleOrIndustry}"""`;
   } catch (error) {
     console.error('Draft error:', error);
     res.status(500).json({ error: 'Failed to generate draft. Please try again.' });
+  }
+});
+
+// Route: Delete Account (da4 — PDPA right to erasure)
+app.delete('/api/delete-account', async (req, res) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+  const idToken = authHeader.split('Bearer ')[1];
+  try {
+    const decoded = await getAuth().verifyIdToken(idToken);
+    const uid = decoded.uid;
+    // Delete Firestore document
+    await db.collection('users').doc(uid).delete();
+    // Delete Firebase Auth user
+    await getAuth().deleteUser(uid);
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Delete account error:', err);
+    res.status(500).json({ error: 'Failed to delete account. Please try again.' });
   }
 });
 

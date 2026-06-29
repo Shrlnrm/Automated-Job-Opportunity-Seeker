@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Register - AJOS</title>
+  <link rel="stylesheet" href="auth.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+  <script type="importmap">
+    {
+      "imports": {
+        "firebase/app": "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js",
+        "firebase/auth": "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js"
+      }
+    }
+  </script>
+</head>
+<body>
+  
+  <a href="index.html" class="auth-logo">
+    <svg width="24" height="24" viewBox="0 0 16 16" fill="none">
+      <rect width="16" height="16" rx="4" fill="#5e6ad2"/>
+      <circle cx="8" cy="8" r="3" fill="white"/>
+    </svg>
+    AJOS
+  </a>
+
+  <div class="auth-container">
+    <div style="display:flex; justify-content:flex-start; margin-bottom:1rem;">
+      <!-- <a href="index.html" class="center-back-btn" id="authBackBtn">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+        Back
+      </a> -->
+    </div>
+    
+    <div class="auth-title">Create an account</div>
+    <div class="auth-subtitle">Join AJOS to unlock job and company leads</div>
+
+    <div class="error-msg" id="errorMsg"></div>
+
+    <button class="btn btn-google" id="googleBtn">
+      <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google">
+      Continue with Google
+    </button>
+
+    <div class="divider">or</div>
+
+    <form id="registerForm">
+      <div class="input-group">
+        <label for="email">Email</label>
+        <input type="email" id="email" name="email" placeholder="Type your email" required maxlength="254">
+      </div>
+
+      <div class="input-group">
+        <label for="password">Password</label>
+        <input type="password" id="password" name="password" placeholder="Create a password (min 6 chars)" required minlength="6" maxlength="128">
+      </div>
+
+      <div class="input-group">
+        <label for="confirmPassword">Confirm Password</label>
+        <input type="password" id="confirmPassword" name="confirmPassword" placeholder="Confirm your password" required minlength="6" maxlength="128">
+      </div>
+
+      <div class="turnstile-container">
+        <div class="cf-turnstile" data-sitekey="0x4AAAAAADq8656XmN0AHUrk" data-theme="auto"></div>
+      </div>
+
+      <button type="submit" class="btn btn-primary" id="submitBtn">Create account</button>
+    </form>
+
+    <div class="footer-links">
+      <div>Already have an account? <a href="login.html">Log in</a></div>
+    </div>
+
+    <div class="terms-text">
+      By creating an account, you agree to our <a href="terms.html">Terms of Service</a> and <a href="privacy.html">Privacy Policy</a>.
+    </div>
+  </div>
+  <script type="module" src="auth.js?v=2"></script>
+</body>
+</html>

@@ -3,141 +3,75 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AJOS</title>
-  <link rel="stylesheet" href="style.css">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+  <title>AJOS - Automated Job Opportunity Seeker</title>
+  <link rel="stylesheet" href="auth.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    .landing-card {
+      max-width: 500px;
+      text-align: center;
+      padding: 3rem;
+    }
+    .landing-title {
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 12px;
+    }
+    .landing-subtitle {
+      font-size: 15px;
+      color: var(--text-secondary);
+      margin-bottom: 32px;
+      line-height: 1.5;
+    }
+    .landing-logo {
+      margin-bottom: 24px;
+    }
+    .landing-logo svg {
+      width: 48px;
+      height: 48px;
+    }
+    .landing-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+  </style>
 </head>
 <body>
 
-  <!-- Top Bar -->
-  <header class="topbar">
-    <div class="topbar-left">
-      <a href="/" class="logo-link">
-        <div class="app-icon">
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-            <rect width="16" height="16" rx="4" fill="#5e6ad2"/>
-            <circle cx="8" cy="8" r="3" fill="white"/>
-          </svg>
-        </div>
-        <span class="app-name">AJOS</span>
-      </a>
-      <span class="divider">/</span>
-      <span class="page-name">Jobs (Malaysia Only)</span>
-    </div>
-    <div class="topbar-right">
-      <button id="themeToggleBtn" class="theme-toggle-btn" aria-label="Toggle theme">
-        <!-- Sun icon -->
-        <svg class="sun-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="12" cy="12" r="5"></circle>
-          <line x1="12" y1="1" x2="12" y2="3"></line>
-          <line x1="12" y1="21" x2="12" y2="23"></line>
-          <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
-          <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
-          <line x1="1" y1="12" x2="3" y2="12"></line>
-          <line x1="21" y1="12" x2="23" y2="12"></line>
-          <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
-          <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+  <!-- Theme initialization to prevent flash -->
+  <script>
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+      document.body.classList.add('dark-theme');
+    }
+  </script>
+
+  <div class="auth-container">
+    <div class="auth-card landing-card">
+      <div class="landing-logo">
+        <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect width="16" height="16" rx="4" fill="#5e6ad2"/>
+          <circle cx="8" cy="8" r="3" fill="white"/>
         </svg>
-        <!-- Moon icon -->
-        <svg class="moon-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
-        </svg>
-      </button>
-    </div>
-  </header>
-
-  <!-- Search Toolbar -->
-  <div class="toolbar">
-    <div class="toolbar-left">
-      <!-- Mode Toggle -->
-      <div class="mode-toggle" id="modeToggle">
-        <button class="mode-btn active" data-mode="jobs">Job Search</button>
-        <button class="mode-btn" data-mode="companies">Company Search</button>
       </div>
-
-      <!-- Job Search fields (default) -->
-      <div class="field-group" id="fieldJobTitle">
-        <label for="jobTitle">Job Title:</label>
-        <input type="text" id="jobTitle" placeholder="" autocomplete="off"/>
+      <h1 class="landing-title">Welcome to AJOS</h1>
+      <p class="landing-subtitle">
+        Your automated job opportunity seeker and company lead generation tool. Find the perfect job or client in seconds.
+      </p>
+      <div class="landing-actions">
+        <a href="login.html" class="btn btn-primary" style="text-decoration:none;">Log In</a>
+        <a href="register.html" class="btn btn-primary" style="text-decoration:none;">Register</a>
       </div>
-      <div class="field-group" id="fieldJobLocation">
-        <label for="jobLocation">Location in Malaysia (Optional):</label>
-        <input type="text" id="jobLocation" placeholder="" autocomplete="off"/>
-      </div>
-
-      <!-- Company Search fields (hidden by default) -->
-      <div class="field-group" id="fieldCompanyName" style="display:none;">
-        <label for="companyName">Company Name:</label>
-        <input type="text" id="companyName" placeholder="" autocomplete="off"/>
-      </div>
-      <div class="field-group" id="fieldIndustry" style="display:none;">
-        <label for="industry">Industry (Optional):</label>
-        <input type="text" id="industry" placeholder="" autocomplete="off"/>
-      </div>
-      <div class="field-group" id="fieldLocation" style="display:none;">
-        <label for="location">Location (Optional):</label>
-        <input type="text" id="location" placeholder="" autocomplete="off"/>
-      </div>
-    </div>
-    <div class="toolbar-right">
-      <button id="printBtn" class="btn btn-ghost">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
-        Export PDF
-      </button>
-      <button id="resetBtn" class="btn btn-ghost">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
-        Reset
-      </button>
-      <button id="nextBtn" class="btn btn-ghost" disabled style="display:none;">Load more</button>
-      <button id="searchBtn" class="btn btn-primary">Search</button>
-    </div>
-  </div>
-
-  <!-- Table -->
-  <div class="table-wrapper">
-    <table id="resultsTable">
-      <thead>
-        <tr>
-          <th class="col-company">Job Title</th>
-          <th class="col-industry">Company</th>
-          <th class="col-address">Location</th>
-          <th class="col-website">Platform</th>
-          <th class="col-contacts">Job Link</th>
-          <th class="col-actions">AI Cover Letter</th>
-        </tr>
-      </thead>
-      <tbody>
-        <!-- rows injected here -->
-      </tbody>
-    </table>
-    <div class="table-empty" id="tableEmpty">
-      <p id="emptyText"><img src="flag.png" alt="Malaysia" class="flag-icon" /> Enter a job title and city above to find opportunities in Malaysia.</p>
-    </div>
-  </div>
-
-  <!-- Email Draft Modal -->
-  <div id="emailModal" class="modal-overlay">
-    <div class="modal-panel">
-      <div class="modal-header">
-        <div>
-          <p class="modal-label">AI Draft</p>
-          <p class="modal-subtitle" id="modalSubtitle">—</p>
-        </div>
-        <button class="close-btn" aria-label="Close">
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-            <path d="M1 1l12 12M13 1L1 13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-          </svg>
-        </button>
-      </div>
-      <textarea id="draftTextarea" readonly></textarea>
-      <div class="modal-footer">
-        <button id="copyBtn" class="btn btn-primary" disabled>Copy to clipboard</button>
       </div>
     </div>
   </div>
 
-  <script src="script.js"></script>
+  <div style="position:fixed; bottom:1.5rem; width:100%; text-align:center; font-size:0.75rem; color:var(--text-muted);">
+    <a href="privacy.html" style="color:var(--text-muted); text-decoration:none; margin:0 0.75rem;">Privacy Policy</a>
+    <a href="terms.html" style="color:var(--text-muted); text-decoration:none; margin:0 0.75rem;">Terms of Service</a>
+  </div>
+
 </body>
 </html>

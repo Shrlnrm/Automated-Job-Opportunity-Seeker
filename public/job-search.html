@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AJOS</title>
+  <link rel="stylesheet" href="style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+  <!-- Cloudflare Turnstile -->
+  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+  <!-- Firebase Import Map for Native ES Modules -->
+  <script type="importmap">
+    {
+      "imports": {
+        "firebase/app": "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js",
+        "firebase/auth": "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js",
+        "firebase/firestore": "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js",
+        "firebase/analytics": "https://www.gstatic.com/firebasejs/10.12.2/firebase-analytics.js"
+      }
+    }
+  </script>
+</head>
+<body>
+
+  <!-- Top Bar -->
+  <header class="topbar">
+    <div class="topbar-left">
+      <a href="#" onclick="window.location.reload(); return false;" class="logo-link">
+        <div class="app-icon">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <rect width="16" height="16" rx="4" fill="#5e6ad2"/>
+            <circle cx="8" cy="8" r="3" fill="white"/>
+          </svg>
+        </div>
+        <span class="app-name">AJOS</span>
+      </a>
+      <span class="divider">/</span>
+      <div class="mode-toggle">
+        <div class="custom-dropdown">
+          <a href="/job-search.html" class="mode-btn active" style="text-decoration:none;">Job Search</a>
+          <div class="dropdown-menu tooltip-menu tooltip-menu-center">Discover and explore active job opportunities across Malaysia.</div>
+        </div>
+        <div class="custom-dropdown">
+          <a href="/company-search.html" class="mode-btn" style="text-decoration:none;">Company Search</a>
+          <div class="dropdown-menu tooltip-menu tooltip-menu-center">Research prospective employers and gather detailed insights on companies from your job search.</div>
+        </div>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <!-- 
+      <button id="themeToggleBtn" class="theme-toggle-btn" aria-label="Toggle theme" style="margin-right: 8px;">
+        <svg class="sun-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="5"></circle>
+          <line x1="12" y1="1" x2="12" y2="3"></line>
+          <line x1="12" y1="21" x2="12" y2="23"></line>
+          <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+          <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+          <line x1="1" y1="12" x2="3" y2="12"></line>
+          <line x1="21" y1="12" x2="23" y2="12"></line>
+          <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+          <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+        </svg>
+        <svg class="moon-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+        </svg>
+      </button>
+      -->
+      <div id="limitsShowcase" class="limits-showcase" style="display: none;">
+        <div class="limit-label" id="limitLabel">Limits Loading...</div>
+        <div class="limit-bar-bg">
+          <div class="limit-bar-fill" id="limitBarFill"></div>
+        </div>
+      </div>
+      <!-- FIX: Removed inline margin-right from reset button to fix gap (2026-06-29) -->
+      <div class="custom-dropdown">
+        <button id="resetBtn" class="btn btn-secondary">Reset</button>
+        <div class="dropdown-menu tooltip-menu tooltip-menu-right">Clear your current session data to initiate a new search.</div>
+      </div>
+      <button id="logoutBtn" class="btn btn-danger">Logout</button>
+    </div>
+  </header>
+
+  <!-- Search Toolbar -->
+  <div class="toolbar">
+    <div class="toolbar-left">
+      <!-- Job Search fields (default) -->
+      <div class="field-group" id="fieldJobTitle">
+        <label for="jobTitle">Job Title:</label>
+        <input type="text" id="jobTitle" placeholder="" autocomplete="off"/>
+      </div>
+      <div class="field-group" id="fieldJobLocation">
+        <label for="jobLocation">Location in Malaysia (Optional):</label>
+        <input type="text" id="jobLocation" placeholder="" autocomplete="off"/>
+      </div>
+    </div>
+    <div class="toolbar-right">
+      <button id="printBtn" class="btn btn-ghost">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+        Export PDF
+      </button>
+      <button id="nextBtn" class="btn btn-ghost" style="display: none;">Search More</button>
+      <div id="restoreContainer" style="display: flex; align-items: center;">
+        <span id="restoreTimer" style="font-size: 11px; color: var(--text-muted); margin-right: 8px;">No recent search</span>
+        <div class="custom-dropdown">
+          <button id="restoreBtn" class="btn btn-ghost" disabled>Reload Recent Search</button>
+          <div class="dropdown-menu tooltip-menu tooltip-menu-right">Restore your previous search parameters and result data.</div>
+        </div>
+      </div>
+      <button id="searchBtn" class="btn btn-primary">Search</button>
+    </div>
+  </div>
+
+  <!-- Sub-Toolbar (Sort/Filter) -->
+  <div class="sub-toolbar">
+    <div class="sub-toolbar-left">
+      <div class="custom-dropdown" id="sortAlphabetDropdown">
+        <div class="dropdown-trigger">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M7 12h10"/><path d="M10 18h4"/></svg>
+          <span class="dropdown-label">Sort by Alphabet</span>
+        </div>
+        <div class="dropdown-menu">
+          <div class="dropdown-item" data-action="sort-alphabet-asc">Ascending (A-Z)</div>
+          <div class="dropdown-item" data-action="sort-alphabet-desc">Descending (Z-A)</div>
+        </div>
+      </div>
+
+      <div class="custom-dropdown" id="filterPlatformDropdown">
+        <div class="dropdown-trigger">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+          <span class="dropdown-label">Filter by Platform</span>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-left: 2px;"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+        <div class="dropdown-menu" id="filterPlatformMenu">
+          <div class="dropdown-item active" data-value="all">All Platforms</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Table -->
+  <div class="table-wrapper">
+    <table id="resultsTable">
+      <thead>
+        <tr>
+          <th class="col-company">Job Title</th>
+          <th class="col-industry">Company</th>
+          <th class="col-address">Location</th>
+          <th class="col-website">Platform</th>
+          <th class="col-contacts">Job Link</th>
+          <th class="col-actions">AI Cover Letter</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- rows injected here -->
+      </tbody>
+    </table>
+    <div class="table-empty" id="tableEmpty">
+      <p id="emptyText">Enter a job title and city above to find opportunities in Malaysia.</p>
+    </div>
+  </div>
+
+  <!-- Email Draft Modal -->
+  <div id="emailModal" class="modal-overlay">
+    <div class="modal-panel">
+      <div class="modal-header">
+        <div>
+          <p class="modal-label">AI Draft</p>
+          <p class="modal-subtitle" id="modalSubtitle">—</p>
+        </div>
+        <button class="close-btn" aria-label="Close">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+            <path d="M1 1l12 12M13 1L1 13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+        </button>
+      </div>
+      <textarea id="draftTextarea" readonly></textarea>
+      <div class="modal-footer">
+        <button id="copyBtn" class="btn btn-primary" disabled>Copy to clipboard</button>
+      </div>
+    </div>
+  </div>
+  <script type="module" src="script.js?v=4"></script>
+</body>
+</html>

@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Verify Your Email - AJOS</title>
+  <link rel="stylesheet" href="auth.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <script type="importmap">
+    {
+      "imports": {
+        "firebase/app": "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js",
+        "firebase/auth": "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js"
+      }
+    }
+  </script>
+</head>
+<body>
+
+  <a href="index.html" class="auth-logo">
+    <svg width="24" height="24" viewBox="0 0 16 16" fill="none">
+      <rect width="16" height="16" rx="4" fill="#5e6ad2"/>
+      <circle cx="8" cy="8" r="3" fill="white"/>
+    </svg>
+    AJOS
+  </a>
+
+  <div class="auth-container">
+    <div style="display:flex; justify-content:center; margin-bottom:1.5rem; color:#5e6ad2;">
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+    </div>
+    <div class="auth-title">Check your inbox</div>
+    <div class="auth-subtitle">We sent a verification link to your email address. Click it to activate your account before logging in.</div>
+
+    <div class="error-msg" id="errorMsg"></div>
+
+    <button class="btn btn-primary" id="resendBtn" style="margin-top:1.5rem;">Resend verification email</button>
+
+    <div class="footer-links" style="margin-top:1rem;">
+      <div><a href="login.html">Back to Login</a></div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from 'firebase/app';
+    import { getAuth, sendEmailVerification, onAuthStateChanged } from 'firebase/auth';
+
+    const firebaseConfig = {
+      apiKey: 'AIzaSyBJnS3EYawuCHHnegronWe_WPRH7TPbO1A',
+      authDomain: 'ajos-544d6.firebaseapp.com',
+      projectId: 'ajos-544d6',
+      storageBucket: 'ajos-544d6.firebasestorage.app',
+      messagingSenderId: '939741010944',
+      appId: '1:939741010944:web:b2f5d91042165b53bd8ce5'
+    };
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+
+    const errorMsg = document.getElementById('errorMsg');
+    const resendBtn = document.getElementById('resendBtn');
+
+    // If user is already verified, send to dashboard
+    onAuthStateChanged(auth, (user) => {
+      if (!user) { window.location.href = '/login.html'; return; }
+      if (user.emailVerified) { window.location.href = '/job-search.html'; }
+    });
+
+    resendBtn.addEventListener('click', async () => {
+      const user = auth.currentUser;
+      if (!user) { window.location.href = '/login.html'; return; }
+      resendBtn.disabled = true;
+      resendBtn.textContent = 'Sending...';
+      try {
+        await sendEmailVerification(user);
+        errorMsg.style.display = 'block';
+        errorMsg.style.color = '#10b981';
+        errorMsg.textContent = 'Verification email sent! Check your inbox.';
+      } catch {
+        errorMsg.style.display = 'block';
+        errorMsg.textContent = 'Failed to send. Please wait a few minutes before trying again.';
+      } finally {
+        // Prevent resend spam — re-enable after 60s
+        setTimeout(() => {
+          resendBtn.disabled = false;
+          resendBtn.textContent = 'Resend verification email';
+        }, 60000);
+      }
+    });
+  </script>
+</body>
+</html>
