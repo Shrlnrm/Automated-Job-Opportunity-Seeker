@@ -1,4 +1,5 @@
 const express = require('express');
+const path = require('path');
 const cors = require('cors');
 const fetch = require('node-fetch');
 const cheerio = require('cheerio');
@@ -838,6 +839,14 @@ app.delete('/api/delete-account', async (req, res) => {
     console.error('Delete account error:', err);
     res.status(500).json({ error: 'Failed to delete account. Please try again.' });
   }
+});
+
+// Serve frontend static files
+app.use(express.static(path.join(__dirname, '../public')));
+
+// Catch-all route to serve the SPA
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '../public/index.html'));
 });
 
 if (process.env.NODE_ENV !== 'production') {
