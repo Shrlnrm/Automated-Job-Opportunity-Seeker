@@ -2,7 +2,6 @@ const express = require('express');
 const cors = require('cors');
 const fetch = require('node-fetch');
 const cheerio = require('cheerio');
-const path = require('path');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const dns = require('dns').promises;
@@ -313,12 +312,10 @@ function sanitise(str, maxLen = 200) {
   return str.replace(/[\x00-\x1f\x7f]/g, '').trim().slice(0, maxLen);
 }
 
-// Serve static files from the 'public' folder
-app.use(express.static(path.join(__dirname, 'public')));
-
-// Fallback for the root and any other routes to serve index.html
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+const draftLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 5,
+  message: { error: 'Too many draft requests, please try again after an hour.' }
 });
 
 // Scrape Helper
