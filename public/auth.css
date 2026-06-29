@@ -228,3 +228,24 @@ body {
   display: none;
 }
 .dark-theme .error-msg { color: #f87171; }
+
+a.policy-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-bottom: 1.25rem;
+  padding: 0.4rem 0.85rem;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--btn-text) !important;
+  text-decoration: none;
+  background: var(--btn-bg);
+  transition: all 0.2s;
+}
+a.policy-back-btn:hover {
+  background: #7480e0;
+  color: #ffffff !important;
+}
+a.policy-back-btn svg { flex-shrink: 0; }
