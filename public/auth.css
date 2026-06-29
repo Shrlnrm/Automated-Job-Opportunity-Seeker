@@ -282,3 +282,19 @@ a.policy-back-btn:hover {
   text-decoration: underline;
 }
 a.policy-back-btn svg { flex-shrink: 0; }
+
+/* ── Mobile Responsiveness ────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .auth-container {
+    padding: 1.25rem;
+    margin-top: 3rem;
+  }
+  .auth-logo, .back-btn {
+    top: 1rem;
+    left: 1rem;
+  }
+  .theme-toggle-btn {
+    top: 1rem;
+    right: 1rem;
+  }
+}
