@@ -20,6 +20,27 @@
     .policy-container p, .policy-container li { font-size: 0.9rem; color: var(--text-muted); }
     .policy-container ul { padding-left: 1.25rem; }
     .policy-container a { color: var(--text-main); }
+    .back-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-top: 2.5rem;
+      padding: 0.55rem 1.1rem;
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: var(--text-muted);
+      text-decoration: none;
+      background: rgba(255,255,255,0.04);
+      transition: background 0.15s, color 0.15s, border-color 0.15s;
+    }
+    .back-btn:hover {
+      background: rgba(255,255,255,0.08);
+      color: var(--text-main);
+      border-color: rgba(255,255,255,0.2);
+    }
+    .back-btn svg { flex-shrink: 0; }
   </style>
 </head>
 <body>
@@ -40,9 +61,9 @@
 
     <h2>1. What We Collect</h2>
     <ul>
-      <li><strong>Email address</strong> — for account creation, authentication, and platform access.</li>
-      <li><strong>Usage data</strong> — job search queries and company search queries are stored temporarily (up to 2 hours) to restore your last session. They are automatically overwritten on your next search.</li>
-      <li><strong>Account metadata</strong> — your remaining monthly search limits and account creation date, used to enforce fair usage.</li>
+      <li><strong>Email address</strong> - for account creation, authentication, and platform access.</li>
+      <li><strong>Usage data</strong> - job search queries and company search queries are stored temporarily (up to 2 hours) to restore your last session. They are automatically overwritten on your next search.</li>
+      <li><strong>Account metadata</strong> - your remaining monthly search limits and account creation date, used to enforce fair usage.</li>
     </ul>
 
     <h2>2. What We Do NOT Collect</h2>
@@ -66,19 +87,19 @@
     <h2>5. Third-Party Services</h2>
     <p>We use the following third-party services which have their own privacy policies:</p>
     <ul>
-      <li><strong>Firebase / Google</strong> — authentication and database storage.</li>
-      <li><strong>Cloudflare Turnstile</strong> — bot protection on login and registration.</li>
-      <li><strong>SerpAPI</strong> — fetching job listings from Google Jobs.</li>
-      <li><strong>Google Places API</strong> — fetching company location data.</li>
-      <li><strong>OpenRouter</strong> — generating email draft suggestions.</li>
+      <li><strong>Firebase / Google</strong> - authentication and database storage.</li>
+      <li><strong>Cloudflare Turnstile</strong> - bot protection on login and registration.</li>
+      <li><strong>SerpAPI</strong> - fetching job listings from Google Jobs.</li>
+      <li><strong>Google Places API</strong> - fetching company location data.</li>
+      <li><strong>OpenRouter</strong> - generating email draft suggestions.</li>
     </ul>
 
     <h2>6. Your Rights (PDPA Malaysia)</h2>
     <p>You have the right to:</p>
     <ul>
-      <li><strong>Access</strong> — request a copy of the data we hold about you.</li>
-      <li><strong>Correction</strong> — update your email address via Firebase account settings.</li>
-      <li><strong>Erasure</strong> — permanently delete your account and all associated data by contacting us. We will process your request within 14 days.</li>
+      <li><strong>Access</strong> - request a copy of the data we hold about you.</li>
+      <li><strong>Correction</strong> - update your email address via Firebase account settings.</li>
+      <li><strong>Erasure</strong> - permanently delete your account and all associated data by contacting us. We will process your request within 14 days.</li>
     </ul>
 
     <h2>7. Security</h2>
@@ -87,7 +108,12 @@
     <h2>8. Contact</h2>
     <p>For any data-related requests or questions, please contact the platform owner directly.</p>
 
-    <p style="margin-top:2rem;"><a href="index.html">← Back to Home</a></p>
+    <a href="index.html" class="back-btn">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+        <path d="M9 1L3 7l6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      Back to Home
+    </a>
   </div>
 
 </body>

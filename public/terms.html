@@ -20,6 +20,27 @@
     .policy-container p, .policy-container li { font-size: 0.9rem; color: var(--text-muted); }
     .policy-container ul { padding-left: 1.25rem; }
     .policy-container a { color: var(--text-main); }
+    .back-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-top: 2.5rem;
+      padding: 0.55rem 1.1rem;
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: var(--text-muted);
+      text-decoration: none;
+      background: rgba(255,255,255,0.04);
+      transition: background 0.15s, color 0.15s, border-color 0.15s;
+    }
+    .back-btn:hover {
+      background: rgba(255,255,255,0.08);
+      color: var(--text-main);
+      border-color: rgba(255,255,255,0.2);
+    }
+    .back-btn svg { flex-shrink: 0; }
   </style>
 </head>
 <body>
@@ -77,7 +98,12 @@
     <h2>9. Governing Law</h2>
     <p>These Terms are governed by the laws of Malaysia.</p>
 
-    <p style="margin-top:2rem;"><a href="index.html">← Back to Home</a></p>
+    <a href="index.html" class="back-btn">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+        <path d="M9 1L3 7l6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      Back to Home
+    </a>
   </div>
 
 </body>
