@@ -234,18 +234,15 @@ a.policy-back-btn {
   align-items: center;
   gap: 0.4rem;
   margin-bottom: 1.25rem;
-  padding: 0.4rem 0.85rem;
-  border: 1px solid transparent;
-  border-radius: 6px;
-  font-size: 0.75rem;
+  font-size: 0.85rem;
   font-weight: 500;
-  color: var(--btn-text) !important;
+  color: var(--text-muted) !important;
   text-decoration: none;
-  background: var(--btn-bg);
-  transition: all 0.2s;
+  background: none;
+  transition: color 0.2s;
 }
 a.policy-back-btn:hover {
-  background: #7480e0;
-  color: #ffffff !important;
+  color: var(--text-main) !important;
+  text-decoration: underline;
 }
 a.policy-back-btn svg { flex-shrink: 0; }
