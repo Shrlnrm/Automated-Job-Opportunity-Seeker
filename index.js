@@ -17,12 +17,35 @@ const { getAuth } = require('firebase-admin/auth');
 
 // On Vercel there is no filesystem — credentials come from an env var JSON string.
 // Locally, fall back to GOOGLE_APPLICATION_CREDENTIALS file path as usual.
-const credential = process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON
-  ? cert(JSON.parse(process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON))
-  : applicationDefault();
+let credential;
+try {
+  if (process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON) {
+    const parsed = JSON.parse(process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON);
+    if (parsed.private_key) {
+      parsed.private_key = parsed.private_key.replace(/\\n/g, '\n');
+    }
+    credential = cert(parsed);
+  } else {
+    credential = applicationDefault();
+  }
+} catch (error) {
+  console.error("FIREBASE ADMIN CRITICAL ERROR:", error.message);
+  credential = applicationDefault();
+}
 
-initializeApp({ credential });
-const db = getFirestore();
+try {
+  initializeApp({ credential });
+} catch (e) {
+  console.error("Firebase init failed:", e.message);
+  initializeApp(); // Empty init fallback so getFirestore doesn't crash boot
+}
+
+let db;
+try {
+  db = getFirestore();
+} catch (e) {
+  console.error("getFirestore failed:", e.message);
+}
 
 const app = express();
 const PORT = process.env.PORT || 3000;
