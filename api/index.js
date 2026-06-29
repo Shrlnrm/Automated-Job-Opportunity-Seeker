@@ -58,7 +58,7 @@ app.use(helmet({
       scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https://cdnjs.cloudflare.com", "https://cse.google.com", "https://www.gstatic.com", "https://challenges.cloudflare.com", "https://apis.google.com", "https://*.firebaseapp.com", "https://accounts.google.com", "https://www.googletagmanager.com"],
       styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com", "https://accounts.google.com"],
       fontSrc: ["'self'", "https://fonts.gstatic.com"],
-      connectSrc: ["'self'", "https://www.googleapis.com", "https://identitytoolkit.googleapis.com", "https://securetoken.googleapis.com", "https://*.firebaseio.com", "wss://*.firebaseio.com", "https://*.firebasedatabase.app", "wss://*.firebasedatabase.app", "https://*.firebaseapp.com", "https://ajos-544d6.firebaseapp.com", "https://apis.google.com", "https://accounts.google.com", "https://firestore.googleapis.com", "https://firebaseinstallations.googleapis.com"],
+      connectSrc: ["'self'", "https://www.googleapis.com", "https://identitytoolkit.googleapis.com", "https://securetoken.googleapis.com", "https://*.firebaseio.com", "wss://*.firebaseio.com", "https://*.firebasedatabase.app", "wss://*.firebasedatabase.app", "https://*.firebaseapp.com", "https://ajos-544d6.firebaseapp.com", "https://apis.google.com", "https://accounts.google.com", "https://firestore.googleapis.com", "https://firebaseinstallations.googleapis.com", "https://challenges.cloudflare.com"],
       imgSrc: ["'self'", "data:", "https:", "https://lh3.googleusercontent.com"],
       frameSrc: ["'self'", "https://cse.google.com", "https://challenges.cloudflare.com", "https://*.firebaseapp.com", "https://ajos-544d6.firebaseapp.com", "https://accounts.google.com", "https://content-identitytoolkit.googleapis.com"],
     }
@@ -81,8 +81,9 @@ app.use(cors({
   origin: function (origin, callback) {
     if (!origin) return callback(null, true); // curl / server-to-server
     if (process.env.NODE_ENV === 'production') {
-      // Production: only exact ALLOWED_ORIGIN
+      // Production: allow ALLOWED_ORIGIN env var or any *.vercel.app subdomain
       if (process.env.ALLOWED_ORIGIN && origin === process.env.ALLOWED_ORIGIN) return callback(null, true);
+      if (/\.vercel\.app$/.test(origin)) return callback(null, true);
       return callback(new Error('CORS: origin not allowed'));
     }
     // Development: allow localhost + any vercel.app preview
