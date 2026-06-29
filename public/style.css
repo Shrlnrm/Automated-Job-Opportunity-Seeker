@@ -59,9 +59,9 @@
   --border:       #333333;
   --border-focus: rgba(255, 255, 255, 0.2);
 
-  --text:         #f9fafb;
-  --text-secondary: #a1a1b2;
-  --text-muted:   #808092;
+  --text:         #ffffff;
+  --text-secondary: #e0e0e0;
+  --text-muted:   #a0a0a0;
 
   --accent:       #ffffff;
   --accent-hover: #eaeaea;
@@ -264,7 +264,7 @@ html, body {
 
 .mode-btn.active {
   background: var(--accent);
-  color: #fff;
+  color: var(--bg);
 }
 
 .toolbar-right {
@@ -426,7 +426,7 @@ html, body {
 
 .dropdown-item.active {
   background: var(--accent);
-  color: #fff;
+  color: var(--bg);
 }
 
 /* ── Buttons ────────────────────────────────────────────── */
@@ -454,7 +454,7 @@ html, body {
 
 .btn-primary {
   background: var(--accent);
-  color: #fff;
+  color: var(--bg);
   border-color: transparent;
 }
 
@@ -805,27 +805,23 @@ body, .topbar, .toolbar, .mode-toggle, .field-group, .btn, table, th, td, tbody 
   transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
 }
 
-/* ── Theme Toggle Button ───────────────────────────────── */
 .theme-toggle-btn {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 30px;
-  height: 30px;
-  border-radius: var(--radius-md);
-  background: var(--surface-2);
-  border: 1px solid var(--border);
-  color: var(--text-secondary);
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
   cursor: pointer;
-  transition: all 0.2s ease;
-  position: relative;
-  overflow: hidden;
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 .theme-toggle-btn:hover {
-  background: var(--border);
+  background-color: rgba(120, 119, 116, 0.1);
   color: var(--text);
-  border-color: var(--border-focus);
 }
 
 .theme-toggle-btn svg {
