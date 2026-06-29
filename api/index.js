@@ -312,11 +312,7 @@ function sanitise(str, maxLen = 200) {
   return str.replace(/[\x00-\x1f\x7f]/g, '').trim().slice(0, maxLen);
 }
 
-const draftLimiter = rateLimit({
-  windowMs: 60 * 60 * 1000,
-  max: 5,
-  message: { error: 'Too many draft requests, please try again after an hour.' }
-});
+
 
 // Scrape Helper
 async function scrapeWebsite(url) {
