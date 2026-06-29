@@ -1,21 +1,21 @@
 /* ── Reset & Base ───────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-:root {
-  --bg:           #0c0c0e;
-  --surface:      #111114;
-  --surface-2:    #18181c;
-  --border:       rgba(255, 255, 255, 0.08);
-  --border-focus: rgba(116, 128, 224, 0.55);
+:root, .light-theme {
+  --bg:           #ffffff;
+  --surface:      #fbfbfa;
+  --surface-2:    #f7f6f3;
+  --border:       #eaeaea;
+  --border-focus: rgba(0, 0, 0, 0.2);
 
-  --text:         #f3f3f6;
-  --text-secondary: #a1a1b2;
-  --text-muted:   #808092;
+  --text:         #111111;
+  --text-secondary: #5c5c66;
+  --text-muted:   #787774;
 
-  --accent:       #7480e0;
-  --accent-hover: #8c98f2;
-  --accent-dim:   rgba(116, 128, 224, 0.15);
-  --draft-btn-border: rgba(116, 128, 224, 0.3);
+  --accent:       #111111;
+  --accent-hover: #333333;
+  --accent-dim:   rgba(0, 0, 0, 0.05);
+  --draft-btn-border: #eaeaea;
 
   --radius-sm:    4px;
   --radius-md:    6px;
@@ -27,70 +27,29 @@
   --font-size-base: 13px;
   --font-size-md:   14px;
 
-  /* Tag colors (Dark mode) */
-  --tag-bg-0: rgba(116, 128, 224, 0.12);
-  --tag-color-0: #9ba8ff;
-  --tag-border-0: rgba(116, 128, 224, 0.25);
+  /* Tag colors (Monochrome minimalist) */
+  --tag-bg-0: #f7f6f3;
+  --tag-color-0: #111111;
+  --tag-border-0: #eaeaea;
 
-  --tag-bg-1: rgba(59, 178, 115, 0.12);
-  --tag-color-1: #60c58f;
-  --tag-border-1: rgba(59, 178, 115, 0.25);
+  --tag-bg-1: #f7f6f3;
+  --tag-color-1: #111111;
+  --tag-border-1: #eaeaea;
 
-  --tag-bg-2: rgba(234, 113, 60, 0.12);
-  --tag-color-2: #ea8a50;
-  --tag-border-2: rgba(234, 113, 60, 0.25);
+  --tag-bg-2: #f7f6f3;
+  --tag-color-2: #111111;
+  --tag-border-2: #eaeaea;
 
-  --tag-bg-3: rgba(236, 72, 153, 0.12);
-  --tag-color-3: #ea84b0;
-  --tag-border-3: rgba(236, 72, 153, 0.25);
+  --tag-bg-3: #f7f6f3;
+  --tag-color-3: #111111;
+  --tag-border-3: #eaeaea;
 
-  --tag-bg-4: rgba(251, 189, 35, 0.12);
-  --tag-color-4: #e5b93c;
-  --tag-border-4: rgba(251, 189, 35, 0.25);
+  --tag-bg-4: #f7f6f3;
+  --tag-color-4: #111111;
+  --tag-border-4: #eaeaea;
 
-  --scrollbar-thumb: rgba(255, 255, 255, 0.08);
-  --scrollbar-thumb-hover: rgba(255, 255, 255, 0.14);
-}
-
-.light-theme {
-  --bg:           #f5f5f7;
-  --surface:      #ffffff;
-  --surface-2:    #eceef2;
-  --border:       rgba(0, 0, 0, 0.08);
-  --border-focus: rgba(76, 88, 192, 0.4);
-
-  --text:         #1d1d1f;
-  --text-secondary: #5c5c66;
-  --text-muted:   #7a7a85;
-
-  --accent:       #4c58c0;
-  --accent-hover: #3b45a0;
-  --accent-dim:   rgba(76, 88, 192, 0.08);
-  --draft-btn-border: rgba(76, 88, 192, 0.25);
-
-  /* Tag colors (Light mode) */
-  --tag-bg-0: rgba(76, 88, 192, 0.08);
-  --tag-color-0: #3b45a0;
-  --tag-border-0: rgba(76, 88, 192, 0.18);
-
-  --tag-bg-1: rgba(34, 139, 80, 0.08);
-  --tag-color-1: #1e7d48;
-  --tag-border-1: rgba(34, 139, 80, 0.18);
-
-  --tag-bg-2: rgba(213, 85, 23, 0.08);
-  --tag-color-2: #bd450c;
-  --tag-border-2: rgba(213, 85, 23, 0.18);
-
-  --tag-bg-3: rgba(219, 39, 119, 0.08);
-  --tag-color-3: #be185d;
-  --tag-border-3: rgba(219, 39, 119, 0.18);
-
-  --tag-bg-4: rgba(180, 110, 10, 0.08);
-  --tag-color-4: #a16207;
-  --tag-border-4: rgba(180, 110, 10, 0.18);
-
-  --scrollbar-thumb: rgba(0, 0, 0, 0.12);
-  --scrollbar-thumb-hover: rgba(0, 0, 0, 0.2);
+  --scrollbar-thumb: rgba(0, 0, 0, 0.08);
+  --scrollbar-thumb-hover: rgba(0, 0, 0, 0.14);
 }
 
 html, body {

@@ -1,13 +1,13 @@
 /* auth.css */
 :root {
-  --bg-color: #111827;
-  --text-main: #f9fafb;
-  --text-muted: #9ca3af;
-  --border-color: #374151;
-  --btn-bg: #f9fafb;
-  --btn-text: #111827;
-  --btn-hover: #e5e7eb;
-  --input-bg: #1f2937;
+  --bg-color: #ffffff;
+  --text-main: #111111;
+  --text-muted: #787774;
+  --border-color: #eaeaea;
+  --btn-bg: #111111;
+  --btn-text: #ffffff;
+  --btn-hover: #333333;
+  --input-bg: #ffffff;
   --font-family: 'Inter', sans-serif;
 }
 
@@ -68,8 +68,8 @@ body {
 }
 
 .btn-primary:hover {
-  background-color: #7480e0;
-  color: #ffffff;
+  background-color: var(--btn-hover);
+  color: var(--btn-text);
 }
 
 .btn-google {
@@ -79,7 +79,7 @@ body {
 }
 
 .btn-google:hover {
-  background-color: rgba(255,255,255,0.05);
+  background-color: #f7f6f3;
 }
 
 .btn-google img {
