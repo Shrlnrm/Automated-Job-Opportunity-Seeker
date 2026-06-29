@@ -1,3 +1,5 @@
+let appHandler;
+try {
 const express = require('express');
 const cors = require('cors');
 const fetch = require('node-fetch');
@@ -846,4 +848,8 @@ if (process.env.NODE_ENV !== 'production') {
   });
 }
 
-module.exports = app;
+  appHandler = app;
+} catch (err) {
+  appHandler = (req, res) => res.status(500).json({ error: 'Vercel Init Crash', message: err.message, stack: err.stack });
+}
+module.exports = appHandler;
