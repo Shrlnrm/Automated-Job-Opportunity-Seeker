@@ -42,19 +42,8 @@
   </div>
 
   <script type="module">
-    import { initializeApp } from 'firebase/app';
-    import { getAuth, sendEmailVerification, onAuthStateChanged } from 'firebase/auth';
-
-    const firebaseConfig = {
-      apiKey: 'AIzaSyBJnS3EYawuCHHnegronWe_WPRH7TPbO1A',
-      authDomain: 'ajos-544d6.firebaseapp.com',
-      projectId: 'ajos-544d6',
-      storageBucket: 'ajos-544d6.firebasestorage.app',
-      messagingSenderId: '939741010944',
-      appId: '1:939741010944:web:b2f5d91042165b53bd8ce5'
-    };
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
+    import { auth } from './auth.js';
+    import { sendEmailVerification, onAuthStateChanged } from 'firebase/auth';
 
     const errorMsg = document.getElementById('errorMsg');
     const resendBtn = document.getElementById('resendBtn');
