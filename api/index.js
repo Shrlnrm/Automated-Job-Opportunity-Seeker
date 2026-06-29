@@ -81,8 +81,13 @@ app.use(cors({
   origin: function (origin, callback) {
     if (!origin) return callback(null, true); // curl / server-to-server
     if (process.env.NODE_ENV === 'production') {
-      // Production: allow ALLOWED_ORIGIN env var or any *.vercel.app subdomain
-      if (process.env.ALLOWED_ORIGIN && origin === process.env.ALLOWED_ORIGIN) return callback(null, true);
+      if (process.env.ALLOWED_ORIGIN) {
+        // Exact match only when ALLOWED_ORIGIN is explicitly configured
+        return origin === process.env.ALLOWED_ORIGIN
+          ? callback(null, true)
+          : callback(new Error('CORS: origin not allowed'));
+      }
+      // Fallback if ALLOWED_ORIGIN is not set: allow any *.vercel.app subdomain
       if (/\.vercel\.app$/.test(origin)) return callback(null, true);
       return callback(new Error('CORS: origin not allowed'));
     }
