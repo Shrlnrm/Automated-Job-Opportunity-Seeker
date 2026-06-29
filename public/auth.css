@@ -11,6 +11,41 @@
   --font-family: 'Inter', sans-serif;
 }
 
+.dark-theme {
+  --bg-color: #111111;
+  --text-main: #fbfbfa;
+  --text-muted: #a1a1b2;
+  --border-color: #333333;
+  --btn-bg: #ffffff;
+  --btn-text: #111111;
+  --btn-hover: #eaeaea;
+  --input-bg: #1a1a1a;
+}
+
+.theme-toggle-btn {
+  position: absolute;
+  top: 1.5rem;
+  right: 2rem;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s, color 0.2s;
+}
+
+.theme-toggle-btn:hover {
+  background-color: rgba(120,119,116,0.1);
+  color: var(--text-main);
+}
+
+body:not(.dark-theme) .sun-icon { display: none; }
+body.dark-theme .moon-icon { display: none; }
+
 body {
   margin: 0;
   padding: 0;

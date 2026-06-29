@@ -52,6 +52,46 @@
   --scrollbar-thumb-hover: rgba(0, 0, 0, 0.14);
 }
 
+.dark-theme {
+  --bg:           #111111;
+  --surface:      #1a1a1a;
+  --surface-2:    #222222;
+  --border:       #333333;
+  --border-focus: rgba(255, 255, 255, 0.2);
+
+  --text:         #f9fafb;
+  --text-secondary: #a1a1b2;
+  --text-muted:   #808092;
+
+  --accent:       #ffffff;
+  --accent-hover: #eaeaea;
+  --accent-dim:   rgba(255, 255, 255, 0.05);
+  --draft-btn-border: #333333;
+
+  --tag-bg-0: #222222;
+  --tag-color-0: #f9fafb;
+  --tag-border-0: #333333;
+
+  --tag-bg-1: #222222;
+  --tag-color-1: #f9fafb;
+  --tag-border-1: #333333;
+
+  --tag-bg-2: #222222;
+  --tag-color-2: #f9fafb;
+  --tag-border-2: #333333;
+
+  --tag-bg-3: #222222;
+  --tag-color-3: #f9fafb;
+  --tag-border-3: #333333;
+
+  --tag-bg-4: #222222;
+  --tag-color-4: #f9fafb;
+  --tag-border-4: #333333;
+
+  --scrollbar-thumb: rgba(255, 255, 255, 0.08);
+  --scrollbar-thumb-hover: rgba(255, 255, 255, 0.14);
+}
+
 html, body {
   height: 100%;
   background: var(--bg);
@@ -87,6 +127,7 @@ html, body {
   gap: 8px;
   text-decoration: none;
   cursor: pointer;
+  color: var(--text);
 }
 
 .app-icon {
