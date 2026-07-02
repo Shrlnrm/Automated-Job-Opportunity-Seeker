@@ -1,5 +1,5 @@
 import { initializeApp } from "firebase/app";
-import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, setPersistence, browserLocalPersistence, browserSessionPersistence } from "firebase/auth";
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, setPersistence, browserLocalPersistence, browserSessionPersistence, sendEmailVerification } from "firebase/auth";
 
 const firebaseConfig = {
   apiKey: "AIzaSy" + "BJnS3EYawuCHHnegronWe_WPRH7TPbO1A",
@@ -40,14 +40,59 @@ function hideError() {
   }
 }
 
+// Global Toast System
+window.showToast = function(message) {
+  let container = document.getElementById('toast-container');
+  if (!container) {
+    container = document.createElement('div');
+    container.id = 'toast-container';
+    document.body.appendChild(container);
+  }
+  const toast = document.createElement('div');
+  toast.className = 'toast';
+  toast.textContent = message;
+  container.appendChild(toast);
+  
+  toast.offsetHeight; // Trigger reflow
+  toast.classList.add('show');
+  
+  setTimeout(() => {
+    toast.classList.remove('show');
+    toast.addEventListener('transitionend', () => toast.remove());
+  }, 3000);
+};
+
+// Check for pending toasts on load
+document.addEventListener('DOMContentLoaded', () => {
+  const pendingToast = sessionStorage.getItem('pendingToast');
+  if (pendingToast) {
+    window.showToast(pendingToast);
+    sessionStorage.removeItem('pendingToast');
+  }
+});
+
 // Redirect logged-in users to dashboard; block unverified emails
 onAuthStateChanged(auth, (user) => {
   if (user) {
+    // 5-day inactivity check
+    const lastActivityStr = localStorage.getItem('lastActivityTime');
+    const now = Date.now();
+    if (lastActivityStr && (now - parseInt(lastActivityStr, 10)) > 5 * 24 * 60 * 60 * 1000) {
+      localStorage.removeItem('lastActivityTime');
+      auth.signOut();
+      sessionStorage.setItem('pendingToast', 'For your security, your session has expired due to inactivity. Please log in again.');
+      if (!window.location.pathname.includes('login')) {
+        window.location.replace('/login.html');
+      }
+      return;
+    } else {
+      localStorage.setItem('lastActivityTime', now.toString());
+    }
+
     const path = window.location.pathname;
     if (path.includes('login') || path.includes('register') || path.includes('forgot-password')) {
       if (!user.emailVerified) {
-        // au4: signed in but unverified — send to verify page
-        auth.signOut();
+        sessionStorage.setItem('pendingToast', 'Please verify your email address to access the platform.');
         window.location.href = '/verify-email.html';
         return;
       }
@@ -93,9 +138,11 @@ if (registerForm) {
 
     try {
       const userCred = await createUserWithEmailAndPassword(auth, email, password);
+      await sendEmailVerification(userCred.user);
       const idToken = await userCred.user.getIdToken();
       await initUserOnBackend(turnstileToken, idToken);
-      window.location.href = '/job-search.html';
+      sessionStorage.setItem('pendingToast', 'Welcome! A verification link has been sent to your inbox.');
+      window.location.href = '/verify-email.html';
     } catch (error) {
       // If backend init failed, sign them out locally so they aren't stuck in limbo
       if (auth.currentUser) await auth.signOut();
@@ -132,8 +179,13 @@ if (loginForm) {
 
     try {
       await setPersistence(auth, rememberMe ? browserLocalPersistence : browserSessionPersistence);
-      await signInWithEmailAndPassword(auth, email, password);
-      window.location.href = '/job-search.html';
+      const userCred = await signInWithEmailAndPassword(auth, email, password);
+      if (!userCred.user.emailVerified) {
+        sessionStorage.setItem('pendingToast', 'Please verify your email address to access the platform.');
+        window.location.href = '/verify-email.html';
+      } else {
+        window.location.href = '/job-search.html';
+      }
     } catch (error) {
       if (error.code === 'auth/too-many-requests') {
         showError("Too many attempts. Please try again later.");

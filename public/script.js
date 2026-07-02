@@ -89,6 +89,25 @@ onAuthStateChanged(auth, (user) => {
   if (!user) {
     window.location.replace('/login.html');
   } else {
+    if (!user.emailVerified) {
+      sessionStorage.setItem('pendingToast', 'Please verify your email address to access the platform.');
+      window.location.replace('/verify-email.html');
+      return;
+    }
+    
+    // 5-day inactivity check
+    const lastActivityStr = localStorage.getItem('lastActivityTime');
+    const now = Date.now();
+    if (lastActivityStr && (now - parseInt(lastActivityStr, 10)) > 5 * 24 * 60 * 60 * 1000) {
+      localStorage.removeItem('lastActivityTime');
+      auth.signOut();
+      sessionStorage.setItem('pendingToast', 'For your security, your session has expired due to inactivity. Please log in again.');
+      window.location.replace('/login.html');
+      return;
+    } else {
+      localStorage.setItem('lastActivityTime', now.toString());
+    }
+
     // FIX: Removed buggy fetchLimits() call that was overwriting snapshot listener and causing freezing (2026-06-26)
 
     // FIX: Switched to listening to the users document directly for search states to avoid Firestore security rules blocking user_temp_searches collection (2026-06-26)
@@ -1239,6 +1258,12 @@ function printTable() {
 
 // ── Theme Toggle & Persistence ───────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
+  const pendingToast = sessionStorage.getItem('pendingToast');
+  if (pendingToast) {
+    window.showToast(pendingToast);
+    sessionStorage.removeItem('pendingToast');
+  }
+
   // Theme is locked to Dark Mode for now
   /*
   const themeToggleBtn = document.getElementById('themeToggleBtn');
