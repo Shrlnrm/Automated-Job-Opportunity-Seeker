@@ -1101,11 +1101,14 @@ function printTable() {
       const jobLink = linkEl ? linkEl.href : '';
 
       tableData.push([jobTitle, company, location, platform, jobLink]);
-      urls.push(jobLink);
+      urls.push({ jobLink });
     } else {
       const company = tds[0].querySelector('.company-name')?.textContent.trim() || tds[0].textContent.trim();
       const industry = tds[1].querySelector('.tag')?.textContent.trim() || tds[1].textContent.trim();
       const address = tds[2].textContent.trim();
+      const addressLinkEl = tds[2].querySelector('a.address-link');
+      const addressUrl = addressLinkEl ? addressLinkEl.href : '';
+      
       const websiteEl = tds[3].querySelector('a.external-link');
       const website = websiteEl ? websiteEl.href : '';
 
@@ -1119,7 +1122,7 @@ function printTable() {
       });
 
       tableData.push([company, industry, address, website, contacts.join('\n')]);
-      urls.push(website);
+      urls.push({ website, address: addressUrl });
     }
   });
 
@@ -1172,19 +1175,24 @@ function printTable() {
       : {
         0: { cellWidth: 45 },
         1: { cellWidth: 35 },
-        2: { cellWidth: 60 },
+        2: { cellWidth: 60, textColor: [26, 86, 219] },
         3: { cellWidth: 50, textColor: [26, 86, 219] },
-        4: { cellWidth: 'auto', textColor: [26, 86, 219] },
+        4: { cellWidth: 'auto', textColor: [30, 30, 30] },
       },
     didDrawCell: (data) => {
       if (data.section !== 'body') return;
 
       if (isJobs && data.column.index === 4) {
-        const url = urls[data.row.index];
+        const url = urls[data.row.index]?.jobLink;
         if (url) doc.link(data.cell.x, data.cell.y, data.cell.width, data.cell.height, { url });
-      } else if (!isJobs && data.column.index === 3) {
-        const url = urls[data.row.index];
-        if (url) doc.link(data.cell.x, data.cell.y, data.cell.width, data.cell.height, { url });
+      } else if (!isJobs) {
+        if (data.column.index === 3) {
+          const url = urls[data.row.index]?.website;
+          if (url) doc.link(data.cell.x, data.cell.y, data.cell.width, data.cell.height, { url });
+        } else if (data.column.index === 2) {
+          const url = urls[data.row.index]?.address;
+          if (url) doc.link(data.cell.x, data.cell.y, data.cell.width, data.cell.height, { url });
+        }
       }
     },
     margin: { left: 14, right: 14 },
