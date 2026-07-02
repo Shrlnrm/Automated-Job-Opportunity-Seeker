@@ -94,6 +94,7 @@
 
 html, body {
   height: 100%;
+  min-height: 100vh;
   background: var(--bg);
   color: var(--text);
   font-family: var(--font);
@@ -824,8 +825,8 @@ body, .topbar, .toolbar, .mode-toggle, .field-group, .btn, table, th, td, tbody 
   color: var(--text);
 }
 
-body:not(.dark-theme) .sun-icon { display: none; }
-body.dark-theme .moon-icon { display: none; }
+html:not(.dark-theme) .sun-icon { display: none; }
+html.dark-theme .moon-icon { display: none; }
 
 /* ── Mobile Responsiveness ────────────────────────────────────────────── */
 @media (max-width: 768px) {

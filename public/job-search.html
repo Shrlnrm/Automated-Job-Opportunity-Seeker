@@ -26,7 +26,7 @@
 
   <script>
     if (localStorage.getItem('theme') === 'dark') {
-      document.body.classList.add('dark-theme');
+      document.documentElement.classList.add('dark-theme');
     }
   </script>
 
@@ -194,7 +194,7 @@
       const btn = document.getElementById('themeToggleBtn');
       if (btn) {
         btn.addEventListener('click', () => {
-          const isDark = document.body.classList.toggle('dark-theme');
+          const isDark = document.documentElement.classList.toggle('dark-theme');
           localStorage.setItem('theme', isDark ? 'dark' : 'light');
         });
       }
