@@ -313,6 +313,12 @@ a.policy-back-btn svg { flex-shrink: 0; }
   position: absolute;
 }
 
+[data-tooltip].theme-toggle-btn::before {
+  left: auto;
+  right: 0;
+  transform: none;
+}
+
 [data-tooltip]::before {
   content: attr(data-tooltip);
   position: absolute;

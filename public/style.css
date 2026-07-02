@@ -932,6 +932,12 @@ html.dark-theme .moon-icon { display: none; }
   display: inline-flex;
 }
 
+[data-tooltip].theme-toggle-btn::before {
+  left: auto;
+  right: 0;
+  transform: none;
+}
+
 [data-tooltip]::before {
   content: attr(data-tooltip);
   position: absolute;
