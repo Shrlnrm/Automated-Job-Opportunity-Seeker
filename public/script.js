@@ -753,7 +753,13 @@ async function addCompanyRow(place, defaultIndustry, placeIndex = -1) {
   tr.innerHTML = `
     <td><span class="company-name">${safeName}</span></td>
     <td><span class="tag ${tagClass}">${safeIndustry}</span></td>
-    <td>${safeAddress}</td>
+    <td>
+      ${safeAddress 
+        ? `<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}" target="_blank" rel="noopener noreferrer" class="address-link">
+             ${safeAddress}
+           </a>` 
+        : '<span style="color:var(--text-muted)">N/A</span>'}
+    </td>
     <td>
       ${website
         ? `<a href="${safeWebsite}" target="_blank" rel="noopener noreferrer" class="external-link">
