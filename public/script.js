@@ -21,6 +21,29 @@ const analytics = getAnalytics(app);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
+// Toast Notification System
+window.showToast = function(message) {
+  let container = document.getElementById('toast-container');
+  if (!container) {
+    container = document.createElement('div');
+    container.id = 'toast-container';
+    document.body.appendChild(container);
+  }
+  const toast = document.createElement('div');
+  toast.className = 'toast';
+  toast.textContent = message;
+  container.appendChild(toast);
+  
+  // Trigger reflow
+  toast.offsetHeight;
+  toast.classList.add('show');
+  
+  setTimeout(() => {
+    toast.classList.remove('show');
+    toast.addEventListener('transitionend', () => toast.remove());
+  }, 3000);
+};
+
 // Global Error Handler for UI Debugging
 window.addEventListener('error', (event) => {
   let errorBox = document.getElementById('debugErrorBox');
@@ -121,7 +144,7 @@ onAuthStateChanged(auth, (user) => {
       }
     }, (error) => {
       console.error("Snapshot error:", error);
-      alert("Failed to load search results: " + error.message);
+      showToast("Failed to load search results: " + error.message);
     });
   }
 });
@@ -226,11 +249,14 @@ async function restoreFromSessionStorage() {
       }
       if (nextBtn) {
         const showNext = !!nextPageToken;
-        nextBtn.style.display = showNext ? 'inline-flex' : 'none';
+        const nextTarget = nextBtn.parentElement.classList.contains('tooltip-wrapper') ? nextBtn.parentElement : nextBtn;
+        nextTarget.style.display = showNext ? 'inline-flex' : 'none';
         nextBtn.disabled = !showNext;
         if (searchBtn) {
           searchBtn.style.display = 'inline-flex';
           searchBtn.disabled = showNext;
+          const searchWrapper = searchBtn.parentElement.classList.contains('tooltip-wrapper') ? searchBtn.parentElement : searchBtn;
+          searchWrapper.setAttribute('data-tooltip', showNext ? 'Clear your current session data to initiate a new search.' : 'Start a new search.');
         }
       }
       populateFilters();
@@ -244,7 +270,10 @@ async function restoreFromSessionStorage() {
 
       parsed.jobs.forEach(job => addJobRow(job));
       nextPageToken = '';
-      if (nextBtn) nextBtn.style.display = 'none';
+      if (nextBtn) {
+        const nextTarget = nextBtn.parentElement.classList.contains('tooltip-wrapper') ? nextBtn.parentElement : nextBtn;
+        nextTarget.style.display = 'none';
+      }
       populateFilters();
       applyFilters();
       return true;
@@ -317,11 +346,13 @@ async function triggerRestore() {
       // Show "Search More" if the stored search had a next page
       if (nextBtn) {
         const showNext = !!nextPageToken;
-        nextBtn.style.display = showNext ? 'inline-flex' : 'none';
+        const nextTarget = nextBtn.parentElement.classList.contains('tooltip-wrapper') ? nextBtn.parentElement : nextBtn;
+        nextTarget.style.display = showNext ? 'inline-flex' : 'none';
         nextBtn.disabled = !showNext;
         if (searchBtn) {
-          searchBtn.style.display = 'inline-flex';
           searchBtn.disabled = showNext;
+          const searchWrapper = searchBtn.parentElement.classList.contains('tooltip-wrapper') ? searchBtn.parentElement : searchBtn;
+          searchWrapper.setAttribute('data-tooltip', showNext ? 'Clear your current session data to initiate a new search.' : 'Start a new search.');
         }
       }
     } else if (searchMode === 'jobs' && latestSnapshotData.jobSearchTemp) {
@@ -535,7 +566,7 @@ async function performSearch(isNextPage = false) {
     const jobLocInput = jobLocEl ? jobLocEl.value.trim() : '';
 
     if (!jobTitleInput) {
-      alert('Please enter a Job Title.');
+      showToast('Please enter a Job Title.');
       return;
     }
     currentIndustry = jobTitleInput;
@@ -548,7 +579,7 @@ async function performSearch(isNextPage = false) {
     const locationInput = document.getElementById('location')?.value.trim() || '';
 
     if (!companyInput && !industryInput && !locationInput) {
-      alert('Please enter at least one of: Company Name, Industry, or Location.');
+      showToast('Please enter at least one of: Company Name, Industry, or Location.');
       return;
     }
     currentIndustry = industryInput || companyInput || 'Unknown';
@@ -663,7 +694,7 @@ async function performSearch(isNextPage = false) {
   } catch (error) {
     console.error('Search error:', error);
     isViewingRecent = false; // let snapshot manage empty state after a failed search
-    alert(error.message);
+    showToast(error.message);
     if (searchBtn) setLoading(searchBtn, false, origText);
   } finally {
     setStatus('Ready');
@@ -671,12 +702,15 @@ async function performSearch(isNextPage = false) {
     if (nextBtn) {
       setLoading(nextBtn, false, 'Search More');
       const showNext = !!(searchMode === 'companies' && nextPageToken);
-      nextBtn.style.display = showNext ? 'inline-flex' : 'none';
+      const nextTarget = nextBtn.parentElement.classList.contains('tooltip-wrapper') ? nextBtn.parentElement : nextBtn;
+      nextTarget.style.display = showNext ? 'inline-flex' : 'none';
       nextBtn.disabled = !showNext;
       // Only disable searchBtn when "Search More" mode is active (there's a next page to load)
       if (searchBtn) {
         searchBtn.style.display = 'inline-flex';
         searchBtn.disabled = showNext; // disabled only when user should be using "Search More" instead
+        const searchWrapper = searchBtn.parentElement.classList.contains('tooltip-wrapper') ? searchBtn.parentElement : searchBtn;
+        searchWrapper.setAttribute('data-tooltip', showNext ? 'Clear your current session data to initiate a new search.' : 'Start a new search.');
       }
     }
     populateFilters();
@@ -1076,7 +1110,7 @@ document.getElementById('printBtn').addEventListener('click', printTable);
 function printTable() {
   const rows = tbody.querySelectorAll('tr');
   if (rows.length === 0) {
-    alert('No results to export. Please search first.');
+    showToast('No results to export. Please search first.');
     return;
   }
 

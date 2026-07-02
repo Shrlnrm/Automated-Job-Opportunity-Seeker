@@ -56,7 +56,7 @@
       </div>
     </div>
     <div class="topbar-right">
-      <button id="themeToggleBtn" class="theme-toggle-btn" aria-label="Toggle theme" style="margin-right: 8px;">
+      <button id="themeToggleBtn" class="theme-toggle-btn" aria-label="Toggle theme" style="margin-right: 8px;" data-tooltip="Toggle dark mode">
         <svg class="sun-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <circle cx="12" cy="12" r="5"></circle>
           <line x1="12" y1="1" x2="12" y2="3"></line>
@@ -105,10 +105,12 @@
       </div>
     </div>
     <div class="toolbar-right">
-      <button id="printBtn" class="btn btn-ghost">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
-        Export PDF
-      </button>
+      <div class="tooltip-wrapper" data-tooltip="Export current results to a PDF document.">
+        <button id="printBtn" class="btn btn-ghost">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+          Export PDF
+        </button>
+      </div>
       <div id="restoreContainer" style="display: flex; align-items: center;">
         <span id="restoreTimer" style="font-size: 11px; color: var(--text-muted); margin-right: 8px;">No recent search</span>
         <div class="custom-dropdown">
@@ -116,8 +118,12 @@
           <div class="dropdown-menu tooltip-menu tooltip-menu-right">Restore your previous search parameters and result data.</div>
         </div>
       </div>
-      <button id="nextBtn" class="btn btn-ghost" style="display: none;">Search More</button>
-      <button id="searchBtn" class="btn btn-primary">Search</button>
+      <div class="tooltip-wrapper" id="nextTooltipWrapper" data-tooltip="Load next 20 companies." style="display: none;">
+        <button id="nextBtn" class="btn btn-ghost">Search More</button>
+      </div>
+      <div class="tooltip-wrapper" id="searchTooltipWrapper" data-tooltip="Start a new search.">
+        <button id="searchBtn" class="btn btn-primary">Search</button>
+      </div>
     </div>
   </div>
 
