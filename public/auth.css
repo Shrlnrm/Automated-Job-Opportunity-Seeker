@@ -43,8 +43,8 @@
   color: var(--text-main);
 }
 
-body:not(.dark-theme) .sun-icon { display: none; }
-body.dark-theme .moon-icon { display: none; }
+html:not(.dark-theme) .sun-icon { display: none; }
+html.dark-theme .moon-icon { display: none; }
 
 html {
   height: 100%;
@@ -307,6 +307,10 @@ a.policy-back-btn svg { flex-shrink: 0; }
 /* ── Tooltips ────────────────────────────────────────────── */
 [data-tooltip] {
   position: relative;
+}
+
+[data-tooltip].theme-toggle-btn {
+  position: absolute;
 }
 
 [data-tooltip]::before {
