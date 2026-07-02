@@ -755,7 +755,7 @@ async function addCompanyRow(place, defaultIndustry, placeIndex = -1) {
     <td><span class="tag ${tagClass}">${safeIndustry}</span></td>
     <td>
       ${safeAddress 
-        ? `<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}" target="_blank" rel="noopener noreferrer" class="address-link">
+        ? `<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(name + ', ' + address)}" target="_blank" rel="noopener noreferrer" class="address-link">
              ${safeAddress}
            </a>` 
         : '<span style="color:var(--text-muted)">N/A</span>'}
