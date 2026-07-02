@@ -320,7 +320,10 @@ a.policy-back-btn svg { flex-shrink: 0; }
   padding: 8px 12px;
   border-radius: 6px;
   font-size: 12px;
-  white-space: nowrap;
+  white-space: normal;
+  max-width: 250px;
+  text-align: center;
+  word-wrap: break-word;
   opacity: 0;
   visibility: hidden;
   transition: opacity 0.2s, visibility 0.2s;

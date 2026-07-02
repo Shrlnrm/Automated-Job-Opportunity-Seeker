@@ -912,7 +912,10 @@ html.dark-theme .moon-icon { display: none; }
   opacity: 0;
   transform: translateY(20px);
   transition: opacity 0.3s ease, transform 0.3s ease;
-  white-space: nowrap;
+  white-space: normal;
+  max-width: 90vw;
+  text-align: center;
+  word-wrap: break-word;
 }
 
 .toast.show {
@@ -939,7 +942,10 @@ html.dark-theme .moon-icon { display: none; }
   padding: 8px 12px;
   border-radius: 6px;
   font-size: 12px;
-  white-space: nowrap;
+  white-space: normal;
+  max-width: 250px;
+  text-align: center;
+  word-wrap: break-word;
   opacity: 0;
   visibility: hidden;
   transition: opacity 0.2s, visibility 0.2s;
