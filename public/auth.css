@@ -46,6 +46,10 @@
 body:not(.dark-theme) .sun-icon { display: none; }
 body.dark-theme .moon-icon { display: none; }
 
+html {
+  height: 100%;
+}
+
 body {
   margin: 0;
   padding: 0;
@@ -54,7 +58,7 @@ body {
   color: var(--text-main);
   display: flex;
   flex-direction: column;
-  min-height: 100vh;
+  min-height: 100%;
   align-items: center;
   justify-content: center;
   transition: background-color 0.2s;
