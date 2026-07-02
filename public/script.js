@@ -476,13 +476,13 @@ function renderLimitsShowcase() {
   }
 
   if (searchMode === 'jobs') {
-    const remain = userLimits.jobSearchesRemaining;
+    const remain = userLimits.jobSearchesRemaining ?? 10;
     label.textContent = `Jobs: ${remain}/10 left`;
     const pct = Math.max(0, Math.min(100, (remain / 10) * 100));
     barFill.style.width = `${pct}%`;
     barFill.style.backgroundColor = remain <= 2 ? '#ef4444' : 'var(--accent)';
   } else {
-    const remain = userLimits.companyLoadsRemaining;
+    const remain = userLimits.companyLoadsRemaining ?? 3000;
     label.textContent = `Leads: ${remain}/3000 left`;
     const pct = Math.max(0, Math.min(100, (remain / 3000) * 100));
     barFill.style.width = `${pct}%`;

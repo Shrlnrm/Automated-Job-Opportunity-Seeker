@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Account Action - AJOS</title>
+  <link rel="stylesheet" href="auth.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <script type="importmap">
+    {
+      "imports": {
+        "firebase/app": "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js",
+        "firebase/auth": "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js"
+      }
+    }
+  </script>
+</head>
+<body>
+
+  <button id="themeToggleBtn" class="theme-toggle-btn" aria-label="Toggle theme" data-tooltip="Toggle dark mode">
+    <svg class="sun-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="5"></circle>
+      <line x1="12" y1="1" x2="12" y2="3"></line>
+      <line x1="12" y1="21" x2="12" y2="23"></line>
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+      <line x1="1" y1="12" x2="3" y2="12"></line>
+      <line x1="21" y1="12" x2="23" y2="12"></line>
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+    </svg>
+    <svg class="moon-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+    </svg>
+  </button>
+
+  <script>
+    if (localStorage.getItem('theme') === 'dark') {
+      document.documentElement.classList.add('dark-theme');
+    }
+  </script>
+
+  <a href="index.html" class="auth-logo">
+    <svg width="24" height="24" viewBox="0 0 16 16" fill="none">
+      <rect width="16" height="16" rx="4" fill="currentColor"/>
+      <circle cx="8" cy="8" r="3" fill="var(--bg-color, var(--bg))"/>
+    </svg>
+    AJOS
+  </a>
+
+  <div class="auth-container">
+    <div style="text-align: left;">
+      <a href="index.html" class="policy-back-btn">
+        <svg width="12" height="12" viewBox="0 0 14 14" fill="none">
+          <path d="M9 1L3 7l6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        Back to Home
+      </a>
+    </div>
+    
+    <div id="dynamicContent" style="margin-top: 2rem;">
+      <div class="auth-title">Processing...</div>
+      <div class="auth-subtitle">Please wait while we verify your request.</div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { auth } from './auth.js';
+    import { applyActionCode, verifyPasswordResetCode, confirmPasswordReset } from 'firebase/auth';
+
+    const dynamicContent = document.getElementById('dynamicContent');
+    const params = new URLSearchParams(window.location.search);
+    const mode = params.get('mode');
+    const actionCode = params.get('oobCode');
+
+    if (!mode || !actionCode) {
+      dynamicContent.innerHTML = `
+        <div class="auth-title">Invalid Request</div>
+        <div class="auth-subtitle">The link you followed is invalid or has expired.</div>
+        <div class="footer-links" style="margin-top:1.5rem;"><a href="login.html">Back to Login</a></div>
+      `;
+    } else if (mode === 'verifyEmail') {
+      applyActionCode(auth, actionCode).then(() => {
+        dynamicContent.innerHTML = `
+          <div style="display:flex; justify-content:center; margin-bottom:1.5rem; color:var(--text-main);">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+          </div>
+          <div class="auth-title">Email Verified</div>
+          <div class="auth-subtitle">Your email has been successfully verified.</div>
+          <div style="margin-top:1.5rem;">
+            <a href="login.html" class="btn btn-primary" style="text-decoration:none;">Log in</a>
+          </div>
+        `;
+      }).catch(error => {
+        dynamicContent.innerHTML = `
+          <div class="auth-title">Verification Failed</div>
+          <div class="auth-subtitle">This link has expired or has already been used.</div>
+          <div class="footer-links" style="margin-top:1.5rem;"><a href="login.html">Back to Login</a></div>
+        `;
+      });
+    } else if (mode === 'resetPassword') {
+      verifyPasswordResetCode(auth, actionCode).then(email => {
+        dynamicContent.innerHTML = `
+          <div class="auth-title">Reset Password</div>
+          <div class="auth-subtitle" style="margin-bottom: 2rem;">for <b style="color:var(--text-main);">${email}</b></div>
+          <form id="resetForm" style="display: flex; flex-direction: column; gap: 1rem; text-align: left;">
+            <div class="field-group">
+              <label for="newPassword" style="display:block; margin-bottom:0.5rem; font-size:0.875rem; color:var(--text-main); font-weight:500;">New Password</label>
+              <input type="password" id="newPassword" class="input" placeholder="Enter new password" required minlength="6" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border); border-radius: 6px; background: var(--surface-2); color: var(--text-main); outline: none;">
+            </div>
+            <div class="error-msg" id="errorMsg" style="color:#ef4444; font-size:0.875rem; display:none;"></div>
+            <button type="submit" class="btn btn-primary" id="saveBtn" style="margin-top: 0.5rem;">Save Password</button>
+          </form>
+          <div class="footer-links" style="margin-top:1.5rem;"><a href="login.html">Cancel</a></div>
+        `;
+        
+        document.getElementById('resetForm').addEventListener('submit', async (e) => {
+          e.preventDefault();
+          const newPassword = document.getElementById('newPassword').value;
+          const saveBtn = document.getElementById('saveBtn');
+          const errorMsg = document.getElementById('errorMsg');
+          
+          saveBtn.disabled = true;
+          saveBtn.textContent = 'Saving...';
+          errorMsg.style.display = 'none';
+          
+          try {
+            await confirmPasswordReset(auth, actionCode, newPassword);
+            dynamicContent.innerHTML = `
+              <div style="display:flex; justify-content:center; margin-bottom:1.5rem; color:var(--text-main);">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+              </div>
+              <div class="auth-title">Password Changed</div>
+              <div class="auth-subtitle">You can now sign in with your new password.</div>
+              <div style="margin-top:1.5rem;">
+                <a href="login.html" class="btn btn-primary" style="text-decoration:none;">Log in</a>
+              </div>
+            `;
+          } catch (error) {
+            errorMsg.textContent = 'Failed to reset password. The link might be expired.';
+            errorMsg.style.display = 'block';
+            saveBtn.disabled = false;
+            saveBtn.textContent = 'Save Password';
+          }
+        });
+      }).catch(error => {
+        dynamicContent.innerHTML = `
+          <div class="auth-title">Reset Failed</div>
+          <div class="auth-subtitle">This link is invalid or has expired.</div>
+          <div class="footer-links" style="margin-top:1.5rem;"><a href="forgot-password.html">Request a new link</a></div>
+        `;
+      });
+    } else {
+       dynamicContent.innerHTML = `
+          <div class="auth-title">Unsupported Action</div>
+          <div class="auth-subtitle">The requested action is not supported.</div>
+          <div class="footer-links" style="margin-top:1.5rem;"><a href="login.html">Back to Login</a></div>
+        `;
+    }
+  </script>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const btn = document.getElementById('themeToggleBtn');
+      if (btn) {
+        const isDarkInitial = document.documentElement.classList.contains('dark-theme');
+        btn.setAttribute('data-tooltip', isDarkInitial ? 'Toggle light mode' : 'Toggle dark mode');
+
+        btn.addEventListener('click', () => {
+          const isDarkNow = document.documentElement.classList.toggle('dark-theme');
+          localStorage.setItem('theme', isDarkNow ? 'dark' : 'light');
+          btn.setAttribute('data-tooltip', isDarkNow ? 'Toggle light mode' : 'Toggle dark mode');
+        });
+      }
+    });
+  </script>
+</body>
+</html>

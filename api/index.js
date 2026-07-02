@@ -166,7 +166,16 @@ async function requireAuthAndCheckLimits(req, res, next) {
       return res.status(403).json({ error: 'Account not fully initialized. Please reload.' });
     }
 
-    const userData = doc.data();
+    let userData = doc.data();
+    
+    // Fallback for legacy users missing limit fields
+    if (userData.jobSearchesRemaining === undefined) {
+      userData.jobSearchesRemaining = 10;
+    }
+    if (userData.companyLoadsRemaining === undefined) {
+      userData.companyLoadsRemaining = 3000;
+    }
+
     req.userData = userData;
     req.userRef = userRef;
 
