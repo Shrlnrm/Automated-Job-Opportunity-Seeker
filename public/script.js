@@ -226,12 +226,11 @@ async function restoreFromSessionStorage() {
       }
       if (nextBtn) {
         const showNext = !!nextPageToken;
-        // FIX: Display buttons but disable them if there is no more output (2026-06-29)
-        nextBtn.style.display = 'inline-flex';
+        nextBtn.style.display = showNext ? 'inline-flex' : 'none';
         nextBtn.disabled = !showNext;
         if (searchBtn) {
           searchBtn.style.display = 'inline-flex';
-          searchBtn.disabled = true;
+          searchBtn.disabled = showNext;
         }
       }
       populateFilters();
@@ -311,12 +310,11 @@ async function triggerRestore() {
       // Show "Search More" if the stored search had a next page
       if (nextBtn) {
         const showNext = !!nextPageToken;
-        // FIX: Display buttons but disable them if there is no more output (2026-06-29)
-        nextBtn.style.display = 'inline-flex';
+        nextBtn.style.display = showNext ? 'inline-flex' : 'none';
         nextBtn.disabled = !showNext;
         if (searchBtn) {
           searchBtn.style.display = 'inline-flex';
-          searchBtn.disabled = true;
+          searchBtn.disabled = showNext;
         }
       }
     } else if (searchMode === 'jobs' && latestSnapshotData.jobSearchTemp) {
@@ -663,12 +661,12 @@ async function performSearch(isNextPage = false) {
     if (nextBtn) {
       setLoading(nextBtn, false, 'Search More');
       const showNext = !!(searchMode === 'companies' && nextPageToken);
-      // FIX: Display buttons but disable them if there is no more output (2026-06-29)
-      nextBtn.style.display = 'inline-flex';
+      nextBtn.style.display = showNext ? 'inline-flex' : 'none';
       nextBtn.disabled = !showNext;
+      // Only disable searchBtn when "Search More" mode is active (there's a next page to load)
       if (searchBtn) {
         searchBtn.style.display = 'inline-flex';
-        searchBtn.disabled = true;
+        searchBtn.disabled = showNext; // disabled only when user should be using "Search More" instead
       }
     }
     populateFilters();

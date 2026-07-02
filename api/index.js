@@ -506,7 +506,6 @@ app.post('/api/search', requireAuthAndCheckLimits, async (req, res) => {
   res.setHeader('Cache-Control', 'private, no-store'); // be10
   const query = sanitise(req.body.query, 200);
   const pageToken = sanitise(req.body.pageToken, 50);
-  const dateFilter = sanitise(req.body.dateFilter, 50);
   const inputs = req.body.inputs || {};
 
   // rl7: Minimum query length
