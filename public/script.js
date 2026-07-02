@@ -454,7 +454,8 @@ const fieldJobLocation = document.getElementById('fieldJobLocation');
 const fieldIndustry = document.getElementById('fieldIndustry');
 const fieldLocation = document.getElementById('fieldLocation');
 const fieldCompanyName = document.getElementById('fieldCompanyName');
-let searchMode = window.location.pathname.includes('company-search.html') ? 'companies' : 'jobs';
+// Use the data-mode attribute set on <html> in each page — immune to URL/pathname edge cases
+let searchMode = document.documentElement.dataset.mode || 'jobs';
 let lastQuery = '';
 
 // Modal Elements
@@ -583,6 +584,9 @@ async function performSearch(isNextPage = false) {
   currentSearchData.query = query;
   currentSearchData.currentIndustry = currentIndustry;
 
+  // Set isViewingRecent BEFORE the await so onSnapshot never wipes a live search
+  isViewingRecent = true;
+
   try {
     const response = await fetchWithAuth(endpoint, {
       method: 'POST',
@@ -592,8 +596,6 @@ async function performSearch(isNextPage = false) {
 
     const data = await response.json();
     if (data.error) throw new Error(data.error);
-
-    isViewingRecent = true;
 
     if (searchMode === 'jobs') {
       let jobs = data.jobs || [];
@@ -653,6 +655,7 @@ async function performSearch(isNextPage = false) {
 
   } catch (error) {
     console.error('Search error:', error);
+    isViewingRecent = false; // let snapshot manage empty state after a failed search
     alert(error.message);
     if (searchBtn) setLoading(searchBtn, false, origText);
   } finally {
