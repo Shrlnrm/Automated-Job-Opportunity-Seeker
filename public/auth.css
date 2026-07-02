@@ -323,6 +323,7 @@ a.policy-back-btn svg { flex-shrink: 0; }
   font-family: var(--font-family);
   line-height: 1.4;
   white-space: normal;
+  width: max-content;
   max-width: 250px;
   text-align: center;
   word-wrap: break-word;

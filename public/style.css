@@ -945,6 +945,7 @@ html.dark-theme .moon-icon { display: none; }
   font-size: var(--font-size-xs);
   line-height: 1.4;
   white-space: normal;
+  width: max-content;
   max-width: 250px;
   text-align: center;
   word-wrap: break-word;
