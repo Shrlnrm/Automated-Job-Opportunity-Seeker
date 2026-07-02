@@ -48,6 +48,7 @@ try {
 }
 
 const app = express();
+app.set('trust proxy', 1); // Vercel is a proxy; required for accurate rate limiting
 const PORT = process.env.PORT || 3000;
 
 // ── Security middleware ─────────────────────────────────────
@@ -657,7 +658,8 @@ app.post('/api/search-companies', requireAuthAndCheckLimits, async (req, res) =>
       headers: {
         'Content-Type': 'application/json',
         'X-Goog-Api-Key': process.env.PLACES_API_KEY,
-        'X-Goog-FieldMask': 'places.displayName,places.primaryTypeDisplayName,places.formattedAddress,places.nationalPhoneNumber,places.websiteUri,nextPageToken'
+        'X-Goog-FieldMask': 'places.displayName,places.primaryTypeDisplayName,places.formattedAddress,places.nationalPhoneNumber,places.websiteUri,nextPageToken',
+        'Referer': req.headers.referer || req.headers.origin || 'https://automated-job-opportunity-seeker.vercel.app/'
       },
       body: JSON.stringify(searchPayload)
     });
