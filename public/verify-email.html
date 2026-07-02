@@ -94,7 +94,8 @@
       resendBtn.disabled = true;
       resendBtn.textContent = 'Sending...';
       try {
-        await sendEmailVerification(user);
+        const actionCodeSettings = { url: window.location.origin + '/login.html' };
+        await sendEmailVerification(user, actionCodeSettings);
         errorMsg.style.display = 'block';
         errorMsg.style.color = '#10b981';
         errorMsg.textContent = 'Verification email sent! Check your inbox.';

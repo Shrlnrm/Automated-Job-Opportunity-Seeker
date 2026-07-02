@@ -138,7 +138,8 @@ if (registerForm) {
 
     try {
       const userCred = await createUserWithEmailAndPassword(auth, email, password);
-      await sendEmailVerification(userCred.user);
+      const actionCodeSettings = { url: window.location.origin + '/login.html' };
+      await sendEmailVerification(userCred.user, actionCodeSettings);
       const idToken = await userCred.user.getIdToken();
       await initUserOnBackend(turnstileToken, idToken);
       sessionStorage.setItem('pendingToast', 'Welcome! A verification link has been sent to your inbox.');
@@ -215,7 +216,8 @@ if (forgotForm) {
     submitBtn.textContent = 'Sending...';
 
     try {
-      await sendPasswordResetEmail(auth, email);
+      const actionCodeSettings = { url: window.location.origin + '/login.html' };
+      await sendPasswordResetEmail(auth, email, actionCodeSettings);
       document.getElementById('mainContainer').style.display = 'none';
       document.getElementById('successContainer').style.display = 'block';
     } catch (error) {
