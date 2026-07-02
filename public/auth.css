@@ -315,11 +315,13 @@ a.policy-back-btn svg { flex-shrink: 0; }
   top: calc(100% + 8px);
   left: 50%;
   transform: translateX(-50%);
-  background: var(--surface-2);
-  color: var(--text);
-  padding: 8px 12px;
+  background: var(--bg-color);
+  color: var(--text-muted);
+  padding: 10px 12px;
   border-radius: 6px;
   font-size: 12px;
+  font-family: var(--font-family);
+  line-height: 1.4;
   white-space: normal;
   max-width: 250px;
   text-align: center;
@@ -329,8 +331,8 @@ a.policy-back-btn svg { flex-shrink: 0; }
   transition: opacity 0.2s, visibility 0.2s;
   pointer-events: none;
   z-index: 1000;
-  border: 1px solid var(--border);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  border: 1px solid var(--border-color);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
 }
 
 [data-tooltip]:hover::before {
