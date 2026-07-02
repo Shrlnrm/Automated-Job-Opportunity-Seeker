@@ -663,6 +663,12 @@ app.post('/api/search-companies', requireAuthAndCheckLimits, async (req, res) =>
     });
     
     const data = await response.json();
+    console.log('PLACES API RESPONSE LENGTH:', data.places ? data.places.length : 0);
+
+    if (data.error) {
+      console.error('Places API Error:', data.error);
+      throw new Error(data.error.message || 'Places API returned an error');
+    }
 
     // Deduct limits based on places loaded
     if (req.userData.role !== 'owner' && data.places) {

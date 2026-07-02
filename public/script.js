@@ -284,7 +284,14 @@ async function triggerRestore() {
       if (tbody) tbody.innerHTML = '';
       rowCount = 0;
       tagColorMap = {};
-      if (tableEmpty) tableEmpty.style.display = 'none';
+      
+      const hasPlaces = temp.places && temp.places.length > 0;
+      if (tableEmpty) tableEmpty.style.display = hasPlaces ? 'none' : 'block';
+      if (!hasPlaces) {
+        if (document.getElementById('emptyText')) {
+          document.getElementById('emptyText').textContent = 'No results found for this recent search.';
+        }
+      }
       nextPageToken = temp.nextPageToken || '';
       
       if (restoreContainer) restoreContainer.style.display = 'none';
