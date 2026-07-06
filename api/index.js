@@ -162,11 +162,25 @@ async function requireAuthAndCheckLimits(req, res, next) {
     const userRef = db.collection('users').doc(req.user.uid);
     const doc = await userRef.get();
     
+    let userData;
     if (!doc.exists) {
-      return res.status(403).json({ error: 'Account not fully initialized. Please reload.' });
+      // Legacy user auto-initialization
+      const now = new Date();
+      const nextReset = new Date(now);
+      nextReset.setMonth(nextReset.getMonth() + 1);
+      
+      userData = {
+        email: req.user.email,
+        jobSearchesRemaining: 10,
+        companyLoadsRemaining: 3000,
+        createdAt: now.toISOString(),
+        nextLimitResetDate: nextReset.toISOString(),
+        role: req.user.email === 'aminmod06@gmail.com' ? 'owner' : 'user'
+      };
+      await userRef.set(userData);
+    } else {
+      userData = doc.data();
     }
-
-    let userData = doc.data();
     
     // Fallback for legacy users missing limit fields
     if (userData.jobSearchesRemaining === undefined) {

@@ -117,7 +117,15 @@ onAuthStateChanged(auth, (user) => {
         const d = docSnap.data();
         userLimits = d;
         latestSnapshotData = d;
-        renderLimitsShowcase();
+      } else {
+        // Fallback for legacy users whose document isn't created yet
+        userLimits = { role: 'user', jobSearchesRemaining: 10, companyLoadsRemaining: 3000 };
+        latestSnapshotData = {};
+      }
+      renderLimitsShowcase();
+
+      // For legacy users, we use an empty object to safely read temp fields
+      const d = latestSnapshotData;
 
         let tempSearchData = null;
         if (searchMode === 'companies' && d.companySearchTemp) {
@@ -160,7 +168,6 @@ onAuthStateChanged(auth, (user) => {
             if (tbody) tbody.innerHTML = '';
           }
         }
-      }
     }, (error) => {
       console.error("Snapshot error:", error);
       showToast("Failed to load search results: " + error.message);
