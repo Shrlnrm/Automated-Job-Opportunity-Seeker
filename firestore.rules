@@ -1,0 +1,25 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /users/{userId} {
+      // Users can only read their own document
+      allow read: if request.auth != null && request.auth.uid == userId;
+      
+      // Users can ONLY update specific temporary search storage fields.
+      // They are explicitly forbidden from editing roles or limit numbers.
+      allow update: if request.auth != null && request.auth.uid == userId 
+                    && request.resource.data.diff(resource.data).affectedKeys()
+                       .hasOnly(['jobSearchTemp', 'companySearchTemp'])
+                    && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role', 'jobSearchesRemaining', 'companyLoadsRemaining', 'email', 'createdAt', 'nextLimitResetDate']);
+      
+      // Prevent direct client-side creation or deletion (handled by backend API /api/init-user)
+      allow create, delete: if false;
+    }
+
+    // rl2: Global counters are backend-only (Admin SDK bypasses rules).
+    // Explicitly block any client-side access.
+    match /globalCounters/{doc} {
+      allow read, write: if false;
+    }
+  }
+}

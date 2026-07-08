@@ -3,7 +3,4 @@ node_modules/
 .DS_Store
 *.log
 ajos-544d6-firebase-adminsdk-*.json
-
-firestore.rules
-firebase.json
 .firebaserc

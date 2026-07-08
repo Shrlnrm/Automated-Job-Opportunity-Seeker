@@ -44,45 +44,47 @@ window.showToast = function(message) {
   }, 3000);
 };
 
-// Global Error Handler for UI Debugging
-window.addEventListener('error', (event) => {
-  let errorBox = document.getElementById('debugErrorBox');
-  if (!errorBox) {
-    errorBox = document.createElement('div');
-    errorBox.id = 'debugErrorBox';
-    errorBox.style.position = 'fixed';
-    errorBox.style.bottom = '10px';
-    errorBox.style.right = '10px';
-    errorBox.style.backgroundColor = 'rgba(255, 0, 0, 0.9)';
-    errorBox.style.color = 'white';
-    errorBox.style.padding = '15px';
-    errorBox.style.borderRadius = '5px';
-    errorBox.style.zIndex = '99999';
-    errorBox.style.maxWidth = '400px';
-    errorBox.style.fontFamily = 'monospace';
-    errorBox.style.fontSize = '12px';
-    errorBox.style.boxShadow = '0 4px 6px rgba(0,0,0,0.3)';
-    errorBox.innerHTML = '<strong>⚠️ JavaScript Error</strong><br><div id="debugErrorList" style="margin-top: 10px; max-height: 200px; overflow-y: auto;"></div><button onclick="this.parentElement.remove()" style="margin-top: 10px; background: white; color: red; border: none; padding: 5px 10px; cursor: pointer; border-radius: 3px;">Dismiss</button>';
-    document.body.appendChild(errorBox);
-  }
-  const errorList = document.getElementById('debugErrorList');
-  if (errorList) {
-    const errorMsg = document.createElement('div');
-    errorMsg.style.marginBottom = '8px';
-    errorMsg.style.borderBottom = '1px solid rgba(255,255,255,0.3)';
-    errorMsg.style.paddingBottom = '8px';
-    errorMsg.textContent = `${event.message} at ${event.filename}:${event.lineno}:${event.colno}`;
-    errorList.appendChild(errorMsg);
-  }
-});
-window.addEventListener('unhandledrejection', (event) => {
-  window.dispatchEvent(new ErrorEvent('error', {
-    message: `Unhandled Promise Rejection: ${event.reason?.message || event.reason}`,
-    filename: 'Promise',
-    lineno: 0,
-    colno: 0
-  }));
-});
+// Global Error Handler for UI Debugging (localhost only — never expose internals in production)
+if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+  window.addEventListener('error', (event) => {
+    let errorBox = document.getElementById('debugErrorBox');
+    if (!errorBox) {
+      errorBox = document.createElement('div');
+      errorBox.id = 'debugErrorBox';
+      errorBox.style.position = 'fixed';
+      errorBox.style.bottom = '10px';
+      errorBox.style.right = '10px';
+      errorBox.style.backgroundColor = 'rgba(255, 0, 0, 0.9)';
+      errorBox.style.color = 'white';
+      errorBox.style.padding = '15px';
+      errorBox.style.borderRadius = '5px';
+      errorBox.style.zIndex = '99999';
+      errorBox.style.maxWidth = '400px';
+      errorBox.style.fontFamily = 'monospace';
+      errorBox.style.fontSize = '12px';
+      errorBox.style.boxShadow = '0 4px 6px rgba(0,0,0,0.3)';
+      errorBox.innerHTML = '<strong>⚠️ JavaScript Error</strong><br><div id="debugErrorList" style="margin-top: 10px; max-height: 200px; overflow-y: auto;"></div><button onclick="this.parentElement.remove()" style="margin-top: 10px; background: white; color: red; border: none; padding: 5px 10px; cursor: pointer; border-radius: 3px;">Dismiss</button>';
+      document.body.appendChild(errorBox);
+    }
+    const errorList = document.getElementById('debugErrorList');
+    if (errorList) {
+      const errorMsg = document.createElement('div');
+      errorMsg.style.marginBottom = '8px';
+      errorMsg.style.borderBottom = '1px solid rgba(255,255,255,0.3)';
+      errorMsg.style.paddingBottom = '8px';
+      errorMsg.textContent = `${event.message} at ${event.filename}:${event.lineno}:${event.colno}`;
+      errorList.appendChild(errorMsg);
+    }
+  });
+  window.addEventListener('unhandledrejection', (event) => {
+    window.dispatchEvent(new ErrorEvent('error', {
+      message: `Unhandled Promise Rejection: ${event.reason?.message || event.reason}`,
+      filename: 'Promise',
+      lineno: 0,
+      colno: 0
+    }));
+  });
+}
 
 // Authentication Guard
 onAuthStateChanged(auth, (user) => {
@@ -942,6 +944,8 @@ async function addCompanyRow(place, defaultIndustry, placeIndex = -1) {
 // Email / Cover Letter Draft
 window.generateDraft = async function (companyName, jobTitleOrIndustry) {
   modal.classList.add('show');
+  // Accessibility: move focus into the modal so keyboard users don't interact with the page behind it
+  closeBtn.focus();
   const isCompanyMode = searchMode === 'companies';
   modalSubtitle.textContent = isCompanyMode
     ? `Generating cold email for: ${companyName}`
@@ -1115,6 +1119,26 @@ if (nextBtn) {
 closeBtn.addEventListener('click', () => modal.classList.remove('show'));
 window.addEventListener('click', e => {
   if (e.target === modal) modal.classList.remove('show');
+});
+
+// Accessibility: Escape key closes modal
+window.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && modal.classList.contains('show')) modal.classList.remove('show');
+});
+
+// Accessibility: Focus trap — keeps Tab navigation inside the open modal
+modal.addEventListener('keydown', (e) => {
+  if (!modal.classList.contains('show') || e.key !== 'Tab') return;
+  const focusable = Array.from(modal.querySelectorAll('button:not([disabled]), textarea'));
+  if (focusable.length === 0) return;
+  const first = focusable[0], last = focusable[focusable.length - 1];
+  if (e.shiftKey && document.activeElement === first) {
+    e.preventDefault();
+    last.focus();
+  } else if (!e.shiftKey && document.activeElement === last) {
+    e.preventDefault();
+    first.focus();
+  }
 });
 
 copyBtn.addEventListener('click', async () => {

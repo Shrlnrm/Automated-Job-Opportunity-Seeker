@@ -2,7 +2,7 @@ import { initializeApp } from "firebase/app";
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, setPersistence, browserLocalPersistence, browserSessionPersistence, sendEmailVerification } from "firebase/auth";
 
 const firebaseConfig = {
-  apiKey: "AIzaSy" + "BJnS3EYawuCHHnegronWe_WPRH7TPbO1A",
+  apiKey: "AIzaSyBJnS3EYawuCHHnegronWe_WPRH7TPbO1A",
   authDomain: "ajos-544d6.firebaseapp.com",
   databaseURL: "https://ajos-544d6-default-rtdb.asia-southeast1.firebasedatabase.app",
   projectId: "ajos-544d6",

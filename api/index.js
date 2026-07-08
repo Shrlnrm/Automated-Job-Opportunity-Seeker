@@ -193,6 +193,21 @@ async function requireAuthAndCheckLimits(req, res, next) {
     req.userData = userData;
     req.userRef = userRef;
 
+    // Fire-and-forget cleanup of expired temp search data.
+    // Handles the case where the user closed the tab before the client-side expiry timer fired.
+    // Admin SDK bypasses Firestore rules, so this is safe to call here.
+    const _nowIso = new Date().toISOString();
+    const _expiredFields = {};
+    if (userData.jobSearchTemp?.expiresAt && userData.jobSearchTemp.expiresAt < _nowIso) {
+      _expiredFields.jobSearchTemp = FieldValue.delete();
+    }
+    if (userData.companySearchTemp?.expiresAt && userData.companySearchTemp.expiresAt < _nowIso) {
+      _expiredFields.companySearchTemp = FieldValue.delete();
+    }
+    if (Object.keys(_expiredFields).length > 0) {
+      userRef.update(_expiredFields).catch(e => console.error('Temp cleanup error:', e));
+    }
+
     // Check if Owner
     if (userData.role === 'owner') {
       return next();
@@ -530,7 +545,15 @@ app.post('/api/search', requireAuthAndCheckLimits, async (req, res) => {
   res.setHeader('Cache-Control', 'private, no-store'); // be10
   const query = sanitise(req.body.query, 200);
   const pageToken = sanitise(req.body.pageToken, 50);
-  const inputs = req.body.inputs || {};
+  // Sanitise all known input fields to prevent stored XSS via Firestore temp data
+  const rawInputs = req.body.inputs || {};
+  const inputs = {
+    jobTitle:    sanitise(rawInputs.jobTitle, 100),
+    jobLocation: sanitise(rawInputs.jobLocation, 100),
+    companyName: sanitise(rawInputs.companyName, 100),
+    industry:    sanitise(rawInputs.industry, 100),
+    location:    sanitise(rawInputs.location, 100),
+  };
 
   // rl7: Minimum query length
   if (!query || query.length < 3) {
@@ -618,10 +641,15 @@ app.post('/api/search', requireAuthAndCheckLimits, async (req, res) => {
       };
     });
 
-    // Deduct limit if jobs found
+    // Atomic limit deduction — Firestore transaction prevents race condition where two
+    // concurrent requests both pass the pre-flight check before either decrements.
     if (req.userData.role !== 'owner' && items.length > 0) {
-      await req.userRef.update({
-        jobSearchesRemaining: FieldValue.increment(-1)
+      await db.runTransaction(async (tx) => {
+        const snap = await tx.get(req.userRef);
+        if ((snap.data().jobSearchesRemaining ?? 0) <= 0) {
+          throw Object.assign(new Error('Monthly job search limit reached.'), { status: 429 });
+        }
+        tx.update(req.userRef, { jobSearchesRemaining: FieldValue.increment(-1) });
       });
     }
 
@@ -640,6 +668,9 @@ app.post('/api/search', requireAuthAndCheckLimits, async (req, res) => {
     res.json({ success: true, jobs: jobs });
   } catch (error) {
     console.error('Job search error:', error);
+    if (error.status === 429) {
+      return res.status(429).json({ error: error.message });
+    }
     res.status(500).json({ error: 'Job search failed. Please try again.' }); // be6
   }
 });
@@ -649,7 +680,15 @@ app.post('/api/search-companies', requireAuthAndCheckLimits, async (req, res) =>
   res.setHeader('Cache-Control', 'private, no-store'); // be10
   const query = sanitise(req.body.query, 200);
   const pageToken = sanitise(req.body.pageToken, 3000);
-  const inputs = req.body.inputs || {};
+  // Sanitise all known input fields to prevent stored XSS via Firestore temp data
+  const rawInputs = req.body.inputs || {};
+  const inputs = {
+    jobTitle:    sanitise(rawInputs.jobTitle, 100),
+    jobLocation: sanitise(rawInputs.jobLocation, 100),
+    companyName: sanitise(rawInputs.companyName, 100),
+    industry:    sanitise(rawInputs.industry, 100),
+    location:    sanitise(rawInputs.location, 100),
+  };
 
   // rl7: Minimum query length
   if (!query || query.length < 3) {
@@ -688,18 +727,22 @@ app.post('/api/search-companies', requireAuthAndCheckLimits, async (req, res) =>
     });
     
     const data = await response.json();
-    console.log('PLACES API RESPONSE LENGTH:', data.places ? data.places.length : 0);
 
     if (data.error) {
       console.error('Places API Error:', data.error);
       throw new Error(data.error.message || 'Places API returned an error');
     }
 
-    // Deduct limits based on places loaded
-    if (req.userData.role !== 'owner' && data.places) {
+    // Atomic limit deduction — Firestore transaction prevents race condition where two
+    // concurrent requests both pass the pre-flight check before either decrements.
+    if (req.userData.role !== 'owner' && data.places && data.places.length > 0) {
       const placesLoaded = data.places.length;
-      await req.userRef.update({
-        companyLoadsRemaining: FieldValue.increment(-placesLoaded)
+      await db.runTransaction(async (tx) => {
+        const snap = await tx.get(req.userRef);
+        if ((snap.data().companyLoadsRemaining ?? 0) <= 0) {
+          throw Object.assign(new Error('Monthly company loads limit reached.'), { status: 429 });
+        }
+        tx.update(req.userRef, { companyLoadsRemaining: FieldValue.increment(-placesLoaded) });
       });
     }
 
@@ -723,6 +766,9 @@ app.post('/api/search-companies', requireAuthAndCheckLimits, async (req, res) =>
     res.json({ success: true, places: places, nextPageToken: data.nextPageToken || null });
   } catch (error) {
     console.error('Company search error:', error);
+    if (error.status === 429) {
+      return res.status(429).json({ error: error.message });
+    }
     res.status(500).json({ error: 'Company search failed. Please try again.' }); // be6
   }
 });

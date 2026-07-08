@@ -10,6 +10,9 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
+  "engines": {
+    "node": ">=22"
+  },
   "type": "commonjs",
   "dependencies": {
     "cheerio": "^1.2.0",
@@ -17,7 +20,7 @@
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "express-rate-limit": "^8.5.2",
-    "firebase-admin": "^11.11.0",
+    "firebase-admin": "^14.1.0",
     "helmet": "^8.2.0",
     "node-fetch": "^2.7.0"
   }
