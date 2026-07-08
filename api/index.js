@@ -10,6 +10,13 @@ const net = require('net');
 const { URL } = require('url');
 require('dotenv').config();
 
+// Prevent Vercel crash page when firebase-admin v14 emits a background credential rejection.
+// Node.js 22+ exits the process on unhandled rejections by default; this keeps it alive.
+process.on('unhandledRejection', (reason) => {
+  console.error('[UNHANDLED REJECTION]', reason);
+});
+
+
 // Firebase Admin Initialization
 const { initializeApp, applicationDefault, cert } = require('firebase-admin/app');
 const { getFirestore, FieldValue } = require('firebase-admin/firestore');
@@ -543,6 +550,7 @@ app.get('/api/debug', async (req, res) => {
 // Route: Search Job Listings via SerpAPI Google Jobs engine
 app.post('/api/search', requireAuthAndCheckLimits, async (req, res) => {
   res.setHeader('Cache-Control', 'private, no-store'); // be10
+  if (!db) return res.status(503).json({ error: 'Database service unavailable. Please try again.' });
   const query = sanitise(req.body.query, 200);
   const pageToken = sanitise(req.body.pageToken, 50);
   // Sanitise all known input fields to prevent stored XSS via Firestore temp data
@@ -576,8 +584,8 @@ app.post('/api/search', requireAuthAndCheckLimits, async (req, res) => {
   if (!apiKey) return res.status(500).json({ error: 'Search service is temporarily unavailable.' });
 
   // rl2: Global daily SERP cap
-  const dailyCounterRef = db.collection('globalCounters').doc('daily');
   try {
+    const dailyCounterRef = db.collection('globalCounters').doc('daily');
     const counterDoc = await dailyCounterRef.get();
     const today = new Date().toISOString().slice(0, 10);
     const counterData = counterDoc.exists ? counterDoc.data() : {};
@@ -929,5 +937,14 @@ if (process.env.NODE_ENV !== 'production') {
     console.log(`Server running on http://localhost:${PORT}`);
   });
 }
+
+// Global error handler — must be the last middleware registered.
+// Returns JSON instead of letting Vercel serve its plain-text crash page.
+// The 4-parameter signature is required by Express to recognise this as an error handler.
+app.use((err, req, res, next) => { // eslint-disable-line no-unused-vars
+  console.error('[EXPRESS ERROR]', err);
+  if (res.headersSent) return next(err);
+  res.status(err.status || 500).json({ error: 'An unexpected error occurred. Please try again.' });
+});
 
 module.exports = app;
