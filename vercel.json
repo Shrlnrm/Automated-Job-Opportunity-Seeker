@@ -1,6 +1,5 @@
 {
   "version": 2,
-  "nodeVersion": "24.x",
   "builds": [
     { "src": "api/index.js", "use": "@vercel/node" },
     { "src": "public/**", "use": "@vercel/static" }
