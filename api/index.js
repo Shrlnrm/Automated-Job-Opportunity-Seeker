@@ -1,3 +1,12 @@
+// Must be absolute first — catches any sync throw during module load.
+// firebase-admin v14 init can throw synchronously inside catch blocks with no outer try.
+process.on('uncaughtException', (error) => {
+  console.error('[UNCAUGHT EXCEPTION]', error);
+});
+process.on('unhandledRejection', (reason) => {
+  console.error('[UNHANDLED REJECTION]', reason);
+});
+
 const express = require('express');
 const path = require('path');
 const cors = require('cors');
@@ -9,12 +18,6 @@ const dns = require('dns').promises;
 const net = require('net');
 const { URL } = require('url');
 require('dotenv').config();
-
-// Prevent Vercel crash page when firebase-admin v14 emits a background credential rejection.
-// Node.js 22+ exits the process on unhandled rejections by default; this keeps it alive.
-process.on('unhandledRejection', (reason) => {
-  console.error('[UNHANDLED REJECTION]', reason);
-});
 
 
 // Firebase Admin Initialization
@@ -37,14 +40,24 @@ try {
   }
 } catch (error) {
   console.error("FIREBASE ADMIN CRITICAL ERROR:", error.message);
-  credential = applicationDefault();
+  try {
+    credential = applicationDefault();
+  } catch (adcError) {
+    console.error("ADC also failed:", adcError.message);
+    // credential stays undefined; initializeApp will attempt its own fallback
+  }
 }
 
 try {
   initializeApp({ credential });
 } catch (e) {
   console.error("Firebase init failed:", e.message);
-  initializeApp(); // Empty init fallback so getFirestore doesn't crash boot
+  try {
+    initializeApp(); // tries ADC auto-detection
+  } catch (e2) {
+    console.error("Empty initializeApp also failed:", e2.message);
+    // db will stay undefined; routes return 503 via existing null guard
+  }
 }
 
 let db;
