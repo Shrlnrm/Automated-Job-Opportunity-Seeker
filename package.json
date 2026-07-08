@@ -10,6 +10,9 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
+  "overrides": {
+    "jwks-rsa": "^2.1.5"
+  },
   "engines": {
     "node": ">=22"
   },
