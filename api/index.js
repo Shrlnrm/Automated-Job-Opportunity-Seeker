@@ -20,10 +20,24 @@ const { URL } = require('url');
 require('dotenv').config();
 
 
-// Firebase Admin Initialization
-const { initializeApp, applicationDefault, cert } = require('firebase-admin/app');
-const { getFirestore, FieldValue } = require('firebase-admin/firestore');
-const { getAuth } = require('firebase-admin/auth');
+// Firebase Admin — wrapped so Vercel's module-loader never sees a require() throw.
+// v14 loads @google-cloud/firestore v7 eagerly; if it fails the require() throws synchronously
+// and Vercel's own try-catch intercepts it before our uncaughtException handler can act.
+let initializeApp, applicationDefault, cert, getApps, getApp;
+let getFirestore, FieldValue;
+let _getAuth;
+try {
+  ({ initializeApp, applicationDefault, cert, getApps, getApp } = require('firebase-admin/app'));
+  ({ getFirestore, FieldValue } = require('firebase-admin/firestore'));
+  ({ getAuth: _getAuth } = require('firebase-admin/auth'));
+} catch (sdkErr) {
+  console.error('[FIREBASE SDK LOAD ERROR]', sdkErr.message);
+}
+// Thin wrapper so all call-sites stay unchanged
+const getAuth = () => {
+  if (!_getAuth) throw new Error('Firebase Auth SDK failed to load');
+  return _getAuth();
+};
 
 // On Vercel there is no filesystem — credentials come from an env var JSON string.
 // Locally, fall back to GOOGLE_APPLICATION_CREDENTIALS file path as usual.
@@ -48,21 +62,30 @@ try {
   }
 }
 
+// getApps() guard: prevents double-init on Vercel warm container reuse (confirmed pattern).
+let firebaseApp;
 try {
-  initializeApp({ credential });
+  const existing = getApps ? getApps() : [];
+  if (existing.length) {
+    firebaseApp = getApp ? getApp() : existing[0];
+  } else {
+    firebaseApp = initializeApp({ credential });
+  }
 } catch (e) {
   console.error("Firebase init failed:", e.message);
   try {
-    initializeApp(); // tries ADC auto-detection
+    firebaseApp = initializeApp ? initializeApp() : null;
   } catch (e2) {
     console.error("Empty initializeApp also failed:", e2.message);
-    // db will stay undefined; routes return 503 via existing null guard
   }
 }
 
 let db;
 try {
-  db = getFirestore();
+  if (getFirestore && firebaseApp) {
+    db = getFirestore(firebaseApp);
+    db.settings({ preferRest: true }); // use HTTPS not gRPC — required for Vercel serverless
+  }
 } catch (e) {
   console.error("getFirestore failed:", e.message);
 }
