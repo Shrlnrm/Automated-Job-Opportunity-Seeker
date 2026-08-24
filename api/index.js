@@ -881,31 +881,31 @@ app.post('/api/search-companies', requireAuthAndCheckLimits, async (req, res) =>
     return response.json();
   };
 
-  // Smart Query Broadening: if only company name is provided, include entity keywords
+  // Smart Natural-Language Query Formatting:
+  // Google Places API returns all regional offices when phrased naturally (e.g., "Spotify offices")
+  // rather than strict boolean "OR" keywords.
   let primaryQuery = query;
-  if (inputs.companyName && !inputs.industry && !inputs.location) {
-    primaryQuery = `${inputs.companyName} company OR office`;
+  if (inputs.companyName) {
+    if (inputs.location) {
+      primaryQuery = `${inputs.companyName} offices in ${inputs.location}`;
+    } else if (!inputs.industry) {
+      primaryQuery = `${inputs.companyName} offices`;
+    }
   }
 
   try {
     let data = await fetchPlaces(primaryQuery, pageToken);
 
-    // Automatic 2-Pass Retry: If Pass 1 returns 0 places on page 1, broaden search query
-    if ((!data.places || data.places.length === 0) && !pageToken) {
-      let secondaryQuery = '';
-      if (inputs.companyName) {
-        if (inputs.location) {
-          secondaryQuery = `${inputs.companyName} ${inputs.location}`;
-        } else {
-          secondaryQuery = `${inputs.companyName} headquarters OR office OR branch`;
-        }
-      } else if (inputs.industry) {
-        secondaryQuery = inputs.location ? `${inputs.industry} companies in ${inputs.location}` : `${inputs.industry} companies`;
-      }
+    // Automatic Broadening Retry: If Pass 1 returned 0 or very few (<3) places on initial search,
+    // retry with natural alternative phrasing (e.g. "Spotify locations" or "Spotify")
+    if ((!data.places || data.places.length < 3) && !pageToken && inputs.companyName) {
+      const fallbackQuery = inputs.location
+        ? `${inputs.companyName} ${inputs.location}`
+        : `${inputs.companyName} locations`;
 
-      if (secondaryQuery && secondaryQuery !== primaryQuery) {
-        const retryData = await fetchPlaces(secondaryQuery, '');
-        if (retryData.places && retryData.places.length > 0) {
+      if (fallbackQuery !== primaryQuery) {
+        const retryData = await fetchPlaces(fallbackQuery, '');
+        if (retryData.places && retryData.places.length > (data.places ? data.places.length : 0)) {
           data = retryData;
         }
       }
