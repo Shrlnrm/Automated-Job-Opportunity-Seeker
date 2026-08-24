@@ -579,6 +579,20 @@ function isGenericIndustry(ind) {
   return GENERIC_INDUSTRIES.includes(n) || n.length < 3;
 }
 
+// Heuristic patterns for initial company classification before scraping
+const KNOWN_MNC_REGEX = /\b(google|microsoft|apple|amazon|meta|intel|dyson|shell|exxon|bp|chevron|samsung|sony|toshiba|panasonic|hitachi|siemens|bosch|philips|schneider electric|keysight|agilent|texas instruments|micron|broadcom|qualcomm|nvidia|amd|cisco|oracle|ibm|dell|hp|lenovo|huawei|ericsson|nokia|western digital|seagate|flextronics|foxconn|jabil|plexus|toyota|honda|nissan|bmw|mercedes|volkswagen|nestle|unilever|procter & gamble|johnson & johnson|pfizer|astrazeneca|novartis|roche|mcdonald|kfc|starbucks|nike|adidas|deloitte|pwc|ey|kpmg|mckinsey|bcg|bain|accenture|fedex|dhl|ups|grab|shopee|lazada)\b/i;
+const KNOWN_GLC_REGEX = /\b(petronas|tenaga nasional|\btnb\b|telekom malaysia|\btm\b|khazanah|sime darby|maybank|cimb|rhb|tabung haji|felda|pos malaysia|mimos|prasarana|keretapi tanah melayu|ktmb|singtel|\btemasek holdings\b|bursa malaysia)\b/i;
+const KNOWN_NON_PROFIT_REGEX = /\b(universiti|university|kolej|college|politeknik|hospital|sekolah|school|yayasan|foundation|majlis|jabatan|kementerian|ministry|persatuan|association|church|masjid|temple|charity)\b/i;
+
+function determineInitialCompanyType(name, address = '') {
+  const nameLower = (name || '').toLowerCase();
+  const addressLower = (address || '').toLowerCase();
+  if (KNOWN_GLC_REGEX.test(nameLower)) return 'GLC';
+  if (KNOWN_NON_PROFIT_REGEX.test(nameLower) || KNOWN_NON_PROFIT_REGEX.test(addressLower)) return 'Non-Profit';
+  if (KNOWN_MNC_REGEX.test(nameLower)) return 'MNC';
+  return 'SME';
+}
+
 // Company Type Tag Class Mapper (MNC, SME, GLC, Startup, Non-Profit)
 function getTypeTagClass(type) {
   const t = (type || '').toLowerCase().trim();
@@ -760,8 +774,8 @@ async function performSearch(isNextPage = false) {
 
       // Deduplicate companies against existing currentSearchData.places
       if (isNextPage && currentSearchData.places && currentSearchData.places.length > 0) {
-        const existingNames = new Set(currentSearchData.places.map(p => p.displayName?.text || 'Unknown'));
-        places = places.filter(p => !existingNames.has(p.displayName?.text || 'Unknown'));
+        const existingIds = new Set(currentSearchData.places.map(p => (p.formattedAddress || p.displayName?.text || '').toLowerCase().trim()));
+        places = places.filter(p => !existingIds.has((p.formattedAddress || p.displayName?.text || '').toLowerCase().trim()));
       }
 
       if (places.length === 0 && (!isNextPage || currentSearchData.places.length === 0)) {
@@ -883,7 +897,7 @@ async function addCompanyRow(place, defaultIndustry, placeIndex = -1, sessionId 
   const address  = place.formattedAddress || '';
   const website  = place.websiteUri || '';
   const mapPhone = place.nationalPhoneNumber || '';
-  const initialType = place.companyType || (name.toLowerCase().includes('sdn bhd') ? 'SME' : 'MNC');
+  const initialType = place.companyType || determineInitialCompanyType(name, address);
 
   const tagClass     = getTagClass(industry);
   const typeTagClass = getTypeTagClass(initialType);

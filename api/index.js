@@ -516,6 +516,27 @@ function isGenericIndustry(industry) {
   return GENERIC_INDUSTRIES.includes(norm) || norm.length < 3;
 }
 
+// Heuristic patterns for initial company classification before scraping
+const KNOWN_MNC_REGEX = /\b(google|microsoft|apple|amazon|meta|intel|dyson|shell|exxon|bp|chevron|samsung|sony|toshiba|panasonic|hitachi|siemens|bosch|philips|schneider electric|keysight|agilent|texas instruments|micron|broadcom|qualcomm|nvidia|amd|cisco|oracle|ibm|dell|hp|lenovo|huawei|ericsson|nokia|western digital|seagate|flextronics|foxconn|jabil|plexus|toyota|honda|nissan|bmw|mercedes|volkswagen|nestle|unilever|procter & gamble|johnson & johnson|pfizer|astrazeneca|novartis|roche|mcdonald|kfc|starbucks|nike|adidas|deloitte|pwc|ey|kpmg|mckinsey|bcg|bain|accenture|fedex|dhl|ups|grab|shopee|lazada)\b/i;
+
+const KNOWN_GLC_REGEX = /\b(petronas|tenaga nasional|\btnb\b|telekom malaysia|\btm\b|khazanah|sime darby|maybank|cimb|rhb|tabung haji|felda|pos malaysia|mimos|prasarana|keretapi tanah melayu|ktmb|singtel|\btemasek holdings\b|bursa malaysia)\b/i;
+
+const KNOWN_NON_PROFIT_REGEX = /\b(universiti|university|kolej|college|politeknik|hospital|sekolah|school|yayasan|foundation|majlis|jabatan|kementerian|ministry|persatuan|association|church|masjid|temple|charity)\b/i;
+
+function determineInitialCompanyType(companyName, address = '') {
+  const nameLower = (companyName || '').toLowerCase();
+  const addressLower = (address || '').toLowerCase();
+  if (KNOWN_GLC_REGEX.test(nameLower)) return 'GLC';
+  if (KNOWN_NON_PROFIT_REGEX.test(nameLower) || KNOWN_NON_PROFIT_REGEX.test(addressLower)) return 'Non-Profit';
+  if (KNOWN_MNC_REGEX.test(nameLower)) return 'MNC';
+  return 'SME';
+}
+
+function cleanEntityName(name) {
+  if (!name) return '';
+  return name.replace(/\b(sdn\.?\s*bhd\.?|bhd\.?|pte\.?\s*ltd\.?|ltd\.?|llc|inc\.?|corp\.?|corporation|gmbh|co\.?|plt|enterprise|solutions|holdings|group)\b/gi, '').trim();
+}
+
 // AI Company Classifier: returns { industry, companyType } (MNC, SME, GLC, Startup, Non-Profit)
 async function classifyCompany(companyName, title, metaDesc, address) {
   if (!process.env.OPENROUTER_API_KEY) return null;
@@ -524,7 +545,7 @@ async function classifyCompany(companyName, title, metaDesc, address) {
 
   try {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 3500); // 3.5s timeout
+    const timeoutId = setTimeout(() => controller.abort(), 4000); // 4s timeout
 
     const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       signal: controller.signal,
@@ -534,13 +555,21 @@ async function classifyCompany(companyName, title, metaDesc, address) {
         'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY}`
       },
       body: JSON.stringify({
-        model: 'openrouter/auto',
+        model: 'google/gemini-2.5-flash',
         messages: [
           {
             role: 'system',
-            content: `You are a corporate intelligence classifier. Classify the business into:
-1. industry: 2-3 word industry label (e.g. "Test & Measurement Tech", "Audio & Music Streaming", "Semiconductors & Hardware", "Fintech & Payments", "Medical Healthcare", "Civil Engineering").
-2. companyType: Must be strictly one of ["MNC", "SME", "GLC", "Startup", "Non-Profit"]. (MNC = multinational corporation with global presence; SME = small-medium enterprise or regional private firm; GLC = government-linked or state-owned corporation; Startup = early-stage venture tech).
+            content: `You are an expert corporate intelligence classifier. Classify the business into:
+1. industry: 2-3 word concise industry label (e.g. "Test & Measurement Tech", "Semiconductors & Hardware", "Audio Streaming", "Fintech & Payments", "Medical Healthcare", "Civil Engineering").
+2. companyType: Strictly one of ["MNC", "SME", "GLC", "Startup", "Non-Profit"].
+Guidelines:
+- "MNC": Global multinational corporation / Fortune 500 / mega-enterprise with global brand presence across multiple continents (e.g., Google, Intel, Dyson, Shell, Sony, Samsung, Keysight, Western Digital).
+- "SME": Small & Medium Enterprise, private limited company (Sdn Bhd, Pte Ltd, Ltd, LLC, GmbH), local or regional distributor/vendor, engineering firm, agency, or domestic business.
+- "GLC": Government-linked or state-owned corporation (e.g., Petronas, Tenaga Nasional, Khazanah, Singtel, POS Malaysia, Telekom Malaysia).
+- "Startup": Early-stage venture/tech startup.
+- "Non-Profit": NGO, university, school, government department, hospital, or charity.
+
+Note: Unless a company is a recognized massive global conglomerate, government-owned, or startup/nonprofit, classify domestic and regional private companies (including Sdn Bhd, Pte Ltd, Ltd) as "SME".
 
 Respond with valid JSON ONLY in this format: {"industry":"...","companyType":"..."}`
           },
@@ -549,7 +578,7 @@ Respond with valid JSON ONLY in this format: {"industry":"...","companyType":"..
             content: `Company Name: ${companyName || 'Unknown'}\nLocation/Address: ${address || 'Unknown'}\nWebsite Summary: ${description || 'N/A'}`
           }
         ],
-        max_tokens: 45,
+        max_tokens: 150,
         temperature: 0.1
       })
     });
@@ -566,13 +595,13 @@ Respond with valid JSON ONLY in this format: {"industry":"...","companyType":"..
     const parsed = JSON.parse(jsonMatch[0]);
 
     const validTypes = ['MNC', 'SME', 'GLC', 'Startup', 'Non-Profit'];
-    const normType = (parsed.companyType || '').toUpperCase().trim();
-    const companyType = validTypes.includes(normType) ? normType : (normType.includes('MNC') ? 'MNC' : 'SME');
+    const normType = (parsed.companyType || '').trim();
+    const matchedType = validTypes.find(vt => vt.toLowerCase() === normType.toLowerCase());
     const industry = (parsed.industry || '').replace(/["'`.#*]/g, '').trim().slice(0, 30);
 
     return {
       industry: industry.length >= 3 ? industry : null,
-      companyType: companyType || 'SME'
+      companyType: matchedType || determineInitialCompanyType(companyName, address)
     };
   } catch {
     return null; // Fail silently, keeping default
@@ -898,35 +927,63 @@ app.post('/api/search-companies', requireAuthAndCheckLimits, async (req, res) =>
   try {
     let data;
 
-    // Worldwide Multi-Continent Company Search (No location given):
-    // Concurrently queries across 9 global continent and international indices
-    // to discover and aggregate all matching corporate entities, regional HQs, and branches globally.
-    if (inputs.companyName && !inputs.location && !pageToken) {
-      const globalQueries = [
-        inputs.companyName,
-        `${inputs.companyName} global offices`,
-        `${inputs.companyName} worldwide`,
-        `${inputs.companyName} in North America`,
-        `${inputs.companyName} in Europe`,
-        `${inputs.companyName} in Asia`,
-        `${inputs.companyName} in Australia`,
-        `${inputs.companyName} in South America`,
-        `${inputs.companyName} in Middle East`
-      ];
+    // Multi-Branch & Entity Discovery when a company name is specified:
+    // Concurrently queries across expanded regional, office, and branch queries to discover all locations (HQs & branches).
+    if (inputs.companyName && !pageToken) {
+      const clean = cleanEntityName(inputs.companyName) || inputs.companyName;
+      const queries = new Set();
 
-      const responses = await Promise.all(globalQueries.map(q => fetchPlaces(q)));
+      if (inputs.location) {
+        const loc = inputs.location.trim();
+        const locLower = loc.toLowerCase();
+        queries.add(`${inputs.companyName} in ${loc}`);
+        queries.add(`${clean} in ${loc}`);
+        queries.add(`${clean} ${loc}`);
+        queries.add(`${clean} offices in ${loc}`);
+        queries.add(`${clean} branches in ${loc}`);
 
-      // Deduplicate by normalized address and place name
+        if (locLower.includes('malaysia')) {
+          ['Penang', 'Kuala Lumpur', 'Selangor', 'Johor', 'Sarawak', 'Sabah', 'Perak', 'Melaka'].forEach(st => {
+            queries.add(`${clean} ${st}`);
+          });
+        } else if (locLower.includes('singapore')) {
+          queries.add(`${clean} Singapore`);
+        } else if (locLower.includes('indonesia')) {
+          ['Jakarta', 'Surabaya', 'Bandung', 'Bali', 'Medan'].forEach(st => queries.add(`${clean} ${st}`));
+        } else if (locLower.includes('us') || locLower.includes('usa') || locLower.includes('united states')) {
+          ['California', 'Texas', 'New York', 'Washington', 'Florida'].forEach(st => queries.add(`${clean} ${st}`));
+        }
+      } else {
+        queries.add(inputs.companyName);
+        queries.add(clean);
+        queries.add(`${clean} global offices`);
+        queries.add(`${clean} worldwide`);
+        queries.add(`${clean} in North America`);
+        queries.add(`${clean} in Europe`);
+        queries.add(`${clean} in Asia`);
+        queries.add(`${clean} in Southeast Asia`);
+        queries.add(`${clean} in Australia`);
+      }
+
+      const responses = await Promise.all(Array.from(queries).map(q => fetchPlaces(q)));
+
+      // Deduplicate by normalized address and place name, and filter irrelevant noise
       const seen = new Set();
       const mergedPlaces = [];
       let nextPageToken = null;
+      const cleanLower = clean.toLowerCase();
 
       for (const res of responses) {
         if (res.nextPageToken && !nextPageToken) nextPageToken = res.nextPageToken;
         for (const p of (res.places || [])) {
           const id = (p.formattedAddress || p.displayName?.text || '').toLowerCase().trim();
+          const placeName = (p.displayName?.text || '').toLowerCase();
+          if (cleanLower.length > 2 && !placeName.includes(cleanLower)) {
+            continue;
+          }
           if (id && !seen.has(id)) {
             seen.add(id);
+            p.companyType = determineInitialCompanyType(p.displayName?.text, p.formattedAddress);
             mergedPlaces.push(p);
           }
         }
@@ -938,9 +995,7 @@ app.post('/api/search-companies', requireAuthAndCheckLimits, async (req, res) =>
       };
     } else {
       let primaryQuery = query;
-      if (inputs.companyName && inputs.location) {
-        primaryQuery = `${inputs.companyName} in ${inputs.location}`;
-      } else if (inputs.industry && inputs.location) {
+      if (inputs.industry && inputs.location) {
         primaryQuery = `${inputs.industry} in ${inputs.location}`;
       }
 
@@ -955,6 +1010,12 @@ app.post('/api/search-companies', requireAuthAndCheckLimits, async (req, res) =>
             data = retryData;
           }
         }
+      }
+
+      if (data.places) {
+        data.places.forEach(p => {
+          p.companyType = determineInitialCompanyType(p.displayName?.text, p.formattedAddress);
+        });
       }
     }
 
@@ -1030,7 +1091,7 @@ app.post('/api/scrape', requireAuthAndCheckLimits, async (req, res) => {
     phones: scrapedData.phones || [],
     socials: scrapedData.socials || [],
     refinedIndustry: isGenericIndustry(currentIndustry) ? (classification?.industry || null) : null,
-    companyType: classification?.companyType || (companyName.toLowerCase().includes('sdn bhd') ? 'SME' : 'MNC')
+    companyType: classification?.companyType || determineInitialCompanyType(companyName, address)
   });
 });
 
