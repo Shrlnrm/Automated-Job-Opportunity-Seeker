@@ -590,12 +590,17 @@ tbody tr:hover {
 .tag-3 { background: var(--tag-bg-3); color: var(--tag-color-3); border-color: var(--tag-border-3); }
 .tag-4 { background: var(--tag-bg-4); color: var(--tag-color-4); border-color: var(--tag-border-4); }
 
-/* Company Type Specific Badges */
-.tag-type-mnc     { background: rgba(59, 130, 246, 0.15); color: #60a5fa; border-color: rgba(59, 130, 246, 0.3); }
-.tag-type-sme     { background: rgba(16, 185, 129, 0.15); color: #34d399; border-color: rgba(16, 185, 129, 0.3); }
-.tag-type-glc     { background: rgba(168, 85, 247, 0.15); color: #c084fc; border-color: rgba(168, 85, 247, 0.3); }
-.tag-type-startup { background: rgba(245, 158, 11, 0.15); color: #fbbf24; border-color: rgba(245, 158, 11, 0.3); }
-.tag-type-default { background: var(--surface-2); color: var(--text-secondary); border-color: var(--border); }
+/* Company Type Badges (Neutral, uncolored) */
+.col-type .tag,
+.tag-type-mnc,
+.tag-type-sme,
+.tag-type-glc,
+.tag-type-startup,
+.tag-type-default {
+  background: var(--surface-2);
+  color: var(--text-secondary);
+  border-color: var(--border);
+}
 
 /* ── Contact Chips ──────────────────────────────────────── */
 .contacts-inner {
