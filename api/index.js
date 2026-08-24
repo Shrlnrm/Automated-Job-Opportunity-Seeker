@@ -1330,25 +1330,26 @@ Candidate Profile Data (Ground Truth):
   let userMessage = '';
 
   if (mode === 'jobs') {
-    systemPrompt = `You are an expert career advisor generating a standardized, professional, and concise job application cover email.
+    systemPrompt = `You are an expert career advisor generating a standardized, professional, and concise job application cover letter email for a specific role.
 
 STRICT RULES:
-1. ZERO ASSUMPTIONS: Do NOT hallucinate, fabricate, or assume any company facts, awards, fake achievements, or unprovided candidate experience. Strictly use only the provided company name, job title, and Candidate Profile Data.
+1. ZERO ASSUMPTIONS: Do NOT hallucinate, fabricate, or assume any company facts, awards, fake achievements, or unprovided candidate experience. Strictly use only the provided company name, exact job title, and Candidate Profile Data.
 2. Standard Professional Format: Use standard English capitalization, professional grammar, clean spacing, and crisp paragraphs (never all-lowercase).
-3. Brevity: Keep the email concise (3 short paragraphs maximum).
-4. Missing Info: If any candidate detail is missing or not provided, use standard bracket placeholders (e.g. [Your Name], [Your Key Skills], [Your Contact Info]).
-5. Output ONLY the raw email text (Subject and Body). Do not include introductory notes, markdown code fences, or explanations.
+3. Single Clean Greeting: Use "Hi Hiring Team," as the greeting (never use slash brackets like [ / ]).
+4. Brevity: Keep the email concise (3 short paragraphs maximum).
+5. Missing Info: If any candidate detail is missing or not provided, use standard bracket placeholders (e.g. [Your Name], [Your Key Skills], [Your Contact Info]).
+6. Output ONLY the raw email text (Subject and Body). Do not include introductory notes, markdown code fences, or explanations.
 
 Template Structure:
 Subject: Application for ${jobTitleOrIndustry} - ${candidateName}
 
-Hi [Hiring Manager / Hiring Team],
+Hi Hiring Team,
 
-I am writing to express my interest in the ${jobTitleOrIndustry} position at ${companyName}.
+I am writing to apply for the ${jobTitleOrIndustry} position at ${companyName}.
 
-[1-2 crisp sentences directly connecting the candidate's actual skills (${candidateSkills || 'relevant skills'}) and verified project background (${candidateProjects || 'relevant project accomplishments'}) to the ${jobTitleOrIndustry} role at ${companyName}. Do not make up extra facts.]
+[1-2 crisp sentences directly connecting the candidate's actual skills (${candidateSkills || 'relevant skills'}) and verified project background (${candidateProjects || 'relevant project accomplishments'}) to the requirements of the ${jobTitleOrIndustry} role at ${companyName}. Do not make up extra facts.]
 
-I have attached my resume for your consideration and would welcome the opportunity to discuss how my background aligns with your team's requirements.
+I have attached my resume for your consideration and would welcome the opportunity to discuss how my background aligns with your team's needs.
 
 Best regards,
 ${candidateName}
@@ -1360,29 +1361,30 @@ ${linksLine ? linksLine : ''}`.trim();
     systemPrompt = `You are an expert career advisor generating a standardized, professional, and concise exploratory cold outreach email to a prospective employer.
 
 STRICT RULES:
-1. ZERO ASSUMPTIONS: Do NOT hallucinate, fabricate, or assume unverified company praise, fake news, or unprovided candidate achievements. Strictly use only the provided company name, industry, and Candidate Profile Data.
+1. ZERO ASSUMPTIONS & GENERAL INQUIRY: Do NOT assume any specific job title or department. Inquire generally about potential career opportunities at the company. Do NOT hallucinate unverified company praise or fake accomplishments.
 2. Standard Professional Format: Use standard English capitalization, professional grammar, clean spacing, and crisp paragraphs (never all-lowercase).
-3. Brevity: Keep the email concise (3 short paragraphs maximum).
-4. Missing Info: If any candidate detail is missing or not provided, use standard bracket placeholders (e.g. [Your Name], [Your Key Skills], [Your Contact Info]).
-5. Output ONLY the raw email text (Subject and Body). Do not include introductory notes, markdown code fences, or explanations.
+3. Single Clean Greeting: Use "Hi Hiring Team," as the greeting (never use slash brackets like [ / ]).
+4. Brevity: Keep the email concise (3 short paragraphs maximum).
+5. Missing Info: If any candidate detail is missing or not provided, use standard bracket placeholders (e.g. [Your Name], [Your Key Skills], [Your Contact Info]).
+6. Output ONLY the raw email text (Subject and Body). Do not include introductory notes, markdown code fences, or explanations.
 
 Template Structure:
-Subject: Inquiring about Opportunities in ${jobTitleOrIndustry} at ${companyName} - ${candidateName}
+Subject: Exploring Opportunities at ${companyName} - ${candidateName}
 
-Hi [Hiring Team / Team Lead],
+Hi Hiring Team,
 
-I am reaching out to explore potential opportunities within the ${jobTitleOrIndustry} division at ${companyName}.
+I am reaching out to inquire about potential career opportunities at ${companyName}.
 
-[1-2 crisp sentences stating the candidate's background (${candidateEdu || 'educational background'}), core strengths in ${candidateSkills || 'key skills'}, and verified project experience (${candidateProjects || 'recent project work'}). Do not fabricate company compliments or unverified achievements.]
+[1-2 crisp sentences stating the candidate's background (${candidateEdu || 'educational background'}), core strengths in ${candidateSkills || 'key skills'}, and verified project accomplishments (${candidateProjects || 'recent project work'}). Do not assume any specific job title or fabricate unverified claims.]
 
-If you have current or upcoming openings matching this background, I would welcome the opportunity to connect briefly or be directed to the appropriate hiring contact.
+Are you currently exploring new candidates or open to an exploratory conversation? If someone else oversees hiring for your team, I would appreciate being directed to the appropriate contact.
 
 Best regards,
 ${candidateName}
 ${contactLine}
 ${linksLine ? linksLine : ''}`.trim();
 
-    userMessage = `${profileContext}\nTarget Company: """${companyName}"""\nTarget Industry: """${jobTitleOrIndustry}"""`;
+    userMessage = `${profileContext}\nTarget Company: """${companyName}"""\nCompany Industry Context: """${jobTitleOrIndustry}"""`;
   }
 
   try {
