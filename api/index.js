@@ -881,32 +881,56 @@ app.post('/api/search-companies', requireAuthAndCheckLimits, async (req, res) =>
     return response.json();
   };
 
-  // Smart Natural-Language Query Formatting:
-  // Google Places API returns all regional offices when phrased naturally (e.g., "Spotify offices")
-  // rather than strict boolean "OR" keywords.
-  let primaryQuery = query;
-  if (inputs.companyName) {
-    if (inputs.location) {
-      primaryQuery = `${inputs.companyName} offices in ${inputs.location}`;
-    } else if (!inputs.industry) {
-      primaryQuery = `${inputs.companyName} offices`;
-    }
-  }
-
   try {
-    let data = await fetchPlaces(primaryQuery, pageToken);
+    let data;
 
-    // Automatic Broadening Retry: If Pass 1 returned 0 or very few (<3) places on initial search,
-    // retry with natural alternative phrasing (e.g. "Spotify locations" or "Spotify")
-    if ((!data.places || data.places.length < 3) && !pageToken && inputs.companyName) {
-      const fallbackQuery = inputs.location
-        ? `${inputs.companyName} ${inputs.location}`
-        : `${inputs.companyName} locations`;
+    // Standalone Company Search (No location given):
+    // Run parallel multi-query lookups across Google Maps' global office, location, and brand indices
+    // to discover and aggregate all regional headquarters and offices worldwide.
+    if (inputs.companyName && !inputs.location && !pageToken) {
+      const [resOffices, resLocations, resExact] = await Promise.all([
+        fetchPlaces(`${inputs.companyName} offices`),
+        fetchPlaces(`${inputs.companyName} locations`),
+        fetchPlaces(inputs.companyName)
+      ]);
 
-      if (fallbackQuery !== primaryQuery) {
-        const retryData = await fetchPlaces(fallbackQuery, '');
-        if (retryData.places && retryData.places.length > (data.places ? data.places.length : 0)) {
-          data = retryData;
+      const places1 = resOffices.places || [];
+      const places2 = resLocations.places || [];
+      const places3 = resExact.places || [];
+
+      // Deduplicate by formatted address and name
+      const seen = new Set();
+      const mergedPlaces = [];
+      for (const p of [...places1, ...places2, ...places3]) {
+        const id = (p.formattedAddress || p.displayName?.text || '').toLowerCase().trim();
+        if (id && !seen.has(id)) {
+          seen.add(id);
+          mergedPlaces.push(p);
+        }
+      }
+
+      data = {
+        places: mergedPlaces,
+        nextPageToken: resOffices.nextPageToken || resLocations.nextPageToken || resExact.nextPageToken || null
+      };
+    } else {
+      let primaryQuery = query;
+      if (inputs.companyName && inputs.location) {
+        primaryQuery = `${inputs.companyName} in ${inputs.location}`;
+      } else if (inputs.industry && inputs.location) {
+        primaryQuery = `${inputs.industry} in ${inputs.location}`;
+      }
+
+      data = await fetchPlaces(primaryQuery, pageToken);
+
+      // Automatic Fallback Retry if 0 results found
+      if ((!data.places || data.places.length === 0) && !pageToken) {
+        let fallbackQuery = inputs.location ? `${query} ${inputs.location}` : `${query} locations`;
+        if (fallbackQuery !== primaryQuery) {
+          const retryData = await fetchPlaces(fallbackQuery, '');
+          if (retryData.places && retryData.places.length > 0) {
+            data = retryData;
+          }
         }
       }
     }
