@@ -257,6 +257,7 @@ async function restoreFromSessionStorage() {
       if (document.getElementById('companyName')) document.getElementById('companyName').value = parsed.inputs.companyName || '';
       if (document.getElementById('industry')) document.getElementById('industry').value = parsed.inputs.industry || '';
       if (document.getElementById('location')) document.getElementById('location').value = parsed.inputs.location || '';
+      updateSearchHint();
     } else if (searchMode === 'jobs' && parsed.inputs) {
       if (document.getElementById('jobTitle')) document.getElementById('jobTitle').value = parsed.inputs.jobTitle || '';
       if (document.getElementById('jobLocation')) document.getElementById('jobLocation').value = parsed.inputs.jobLocation || '';
@@ -531,6 +532,22 @@ const closeBtn = document.querySelector('.close-btn');
 const copyBtn = document.getElementById('copyBtn');
 const draftTextarea = document.getElementById('draftTextarea');
 const modalSubtitle = document.getElementById('modalSubtitle');
+
+// Dynamic Search Hint (Only visible when all 3 company fields are empty)
+function updateSearchHint() {
+  const hintEl = document.getElementById('searchHint');
+  if (!hintEl) return;
+  const company = document.getElementById('companyName')?.value.trim() || '';
+  const industry = document.getElementById('industry')?.value.trim() || '';
+  const location = document.getElementById('location')?.value.trim() || '';
+  hintEl.style.display = (!company && !industry && !location) ? 'inline-block' : 'none';
+}
+
+['companyName', 'industry', 'location'].forEach(id => {
+  const el = document.getElementById(id);
+  if (el) el.addEventListener('input', updateSearchHint);
+});
+updateSearchHint();
 
 // Tag colour index cycles 0-4
 const TAG_CLASSES = ['tag-0', 'tag-1', 'tag-2', 'tag-3', 'tag-4'];
