@@ -143,7 +143,7 @@ function populateProfileUI(p) {
   if (profilePhone) profilePhone.value = p.phone || '';
 
   if (profileSavedBadge) {
-    profileSavedBadge.style.display = 'block';
+    profileSavedBadge.style.display = 'inline-flex';
   }
 }
 
@@ -298,7 +298,7 @@ if (saveProfileBtn) {
         throw new Error(data.error || 'Failed to save profile');
       }
 
-      if (profileSavedBadge) profileSavedBadge.style.display = 'block';
+      if (profileSavedBadge) profileSavedBadge.style.display = 'inline-flex';
       showToast('Profile updated and saved to database!');
     } catch (err) {
       console.error('Profile save error:', err);
