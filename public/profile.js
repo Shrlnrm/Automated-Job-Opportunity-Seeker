@@ -86,7 +86,7 @@ const currentPasswordInput = document.getElementById('currentPassword');
 const newPasswordInput = document.getElementById('newPassword');
 const confirmPasswordInput = document.getElementById('confirmPassword');
 const updatePasswordBtn = document.getElementById('updatePasswordBtn');
-const sendResetEmailBtn = document.getElementById('sendResetEmailBtn');
+const googleAuthNotice = document.getElementById('googleAuthNotice');
 
 const themeToggleBtn = document.getElementById('themeToggleBtn');
 const logoutBtn = document.getElementById('logoutBtn');
@@ -318,6 +318,11 @@ if (changePasswordForm) {
     const newPass = newPasswordInput?.value || '';
     const confirmPass = confirmPasswordInput?.value || '';
 
+    if (!currentPass) {
+      showToast('Please enter your current password.');
+      return;
+    }
+
     if (newPass.length < 6) {
       showToast('New password must be at least 6 characters.');
       return;
@@ -329,7 +334,7 @@ if (changePasswordForm) {
     }
 
     const user = auth.currentUser;
-    if (!user) {
+    if (!user || !user.email) {
       window.location.href = '/login.html';
       return;
     }
@@ -338,52 +343,27 @@ if (changePasswordForm) {
     updatePasswordBtn.textContent = 'Updating...';
 
     try {
-      // Reauthenticate if current password was entered
-      if (currentPass && user.email) {
-        const credential = EmailAuthProvider.credential(user.email, currentPass);
-        await reauthenticateWithCredential(user, credential);
-      }
+      // Reauthenticate with current password
+      const credential = EmailAuthProvider.credential(user.email, currentPass);
+      await reauthenticateWithCredential(user, credential);
 
       await updatePassword(user, newPass);
       showToast('Password updated successfully!');
       changePasswordForm.reset();
     } catch (err) {
       console.error('Password update error:', err);
-      if (err.code === 'auth/requires-recent-login') {
-        showToast('Please enter your Current Password to confirm this change.');
-      } else if (err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') {
+      if (err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') {
         showToast('Current password incorrect.');
+      } else if (err.code === 'auth/too-many-requests') {
+        showToast('Too many attempts. Please try again later.');
+      } else if (err.code === 'auth/requires-recent-login') {
+        showToast('Session expired. Please log in again to change password.');
       } else {
         showToast(err.message || 'Failed to update password.');
       }
     } finally {
       updatePasswordBtn.disabled = false;
       updatePasswordBtn.textContent = 'Update Password';
-    }
-  });
-}
-
-// Send Password Reset Email Link
-if (sendResetEmailBtn) {
-  sendResetEmailBtn.addEventListener('click', async () => {
-    const user = auth.currentUser;
-    if (!user || !user.email) {
-      showToast('No active email found.');
-      return;
-    }
-
-    sendResetEmailBtn.disabled = true;
-    sendResetEmailBtn.textContent = 'Sending email...';
-
-    try {
-      await sendPasswordResetEmail(auth, user.email);
-      showToast(`Password reset link sent to ${user.email}`);
-    } catch (err) {
-      console.error('Password reset email error:', err);
-      showToast(err.message || 'Failed to send reset email.');
-    } finally {
-      sendResetEmailBtn.disabled = false;
-      sendResetEmailBtn.textContent = 'Send Password Reset Email Instead';
     }
   });
 }
@@ -400,6 +380,16 @@ onAuthStateChanged(auth, async (user) => {
   }
   if (profileEmail && !profileEmail.value) {
     profileEmail.value = user.email;
+  }
+
+  // Handle Google OAuth users
+  const isGoogleUser = user.providerData && user.providerData.some(p => p.providerId === 'google.com');
+  if (isGoogleUser) {
+    if (googleAuthNotice) googleAuthNotice.style.display = 'block';
+    if (changePasswordForm) changePasswordForm.style.display = 'none';
+  } else {
+    if (googleAuthNotice) googleAuthNotice.style.display = 'none';
+    if (changePasswordForm) changePasswordForm.style.display = 'flex';
   }
 
   // Load existing profile from database

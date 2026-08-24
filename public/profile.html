@@ -141,11 +141,15 @@
           <span style="font-size: var(--font-size-xs); color: var(--text-muted);">Firebase Auth</span>
         </div>
 
+        <div id="googleAuthNotice" style="display: none; font-size: var(--font-size-xs); color: var(--text-secondary); line-height: 1.5; padding: 12px; background: var(--surface-2); border-radius: var(--radius-md); border: 1px solid var(--border);">
+          You are signed in with Google. Your authentication and security are managed through your Google Account.
+        </div>
+
         <form id="changePasswordForm" style="display: flex; flex-direction: column; gap: 12px;">
           <div class="form-row">
             <label for="currentPassword">Current Password:</label>
             <div class="password-input-wrapper">
-              <input type="password" id="currentPassword" placeholder="••••••••" autocomplete="current-password"/>
+              <input type="password" id="currentPassword" placeholder="••••••••" autocomplete="current-password" required maxlength="128"/>
               <button type="button" class="password-toggle-btn" aria-label="Toggle password visibility" tabindex="-1">
                 <svg class="eye-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                   <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
@@ -161,7 +165,7 @@
           <div class="form-row">
             <label for="newPassword">New Password:</label>
             <div class="password-input-wrapper">
-              <input type="password" id="newPassword" placeholder="At least 6 characters" autocomplete="new-password" required/>
+              <input type="password" id="newPassword" placeholder="At least 6 characters" autocomplete="new-password" required minlength="6" maxlength="128"/>
               <button type="button" class="password-toggle-btn" aria-label="Toggle password visibility" tabindex="-1">
                 <svg class="eye-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                   <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8z"></path>
@@ -177,7 +181,7 @@
           <div class="form-row">
             <label for="confirmPassword">Confirm New Password:</label>
             <div class="password-input-wrapper">
-              <input type="password" id="confirmPassword" placeholder="••••••••" autocomplete="new-password" required/>
+              <input type="password" id="confirmPassword" placeholder="••••••••" autocomplete="new-password" required minlength="6" maxlength="128"/>
               <button type="button" class="password-toggle-btn" aria-label="Toggle password visibility" tabindex="-1">
                 <svg class="eye-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                   <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8z"></path>
@@ -194,9 +198,6 @@
           <div class="profile-card-actions" style="margin-top: 4px;">
             <button type="submit" id="updatePasswordBtn" class="btn btn-primary">
               Update Password
-            </button>
-            <button type="button" id="sendResetEmailBtn" class="btn btn-ghost">
-              Send Reset Email
             </button>
           </div>
         </form>
