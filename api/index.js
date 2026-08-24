@@ -476,14 +476,92 @@ async function scrapeWebsite(url) {
       socials.push(match[1]);
     }
     
+    // Extract title & meta description for business classification
+    const title = $('title').text().replace(/[\x00-\x1f\x7f]/g, '').trim().slice(0, 150);
+    const metaDesc = (
+      $('meta[name="description"]').attr('content') ||
+      $('meta[property="og:description"]').attr('content') ||
+      ''
+    ).replace(/[\x00-\x1f\x7f]/g, '').trim().slice(0, 300);
+
     return {
       emails: filteredEmails,
       phones: [...new Set(phones)],
-      socials: [...new Set(socials)]
+      socials: [...new Set(socials)],
+      title,
+      metaDesc
     };
   } catch (error) {
     console.error(`Error scraping ${url}:`, error.message);
-    return { emails: [], phones: [], socials: [] };
+    return { emails: [], phones: [], socials: [], title: '', metaDesc: '' };
+  }
+}
+
+// Helper: Generic Google Places industries that benefit from AI refinement
+const GENERIC_INDUSTRIES = [
+  'corporate office',
+  'corporate campus',
+  'establishment',
+  'point of interest',
+  'unknown',
+  'office',
+  'headquarters',
+  'company',
+  'business center'
+];
+
+function isGenericIndustry(industry) {
+  if (!industry) return true;
+  const norm = industry.toLowerCase().trim();
+  return GENERIC_INDUSTRIES.includes(norm) || norm.length < 3;
+}
+
+// AI Industry Classification Helper with strict 3.5s timeout and fail-safe
+async function classifyIndustry(companyName, title, metaDesc) {
+  if (!process.env.OPENROUTER_API_KEY) return null;
+  const description = [title, metaDesc].filter(Boolean).join(' - ').trim();
+  if (!description && !companyName) return null;
+
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 3500); // 3.5s timeout
+
+    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+      signal: controller.signal,
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY}`
+      },
+      body: JSON.stringify({
+        model: 'openrouter/auto',
+        messages: [
+          {
+            role: 'system',
+            content: 'You are a business classifier. Classify the company into a concise 2-3 word industry label (e.g., "Drone & Robotics", "Fintech & Payments", "Construction & Civil", "Renewable Energy", "Medical Clinic", "Legal Services", "Logistics & Supply"). Return ONLY the 2-3 word label. No punctuation, no markdown, max 25 characters.'
+          },
+          {
+            role: 'user',
+            content: `Company: ${companyName || 'Unknown'}\nWebsite summary: ${description || 'No website description'}`
+          }
+        ],
+        max_tokens: 15,
+        temperature: 0.1
+      })
+    });
+
+    clearTimeout(timeoutId);
+    if (!response.ok) return null;
+
+    const data = await response.json();
+    const label = data.choices?.[0]?.message?.content?.trim();
+    if (!label) return null;
+    
+    // Clean up label: remove quotes, periods, limit length
+    const cleanLabel = label.replace(/["'`.#*]/g, '').trim().slice(0, 30);
+    return cleanLabel.length >= 3 ? cleanLabel : null;
+  } catch {
+    return null; // Fail silently, keeping default
   }
 }
 
@@ -845,20 +923,33 @@ app.post('/api/search-companies', requireAuthAndCheckLimits, async (req, res) =>
   }
 });
 
-// Route: Scrape Website (SSRF-protected)
+// Route: Scrape Website (SSRF-protected) & AI Industry Refinement
 app.post('/api/scrape', requireAuthAndCheckLimits, async (req, res) => {
   res.setHeader('Cache-Control', 'private, no-store'); // be10
-  const { website } = req.body;
-  const emptyResult = { emails: [], phones: [], socials: [] };
-  if (!website || typeof website !== 'string') return res.json(emptyResult);
+  const website = typeof req.body.website === 'string' ? req.body.website.trim() : '';
+  const companyName = sanitise(req.body.companyName, 100);
+  const currentIndustry = sanitise(req.body.currentIndustry, 100);
 
-  // Block requests to internal / private networks
-  if (!(await isUrlSafe(website))) {
-    return res.json(emptyResult);
+  let scrapedData = { emails: [], phones: [], socials: [], title: '', metaDesc: '' };
+
+  if (website) {
+    if (await isUrlSafe(website)) {
+      scrapedData = await scrapeWebsite(website);
+    }
   }
 
-  const scrapedData = await scrapeWebsite(website);
-  res.json(scrapedData);
+  // Only trigger AI classification if the current industry is generic or missing
+  let refinedIndustry = null;
+  if (isGenericIndustry(currentIndustry) && (scrapedData.title || scrapedData.metaDesc || companyName)) {
+    refinedIndustry = await classifyIndustry(companyName, scrapedData.title, scrapedData.metaDesc);
+  }
+
+  res.json({
+    emails: scrapedData.emails || [],
+    phones: scrapedData.phones || [],
+    socials: scrapedData.socials || [],
+    refinedIndustry: refinedIndustry || null
+  });
 });
 
 app.post('/api/draft', draftLimiter, requireAuthAndCheckLimits, async (req, res) => {

@@ -543,6 +543,24 @@ function getTagClass(label) {
   return tagColorMap[label];
 }
 
+const GENERIC_INDUSTRIES = [
+  'corporate office',
+  'corporate campus',
+  'establishment',
+  'point of interest',
+  'unknown',
+  'office',
+  'headquarters',
+  'company',
+  'business center'
+];
+
+function isGenericIndustry(ind) {
+  if (!ind) return true;
+  const n = ind.toLowerCase().trim();
+  return GENERIC_INDUSTRIES.includes(n) || n.length < 3;
+}
+
 // HTML-escape to prevent XSS when injecting dynamic text via innerHTML
 function escapeHtml(str) {
   const div = document.createElement('div');
@@ -882,35 +900,63 @@ async function addCompanyRow(place, defaultIndustry, placeIndex = -1) {
     contactsHTML += `<div class="contact-chip">${iconPhone}${escapeHtml(mapPhone)}</div>`;
   }
 
-  if (website) {
+  if (website || isGenericIndustry(industry)) {
     try {
       const scrapeRes  = await fetchWithAuth('/api/scrape', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ website })
+        body: JSON.stringify({ website: website || '', companyName: name, currentIndustry: industry })
       });
       const scrapeData = await scrapeRes.json();
 
-      scrapeData.emails.filter(isValidEmail).forEach(e => {
-        contactsHTML += `<div class="contact-chip">${iconMail}${escapeHtml(e)}</div>`;
-      });
+      // Dynamically refine industry tag if AI returned a more accurate classification
+      if (scrapeData.refinedIndustry) {
+        const newIndustry = scrapeData.refinedIndustry;
+        const newTagClass = getTagClass(newIndustry);
+        const tagEl = tr.querySelector('td .tag');
+        if (tagEl) {
+          tagEl.className = `tag ${newTagClass}`;
+          tagEl.textContent = newIndustry;
+        }
+        const draftBtn = tr.querySelector('.draft-btn');
+        if (draftBtn) {
+          draftBtn.setAttribute('data-industry', newIndustry);
+        }
+        if (placeIndex >= 0 && currentSearchData.places && currentSearchData.places[placeIndex]) {
+          if (!currentSearchData.places[placeIndex].primaryTypeDisplayName) {
+            currentSearchData.places[placeIndex].primaryTypeDisplayName = {};
+          }
+          currentSearchData.places[placeIndex].primaryTypeDisplayName.text = newIndustry;
+        }
+        populateFilters();
+      }
 
-      scrapeData.phones.filter(p => p !== mapPhone).forEach(p => {
-        contactsHTML += `<div class="contact-chip">${iconPhone}${escapeHtml(p)}</div>`;
-      });
+      if (scrapeData.emails) {
+        scrapeData.emails.filter(isValidEmail).forEach(e => {
+          contactsHTML += `<div class="contact-chip">${iconMail}${escapeHtml(e)}</div>`;
+        });
+      }
+
+      if (scrapeData.phones) {
+        scrapeData.phones.filter(p => p !== mapPhone).forEach(p => {
+          contactsHTML += `<div class="contact-chip">${iconPhone}${escapeHtml(p)}</div>`;
+        });
+      }
 
       const seenHosts = new Set();
-      scrapeData.socials.forEach(s => {
-        try {
-          const host = new URL(s).hostname.replace('www.', '');
-          if (seenHosts.has(host)) return;
-          seenHosts.add(host);
-          contactsHTML += `<div class="contact-chip">${iconLink}<a href="${escapeHtml(s)}" target="_blank" rel="noopener noreferrer" class="social-link">${escapeHtml(host)}</a></div>`;
-        } catch (_) {}
-      });
+      if (scrapeData.socials) {
+        scrapeData.socials.forEach(s => {
+          try {
+            const host = new URL(s).hostname.replace('www.', '');
+            if (seenHosts.has(host)) return;
+            seenHosts.add(host);
+            contactsHTML += `<div class="contact-chip">${iconLink}<a href="${escapeHtml(s)}" target="_blank" rel="noopener noreferrer" class="social-link">${escapeHtml(host)}</a></div>`;
+          } catch (_) {}
+        });
+      }
 
     } catch (e) {
-      console.error('Scrape failed for ' + website);
+      console.error('Scrape/refinement failed for ' + name, e);
     }
   }
 
