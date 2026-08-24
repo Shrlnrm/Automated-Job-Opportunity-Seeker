@@ -507,13 +507,60 @@ const GENERIC_INDUSTRIES = [
   'office',
   'headquarters',
   'company',
-  'business center'
+  'business center',
+  'manufacturer',
+  'services',
+  'service',
+  'wholesaler',
+  'supplier',
+  'store',
+  'shop',
+  'dealer',
+  'distributor',
+  'commercial',
+  'business',
+  'general contractor',
+  'enterprise'
 ];
 
-function isGenericIndustry(industry) {
+function isGenericIndustry(industry, companyName = '') {
   if (!industry) return true;
   const norm = industry.toLowerCase().trim();
-  return GENERIC_INDUSTRIES.includes(norm) || norm.length < 3;
+  if (norm.length < 3 || GENERIC_INDUSTRIES.includes(norm)) return true;
+  if (companyName) {
+    const compNorm = companyName.toLowerCase().trim();
+    if (norm === compNorm || norm.includes(compNorm) || compNorm.includes(norm)) return true;
+  }
+  return false;
+}
+
+function normalizeAddress(addr) {
+  if (!addr) return '';
+  return addr
+    .toLowerCase()
+    .replace(/\bno\.?\s*/g, '')
+    .replace(/[,\-\.\/\\#]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function isLocationMatch(address, requestedLocation) {
+  if (!requestedLocation) return true;
+  const loc = requestedLocation.toLowerCase().trim();
+  const addr = (address || '').toLowerCase();
+  
+  if (loc === 'malaysia' || loc.includes('malaysia')) {
+    if (addr.includes('singapore') || addr.includes('indonesia') || addr.includes('thailand') || addr.includes('philippines')) {
+      return false;
+    }
+    return addr.includes('malaysia') || /\b(kuala lumpur|selangor|penang|pulau pinang|johor|sabah|sarawak|perak|melaka|pahang|kedah|kelantan|terengganu|negeri sembilan|perlis|putrajaya|labuan|cyberjaya|petaling jaya|shah alam|bayan lepas|georgetown)\b/.test(addr);
+  }
+  
+  if (loc === 'singapore' || loc.includes('singapore')) {
+    return addr.includes('singapore');
+  }
+
+  return addr.includes(loc);
 }
 
 // Heuristic patterns for initial company classification before scraping
@@ -967,30 +1014,48 @@ app.post('/api/search-companies', requireAuthAndCheckLimits, async (req, res) =>
 
       const responses = await Promise.all(Array.from(queries).map(q => fetchPlaces(q)));
 
-      // Deduplicate by normalized address and place name, and filter irrelevant noise
-      const seen = new Set();
-      const mergedPlaces = [];
+      // Deduplicate by normalized address, merge rich details, and filter irrelevant noise / cross-border results
+      const seenAddresses = new Map();
       let nextPageToken = null;
       const cleanLower = clean.toLowerCase();
 
       for (const res of responses) {
         if (res.nextPageToken && !nextPageToken) nextPageToken = res.nextPageToken;
         for (const p of (res.places || [])) {
-          const id = (p.formattedAddress || p.displayName?.text || '').toLowerCase().trim();
-          const placeName = (p.displayName?.text || '').toLowerCase();
-          if (cleanLower.length > 2 && !placeName.includes(cleanLower)) {
+          const addr = p.formattedAddress || '';
+          const placeName = p.displayName?.text || '';
+
+          // 1. Filter out irrelevant noise
+          if (cleanLower.length > 2 && !placeName.toLowerCase().includes(cleanLower)) {
             continue;
           }
-          if (id && !seen.has(id)) {
-            seen.add(id);
-            p.companyType = determineInitialCompanyType(p.displayName?.text, p.formattedAddress);
-            mergedPlaces.push(p);
+
+          // 2. Filter out places outside the requested country/location
+          if (inputs.location && !isLocationMatch(addr, inputs.location)) {
+            continue;
+          }
+
+          // 3. Normalize address to deduplicate duplicate entries for the same building/unit
+          const normAddr = normalizeAddress(addr) || placeName.toLowerCase().trim();
+
+          if (!seenAddresses.has(normAddr)) {
+            p.companyType = determineInitialCompanyType(placeName, addr);
+            seenAddresses.set(normAddr, p);
+          } else {
+            // Merge & upgrade fields if this entry has website or phone
+            const existing = seenAddresses.get(normAddr);
+            if (!existing.websiteUri && p.websiteUri) {
+              existing.websiteUri = p.websiteUri;
+            }
+            if (!existing.nationalPhoneNumber && p.nationalPhoneNumber) {
+              existing.nationalPhoneNumber = p.nationalPhoneNumber;
+            }
           }
         }
       }
 
       data = {
-        places: mergedPlaces,
+        places: Array.from(seenAddresses.values()),
         nextPageToken: nextPageToken
       };
     } else {
@@ -1013,6 +1078,7 @@ app.post('/api/search-companies', requireAuthAndCheckLimits, async (req, res) =>
       }
 
       if (data.places) {
+        data.places = data.places.filter(p => !inputs.location || isLocationMatch(p.formattedAddress, inputs.location));
         data.places.forEach(p => {
           p.companyType = determineInitialCompanyType(p.displayName?.text, p.formattedAddress);
         });
@@ -1090,7 +1156,7 @@ app.post('/api/scrape', requireAuthAndCheckLimits, async (req, res) => {
     emails: scrapedData.emails || [],
     phones: scrapedData.phones || [],
     socials: scrapedData.socials || [],
-    refinedIndustry: isGenericIndustry(currentIndustry) ? (classification?.industry || null) : null,
+    refinedIndustry: isGenericIndustry(currentIndustry, companyName) ? (classification?.industry || null) : null,
     companyType: classification?.companyType || determineInitialCompanyType(companyName, address)
   });
 });

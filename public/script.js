@@ -570,13 +570,31 @@ const GENERIC_INDUSTRIES = [
   'office',
   'headquarters',
   'company',
-  'business center'
+  'business center',
+  'manufacturer',
+  'services',
+  'service',
+  'wholesaler',
+  'supplier',
+  'store',
+  'shop',
+  'dealer',
+  'distributor',
+  'commercial',
+  'business',
+  'general contractor',
+  'enterprise'
 ];
 
-function isGenericIndustry(ind) {
+function isGenericIndustry(ind, companyName = '') {
   if (!ind) return true;
   const n = ind.toLowerCase().trim();
-  return GENERIC_INDUSTRIES.includes(n) || n.length < 3;
+  if (GENERIC_INDUSTRIES.includes(n) || n.length < 3) return true;
+  if (companyName) {
+    const compNorm = companyName.toLowerCase().trim();
+    if (n === compNorm || n.includes(compNorm) || compNorm.includes(n)) return true;
+  }
+  return false;
 }
 
 // Heuristic patterns for initial company classification before scraping
@@ -671,7 +689,7 @@ async function performSearch(isNextPage = false) {
       showToast('Please enter at least one of: Company Name, Industry, or Location.');
       return;
     }
-    currentIndustry = industryInput || companyInput || 'Unknown';
+    currentIndustry = industryInput || 'Enterprise';
 
     const parts = [];
     if (companyInput) parts.push(companyInput);
@@ -893,7 +911,8 @@ function addJobRow(job) {
 async function addCompanyRow(place, defaultIndustry, placeIndex = -1, sessionId = null) {
   rowCount++;
   const name     = place.displayName?.text || 'Unknown';
-  const industry = place.primaryTypeDisplayName?.text || defaultIndustry;
+  const rawIndustry = place.primaryTypeDisplayName?.text || '';
+  const industry = rawIndustry && !isGenericIndustry(rawIndustry, name) ? rawIndustry : (rawIndustry || defaultIndustry || 'Enterprise');
   const address  = place.formattedAddress || '';
   const website  = place.websiteUri || '';
   const mapPhone = place.nationalPhoneNumber || '';
@@ -980,7 +999,7 @@ async function addCompanyRow(place, defaultIndustry, placeIndex = -1, sessionId 
     contactsHTML += `<div class="contact-chip">${iconPhone}${escapeHtml(mapPhone)}</div>`;
   }
 
-  if (website || isGenericIndustry(industry) || !place.companyType) {
+  if (website || isGenericIndustry(industry, name) || !place.companyType) {
     try {
       const scrapeRes  = await fetchWithAuth('/api/scrape', {
         method: 'POST',
