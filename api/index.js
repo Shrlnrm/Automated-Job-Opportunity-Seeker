@@ -164,6 +164,15 @@ const draftLimiter = rateLimit({
   message: { error: 'Draft limit reached. Please wait a minute.' }
 });
 
+// Dedicated rate limit for user initialization: 20 requests per 15 min per IP
+const initUserLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many registration attempts. Please try again later.' }
+});
+
 // ── Duplicate request protection (rl8) ──────────────────────
 // ponytail: in-memory map is fine for single-instance server; upgrade to Redis if scaling
 const recentRequests = new Map();
@@ -218,7 +227,7 @@ async function requireAuthAndCheckLimits(req, res, next) {
         companyLoadsRemaining: 3000,
         createdAt: now.toISOString(),
         nextLimitResetDate: nextReset.toISOString(),
-        role: req.user.email === 'aminmod06@gmail.com' ? 'owner' : 'user'
+        role: req.user.email === (process.env.OWNER_EMAIL || 'aminmod06@gmail.com') ? 'owner' : 'user'
       };
       await userRef.set(userData);
     } else {
@@ -296,7 +305,7 @@ app.get('/api/user-limits', requireAuthAndCheckLimits, (req, res) => {
 
 
 // Route: Initialize New User & Verify Turnstile
-app.post('/api/init-user', async (req, res) => {
+app.post('/api/init-user', initUserLimiter, async (req, res) => {
   const { turnstileToken, idToken } = req.body;
   if (!turnstileToken || !idToken) {
     return res.status(400).json({ error: 'Missing tokens' });
@@ -357,7 +366,7 @@ app.post('/api/init-user', async (req, res) => {
         companyLoadsRemaining: 3000,
         createdAt: now.toISOString(),
         nextLimitResetDate: nextReset.toISOString(),
-        role: email === 'aminmod06@gmail.com' ? 'owner' : 'user'
+        role: email === (process.env.OWNER_EMAIL || 'aminmod06@gmail.com') ? 'owner' : 'user'
       });
     }
 
@@ -375,19 +384,35 @@ async function isUrlSafe(urlString) {
     if (!['http:', 'https:'].includes(parsed.protocol)) return false;
     // Block common dangerous hostnames directly
     const hostname = parsed.hostname.toLowerCase();
-    if (hostname === 'localhost' || hostname === '0.0.0.0') return false;
+    if (hostname === 'localhost' || hostname === '0.0.0.0' || hostname === '::1' || hostname === '[::1]') return false;
     // Resolve and block private / reserved IPs
     const { address } = await dns.lookup(hostname);
     if (net.isIP(address)) {
-      const parts = address.split('.').map(Number);
-      if (
-        address === '127.0.0.1' ||
-        address === '0.0.0.0' ||
-        parts[0] === 10 ||
-        (parts[0] === 172 && parts[1] >= 16 && parts[1] <= 31) ||
-        (parts[0] === 192 && parts[1] === 168) ||
-        (parts[0] === 169 && parts[1] === 254) // cloud metadata
-      ) return false;
+      if (address === '127.0.0.1' || address === '0.0.0.0' || address === '::1') return false;
+      if (net.isIPv4(address)) {
+        const parts = address.split('.').map(Number);
+        if (
+          parts[0] === 10 ||
+          parts[0] === 127 ||
+          (parts[0] === 172 && parts[1] >= 16 && parts[1] <= 31) ||
+          (parts[0] === 192 && parts[1] === 168) ||
+          (parts[0] === 169 && parts[1] === 254) // cloud metadata
+        ) return false;
+      } else if (net.isIPv6(address)) {
+        const norm = address.toLowerCase();
+        if (
+          norm === '::1' ||
+          norm.startsWith('fc') ||
+          norm.startsWith('fd') ||
+          norm.startsWith('fe8') ||
+          norm.startsWith('fe9') ||
+          norm.startsWith('fea') ||
+          norm.startsWith('feb') ||
+          norm.startsWith('::ffff:127.') ||
+          norm.startsWith('::ffff:10.') ||
+          norm.startsWith('::ffff:192.168.')
+        ) return false;
+      }
     }
     return true;
   } catch {
@@ -550,8 +575,11 @@ function parseJobDetails(title, link, snippet) {
   return { jobTitle, companyName, location, site };
 }
 
-// Route: Debug Environment Variables
+// Route: Debug Environment Variables (Development only)
 app.get('/api/debug', async (req, res) => {
+  if (process.env.NODE_ENV === 'production') {
+    return res.status(404).json({ error: 'Not found' });
+  }
   const info = {
     hasBraveKey: !!process.env.BRAVE_SEARCH_API_KEY,
     braveKeyPrefix: process.env.BRAVE_SEARCH_API_KEY ? process.env.BRAVE_SEARCH_API_KEY.substring(0, 8) + '...' : null,

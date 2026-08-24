@@ -1,4 +1,4 @@
-﻿name: CI
+name: CI
 
 on:
   push:
@@ -22,6 +22,9 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Syntax verification
+        run: node --check api/index.js
 
       - name: Security audit
         # Fails the job if any high or critical CVEs are found in dependencies.
