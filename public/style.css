@@ -1023,10 +1023,19 @@ html.dark-theme .moon-icon { display: none; }
 }
 
 /* ── Profile Page Styles ─────────────────────────────────── */
+html[data-mode="profile"],
+html[data-mode="profile"] body,
+body:has(.profile-container) {
+  height: auto;
+  min-height: 100%;
+  overflow-y: auto !important;
+  overflow-x: hidden;
+}
+
 .profile-container {
   max-width: 960px;
   margin: 28px auto;
-  padding: 0 20px 48px;
+  padding: 0 20px 80px;
   display: flex;
   flex-direction: column;
   gap: 24px;
