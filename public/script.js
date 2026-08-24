@@ -514,6 +514,8 @@ const filterPlatformDropdown = document.getElementById('filterPlatformDropdown')
 const filterPlatformMenu = document.getElementById('filterPlatformMenu');
 const filterIndustryDropdown = document.getElementById('filterIndustryDropdown');
 const filterIndustryMenu = document.getElementById('filterIndustryMenu');
+const filterTypeDropdown = document.getElementById('filterTypeDropdown');
+const filterTypeMenu = document.getElementById('filterTypeMenu');
 
 // Mode toggle elements
 const modeToggle = document.getElementById('modeToggle');
@@ -732,6 +734,15 @@ async function performSearch(isNextPage = false) {
     currentSearchData.places = [];
     currentSearchData.jobs = [];
     currentSearchData.inputs = searchInputs;
+    currentIndustryFilter = 'all';
+    currentTypeFilter = 'all';
+    currentPlatformFilter = 'all';
+    const indLabel = document.querySelector('#filterIndustryDropdown .dropdown-label');
+    if (indLabel) indLabel.textContent = 'Filter by Industry';
+    const typeLabel = document.querySelector('#filterTypeDropdown .dropdown-label');
+    if (typeLabel) typeLabel.textContent = 'Filter by Type';
+    const platLabel = document.querySelector('#filterPlatformDropdown .dropdown-label');
+    if (platLabel) platLabel.textContent = 'Filter by Platform';
   }
   
   currentSearchData.mode = searchMode;
@@ -1042,6 +1053,7 @@ async function addCompanyRow(place, defaultIndustry, placeIndex = -1, sessionId 
         if (placeIndex >= 0 && currentSearchData.places && currentSearchData.places[placeIndex]) {
           currentSearchData.places[placeIndex].companyType = newType;
         }
+        populateFilters();
       }
 
       if (scrapeData.emails) {
@@ -1166,6 +1178,7 @@ function sortTable(type, isAsc) {
 
 let currentPlatformFilter = 'all';
 let currentIndustryFilter = 'all';
+let currentTypeFilter = 'all';
 
 function updateActiveDropdownItem(menu, activeItem) {
   if (!menu) return;
@@ -1192,21 +1205,40 @@ function populateFilters() {
       div.textContent = p;
       filterPlatformMenu.appendChild(div);
     });
-  } else if (searchMode === 'companies' && filterIndustryMenu) {
-    const industries = new Set();
-    rows.forEach(row => {
-      const industry = row.querySelectorAll('td')[1]?.querySelector('.tag')?.textContent.trim() || row.querySelectorAll('td')[1]?.textContent.trim();
-      if (industry) industries.add(industry);
-    });
+  } else if (searchMode === 'companies') {
+    if (filterIndustryMenu) {
+      const industries = new Set();
+      rows.forEach(row => {
+        const industry = row.querySelectorAll('td')[1]?.querySelector('.tag')?.textContent.trim() || row.querySelectorAll('td')[1]?.textContent.trim();
+        if (industry) industries.add(industry);
+      });
 
-    filterIndustryMenu.innerHTML = `<div class="dropdown-item ${currentIndustryFilter === 'all' ? 'active' : ''}" data-value="all">All Industries</div>`;
-    Array.from(industries).sort().forEach(i => {
-      const div = document.createElement('div');
-      div.className = `dropdown-item ${currentIndustryFilter === i ? 'active' : ''}`;
-      div.setAttribute('data-value', i);
-      div.textContent = i;
-      filterIndustryMenu.appendChild(div);
-    });
+      filterIndustryMenu.innerHTML = `<div class="dropdown-item ${currentIndustryFilter === 'all' ? 'active' : ''}" data-value="all">All Industries</div>`;
+      Array.from(industries).sort().forEach(i => {
+        const div = document.createElement('div');
+        div.className = `dropdown-item ${currentIndustryFilter === i ? 'active' : ''}`;
+        div.setAttribute('data-value', i);
+        div.textContent = i;
+        filterIndustryMenu.appendChild(div);
+      });
+    }
+
+    if (filterTypeMenu) {
+      const types = new Set();
+      rows.forEach(row => {
+        const type = row.querySelectorAll('td')[2]?.querySelector('.tag')?.textContent.trim() || row.querySelectorAll('td')[2]?.textContent.trim();
+        if (type) types.add(type);
+      });
+
+      filterTypeMenu.innerHTML = `<div class="dropdown-item ${currentTypeFilter === 'all' ? 'active' : ''}" data-value="all">All Types</div>`;
+      Array.from(types).sort().forEach(t => {
+        const div = document.createElement('div');
+        div.className = `dropdown-item ${currentTypeFilter === t ? 'active' : ''}`;
+        div.setAttribute('data-value', t);
+        div.textContent = t;
+        filterTypeMenu.appendChild(div);
+      });
+    }
   }
 }
 
@@ -1220,7 +1252,10 @@ function applyFilters() {
   } else if (searchMode === 'companies') {
     rows.forEach(row => {
       const industry = row.querySelectorAll('td')[1]?.querySelector('.tag')?.textContent.trim() || row.querySelectorAll('td')[1]?.textContent.trim();
-      row.style.display = (currentIndustryFilter === 'all' || industry === currentIndustryFilter) ? '' : 'none';
+      const type = row.querySelectorAll('td')[2]?.querySelector('.tag')?.textContent.trim() || row.querySelectorAll('td')[2]?.textContent.trim();
+      const matchIndustry = (currentIndustryFilter === 'all' || industry === currentIndustryFilter);
+      const matchType = (currentTypeFilter === 'all' || type === currentTypeFilter);
+      row.style.display = (matchIndustry && matchType) ? '' : 'none';
     });
   }
 }
@@ -1257,6 +1292,12 @@ document.addEventListener('click', (e) => {
     updateActiveDropdownItem(filterIndustryMenu, e.target);
     const label = document.querySelector('#filterIndustryDropdown .dropdown-label');
     if (label) label.textContent = currentIndustryFilter === 'all' ? 'Filter by Industry' : currentIndustryFilter;
+    applyFilters();
+  } else if (e.target.matches('#filterTypeMenu .dropdown-item')) {
+    currentTypeFilter = e.target.getAttribute('data-value');
+    updateActiveDropdownItem(filterTypeMenu, e.target);
+    const label = document.querySelector('#filterTypeDropdown .dropdown-label');
+    if (label) label.textContent = currentTypeFilter === 'all' ? 'Filter by Type' : currentTypeFilter;
     applyFilters();
   }
 });
