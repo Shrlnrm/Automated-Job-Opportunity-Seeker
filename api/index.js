@@ -860,23 +860,56 @@ app.post('/api/search-companies', requireAuthAndCheckLimits, async (req, res) =>
     return res.status(429).json({ error: 'Monthly company loads limit reached.' });
   }
 
-  const searchUrl = 'https://places.googleapis.com/v1/places:searchText';
-  const searchPayload = { textQuery: query, pageSize: 20 };
-  if (pageToken) searchPayload.pageToken = pageToken;
+  const referer = req.headers.referer || req.headers.origin || 'https://automated-job-opportunity-seeker.vercel.app/';
 
-  try {
+  // Helper to query Google Places API
+  const fetchPlaces = async (textQuery, token) => {
+    const searchUrl = 'https://places.googleapis.com/v1/places:searchText';
+    const searchPayload = { textQuery, pageSize: 20 };
+    if (token) searchPayload.pageToken = token;
+
     const response = await fetch(searchUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'X-Goog-Api-Key': process.env.PLACES_API_KEY,
         'X-Goog-FieldMask': 'places.displayName,places.primaryTypeDisplayName,places.formattedAddress,places.nationalPhoneNumber,places.websiteUri,nextPageToken',
-        'Referer': req.headers.referer || req.headers.origin || 'https://automated-job-opportunity-seeker.vercel.app/'
+        'Referer': referer
       },
       body: JSON.stringify(searchPayload)
     });
-    
-    const data = await response.json();
+    return response.json();
+  };
+
+  // Smart Query Broadening: if only company name is provided, include entity keywords
+  let primaryQuery = query;
+  if (inputs.companyName && !inputs.industry && !inputs.location) {
+    primaryQuery = `${inputs.companyName} company OR office`;
+  }
+
+  try {
+    let data = await fetchPlaces(primaryQuery, pageToken);
+
+    // Automatic 2-Pass Retry: If Pass 1 returns 0 places on page 1, broaden search query
+    if ((!data.places || data.places.length === 0) && !pageToken) {
+      let secondaryQuery = '';
+      if (inputs.companyName) {
+        if (inputs.location) {
+          secondaryQuery = `${inputs.companyName} ${inputs.location}`;
+        } else {
+          secondaryQuery = `${inputs.companyName} headquarters OR office OR branch`;
+        }
+      } else if (inputs.industry) {
+        secondaryQuery = inputs.location ? `${inputs.industry} companies in ${inputs.location}` : `${inputs.industry} companies`;
+      }
+
+      if (secondaryQuery && secondaryQuery !== primaryQuery) {
+        const retryData = await fetchPlaces(secondaryQuery, '');
+        if (retryData.places && retryData.places.length > 0) {
+          data = retryData;
+        }
+      }
+    }
 
     if (data.error) {
       console.error('Places API Error:', data.error);

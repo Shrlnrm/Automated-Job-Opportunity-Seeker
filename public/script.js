@@ -222,6 +222,7 @@ let nextPageToken = '';
 let currentIndustry = '';
 let rowCount = 0;
 let userLimits = null;
+let currentSearchSessionId = 0;
 
 let currentSearchData = {
   mode: '',
@@ -601,6 +602,7 @@ function setStatus(text, active = false) {
 
 // Search
 async function performSearch(isNextPage = false) {
+  const thisSessionId = ++currentSearchSessionId;
   let query;
   let endpoint = '/api/search';
   let searchInputs = {};
@@ -658,7 +660,16 @@ async function performSearch(isNextPage = false) {
     nextPageToken = '';
     rowCount = 0;
     tagColorMap = {};
-    if (tableEmpty) tableEmpty.style.display = 'none';
+    if (tableEmpty) {
+      tableEmpty.style.display = 'flex';
+      tableEmpty.innerHTML = `
+        <div class="table-spinner">
+          <div class="big-spinner"></div>
+          <div class="empty-title">${searchMode === 'companies' ? 'Searching companies...' : 'Searching job listings...'}</div>
+          <div class="empty-subtitle">Discovering verified business entities, locations, and domain information.</div>
+        </div>
+      `;
+    }
     currentSearchData.places = [];
     currentSearchData.jobs = [];
     currentSearchData.inputs = searchInputs;
@@ -681,6 +692,9 @@ async function performSearch(isNextPage = false) {
     const data = await response.json();
     if (data.error) throw new Error(data.error);
 
+    // Guard against race conditions from previous search responses
+    if (thisSessionId !== currentSearchSessionId) return;
+
     if (searchMode === 'jobs') {
       let jobs = data.jobs || [];
 
@@ -692,11 +706,18 @@ async function performSearch(isNextPage = false) {
 
       if (jobs.length === 0 && (!isNextPage || currentSearchData.jobs.length === 0)) {
         setStatus('No results found.');
-        if (!isNextPage && tableEmpty) tableEmpty.style.display = 'block';
+        if (!isNextPage && tableEmpty) {
+          tableEmpty.style.display = 'flex';
+          tableEmpty.innerHTML = `
+            <div class="empty-title">No job listings found</div>
+            <div class="empty-subtitle">We couldn't find any jobs matching your search. Try broadening your job title or location keyword.</div>
+          `;
+        }
         nextPageToken = '';
         return;
       }
 
+      if (tableEmpty) tableEmpty.style.display = 'none';
       nextPageToken = data.nextPageToken || '';
       currentSearchData.nextPageToken = nextPageToken;
       currentSearchData.jobs = isNextPage ? currentSearchData.jobs.concat(jobs) : jobs;
@@ -718,11 +739,18 @@ async function performSearch(isNextPage = false) {
 
       if (places.length === 0 && (!isNextPage || currentSearchData.places.length === 0)) {
         setStatus('No results found.');
-        if (!isNextPage && tableEmpty) tableEmpty.style.display = 'block';
+        if (!isNextPage && tableEmpty) {
+          tableEmpty.style.display = 'flex';
+          tableEmpty.innerHTML = `
+            <div class="empty-title">No companies found</div>
+            <div class="empty-subtitle">We couldn't find any companies matching your search. Try broadening your location or checking the spelling.</div>
+          `;
+        }
         nextPageToken = '';
         return;
       }
 
+      if (tableEmpty) tableEmpty.style.display = 'none';
       nextPageToken = data.nextPageToken || '';
       currentSearchData.nextPageToken = nextPageToken;
       
@@ -731,7 +759,7 @@ async function performSearch(isNextPage = false) {
       saveToSessionStorage();
 
       for (let i = 0; i < places.length; i++) {
-        addCompanyRow(places[i], currentIndustry, startIndex + i);
+        addCompanyRow(places[i], currentIndustry, startIndex + i, thisSessionId);
       }
 
       setStatus(`${rowCount} companies`, false);
@@ -741,6 +769,13 @@ async function performSearch(isNextPage = false) {
     console.error('Search error:', error);
     isViewingRecent = false; // let snapshot manage empty state after a failed search
     showToast(error.message);
+    if (!isNextPage && tableEmpty) {
+      tableEmpty.style.display = 'flex';
+      tableEmpty.innerHTML = `
+        <div class="empty-title" style="color:var(--danger, #ef4444)">Search Failed</div>
+        <div class="empty-subtitle">${escapeHtml(error.message || 'An unexpected error occurred. Please try again.')}</div>
+      `;
+    }
     if (searchBtn) setLoading(searchBtn, false, origText);
   } finally {
     setStatus('Ready');
@@ -814,7 +849,7 @@ function addJobRow(job) {
   if (tbody) tbody.appendChild(tr);
 }
 
-async function addCompanyRow(place, defaultIndustry, placeIndex = -1) {
+async function addCompanyRow(place, defaultIndustry, placeIndex = -1, sessionId = null) {
   rowCount++;
   const name     = place.displayName?.text || 'Unknown';
   const industry = place.primaryTypeDisplayName?.text || defaultIndustry;
@@ -969,6 +1004,9 @@ async function addCompanyRow(place, defaultIndustry, placeIndex = -1) {
   
   // Save scraped result to sessionStorage and sync to Firestore
   if (placeIndex >= 0 && currentSearchData.places && currentSearchData.places[placeIndex]) {
+    // Guard against race conditions if user started a new search while scraping was in-flight
+    if (sessionId && sessionId !== currentSearchSessionId) return;
+
     currentSearchData.places[placeIndex].scrapedContactsHTML = contactsHTML;
     saveToSessionStorage();
     
