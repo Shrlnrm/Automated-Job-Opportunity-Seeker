@@ -657,6 +657,37 @@ a.external-link:hover {
   text-underline-offset: 2px;
 }
 
+/* ── Multi-Platform Apply Chips ─────────────────────────── */
+.apply-options-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: center;
+}
+
+.apply-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 1px 7px;
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-xs);
+  font-weight: 500;
+  color: var(--accent);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  text-decoration: none;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.apply-chip:hover {
+  background: var(--surface);
+  color: var(--text);
+  border-color: var(--accent);
+  text-decoration: none;
+}
+
 /* ── Address Link ───────────────────────────────────────── */
 a.address-link {
   color: inherit;

@@ -859,26 +859,44 @@ app.post('/api/search', requireAuthAndCheckLimits, async (req, res) => {
 
     const items = data.jobs_results || [];
     const jobs = items.map(item => {
-      // Detect site from apply_options links
-      let site = 'Other';
-      let link = `https://www.google.com/search?q=${encodeURIComponent((item.title || '') + ' ' + (item.company_name || ''))}`;
-      if (item.apply_options && item.apply_options.length > 0) {
-        const applyUrl = (item.apply_options[0].link || '').toLowerCase();
-        if (applyUrl.includes('jobstreet')) site = 'JobStreet';
-        else if (applyUrl.includes('indeed')) site = 'Indeed';
-        else if (applyUrl.includes('linkedin')) site = 'LinkedIn';
-        else if (applyUrl.includes('jobsdb')) site = 'JobsDB';
-        
+      // Helper to clean tracking parameters
+      const cleanUrl = (rawUrl) => {
+        if (!rawUrl) return '';
         try {
-          const urlObj = new URL(item.apply_options[0].link);
-          // Strip UTM tracking parameters which trigger auto-apply forms on some sites
+          const urlObj = new URL(rawUrl);
           urlObj.searchParams.delete('utm_campaign');
           urlObj.searchParams.delete('utm_source');
           urlObj.searchParams.delete('utm_medium');
-          link = urlObj.toString();
-        } catch (e) {
-          link = item.apply_options[0].link;
+          return urlObj.toString();
+        } catch {
+          return rawUrl;
         }
+      };
+
+      const detectSite = (url, title = '') => {
+        const u = (url || '').toLowerCase();
+        const t = (title || '').toLowerCase();
+        if (u.includes('jobstreet') || t.includes('jobstreet')) return 'JobStreet';
+        if (u.includes('indeed') || t.includes('indeed')) return 'Indeed';
+        if (u.includes('linkedin') || t.includes('linkedin')) return 'LinkedIn';
+        if (u.includes('jobsdb') || t.includes('jobsdb')) return 'JobsDB';
+        if (u.includes('glassdoor') || t.includes('glassdoor')) return 'Glassdoor';
+        if (t.includes('company') || t.includes('employer')) return 'Company Site';
+        return 'Direct Site';
+      };
+
+      const applyOptions = (item.apply_options || []).map(opt => ({
+        title: opt.title || 'Apply',
+        link: cleanUrl(opt.link),
+        site: detectSite(opt.link, opt.title)
+      })).filter(opt => opt.link);
+
+      // Default site and link (fallback to search if no direct link)
+      let site = 'Other';
+      let link = `https://www.google.com/search?q=${encodeURIComponent((item.title || '') + ' ' + (item.company_name || ''))}`;
+      if (applyOptions.length > 0) {
+        link = applyOptions[0].link;
+        site = applyOptions[0].site;
       }
 
       return {
@@ -887,7 +905,8 @@ app.post('/api/search', requireAuthAndCheckLimits, async (req, res) => {
         location: item.location || 'Malaysia',
         site,
         link,
-        via: item.via || null
+        via: item.via || null,
+        applyOptions
       };
     });
 

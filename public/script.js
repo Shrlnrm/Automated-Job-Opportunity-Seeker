@@ -679,7 +679,7 @@ async function performSearch(isNextPage = false) {
       return;
     }
     currentIndustry = jobTitleInput;
-    query = jobLocInput ? `"${jobTitleInput}" "${jobLocInput}"` : `"${jobTitleInput}"`;
+    query = jobLocInput ? `${jobTitleInput} ${jobLocInput}` : jobTitleInput;
     endpoint = '/api/search';
     searchInputs = { jobTitle: jobTitleInput, jobLocation: jobLocInput };
   } else {
@@ -888,6 +888,23 @@ function addJobRow(job) {
   const safePlatform = escapeHtml(platform);
   const safeLink     = escapeHtml(link);
 
+  let applyHtml = '';
+  if (job.applyOptions && job.applyOptions.length > 0) {
+    applyHtml = `<div class="apply-options-container">` +
+      job.applyOptions.map(opt => {
+        const optTitle = opt.title || 'Apply';
+        const optSite = opt.site || optTitle;
+        return `<a href="${escapeHtml(opt.link)}" target="_blank" rel="noopener noreferrer" class="apply-chip" title="${escapeHtml(optTitle)}">${escapeHtml(optSite)}</a>`;
+      }).join('') +
+      `</div>`;
+  } else {
+    applyHtml = `
+      <a href="${safeLink}" target="_blank" rel="noopener noreferrer" class="external-link">
+        View Job
+      </a>
+    `;
+  }
+
   const tr = document.createElement('tr');
   tr.innerHTML = `
     <td>
@@ -898,10 +915,8 @@ function addJobRow(job) {
     <td>
       <span class="tag ${tagClass}">${safePlatform}</span>
     </td>
-    <td>
-      <a href="${safeLink}" target="_blank" rel="noopener noreferrer" class="external-link">
-        View Job
-      </a>
+    <td class="col-contacts">
+      ${applyHtml}
     </td>
     <td>
       <button class="draft-btn" data-company="${safeCompany}" data-title="${safeTitle}">
@@ -910,7 +925,6 @@ function addJobRow(job) {
       </button>
     </td>
   `;
-
 
   const draftBtn = tr.querySelector('.draft-btn');
   draftBtn.addEventListener('click', () => {
@@ -1195,6 +1209,10 @@ function populateFilters() {
     rows.forEach(row => {
       const platform = row.querySelectorAll('td')[3]?.querySelector('.tag')?.textContent.trim() || row.querySelectorAll('td')[3]?.textContent.trim();
       if (platform) platforms.add(platform);
+      row.querySelectorAll('td')[4]?.querySelectorAll('.apply-chip').forEach(chip => {
+        const txt = chip.textContent.trim();
+        if (txt) platforms.add(txt);
+      });
     });
     
     filterPlatformMenu.innerHTML = `<div class="dropdown-item ${currentPlatformFilter === 'all' ? 'active' : ''}" data-value="all">All Platforms</div>`;
@@ -1247,7 +1265,9 @@ function applyFilters() {
   if (searchMode === 'jobs') {
     rows.forEach(row => {
       const platform = row.querySelectorAll('td')[3]?.querySelector('.tag')?.textContent.trim() || row.querySelectorAll('td')[3]?.textContent.trim();
-      row.style.display = (currentPlatformFilter === 'all' || platform === currentPlatformFilter) ? '' : 'none';
+      const chipTexts = Array.from(row.querySelectorAll('td')[4]?.querySelectorAll('.apply-chip')).map(c => c.textContent.trim());
+      const matches = (currentPlatformFilter === 'all' || platform === currentPlatformFilter || chipTexts.includes(currentPlatformFilter));
+      row.style.display = matches ? '' : 'none';
     });
   } else if (searchMode === 'companies') {
     rows.forEach(row => {
