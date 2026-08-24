@@ -516,8 +516,8 @@ function isGenericIndustry(industry) {
   return GENERIC_INDUSTRIES.includes(norm) || norm.length < 3;
 }
 
-// AI Industry Classification Helper with strict 3.5s timeout and fail-safe
-async function classifyIndustry(companyName, title, metaDesc) {
+// AI Company Classifier: returns { industry, companyType } (MNC, SME, GLC, Startup, Non-Profit)
+async function classifyCompany(companyName, title, metaDesc, address) {
   if (!process.env.OPENROUTER_API_KEY) return null;
   const description = [title, metaDesc].filter(Boolean).join(' - ').trim();
   if (!description && !companyName) return null;
@@ -538,14 +538,18 @@ async function classifyIndustry(companyName, title, metaDesc) {
         messages: [
           {
             role: 'system',
-            content: 'You are a business classifier. Classify the company into a concise 2-3 word industry label (e.g., "Drone & Robotics", "Fintech & Payments", "Construction & Civil", "Renewable Energy", "Medical Clinic", "Legal Services", "Logistics & Supply"). Return ONLY the 2-3 word label. No punctuation, no markdown, max 25 characters.'
+            content: `You are a corporate intelligence classifier. Classify the business into:
+1. industry: 2-3 word industry label (e.g. "Test & Measurement Tech", "Audio & Music Streaming", "Semiconductors & Hardware", "Fintech & Payments", "Medical Healthcare", "Civil Engineering").
+2. companyType: Must be strictly one of ["MNC", "SME", "GLC", "Startup", "Non-Profit"]. (MNC = multinational corporation with global presence; SME = small-medium enterprise or regional private firm; GLC = government-linked or state-owned corporation; Startup = early-stage venture tech).
+
+Respond with valid JSON ONLY in this format: {"industry":"...","companyType":"..."}`
           },
           {
             role: 'user',
-            content: `Company: ${companyName || 'Unknown'}\nWebsite summary: ${description || 'No website description'}`
+            content: `Company Name: ${companyName || 'Unknown'}\nLocation/Address: ${address || 'Unknown'}\nWebsite Summary: ${description || 'N/A'}`
           }
         ],
-        max_tokens: 15,
+        max_tokens: 45,
         temperature: 0.1
       })
     });
@@ -554,12 +558,22 @@ async function classifyIndustry(companyName, title, metaDesc) {
     if (!response.ok) return null;
 
     const data = await response.json();
-    const label = data.choices?.[0]?.message?.content?.trim();
-    if (!label) return null;
-    
-    // Clean up label: remove quotes, periods, limit length
-    const cleanLabel = label.replace(/["'`.#*]/g, '').trim().slice(0, 30);
-    return cleanLabel.length >= 3 ? cleanLabel : null;
+    const rawContent = data.choices?.[0]?.message?.content?.trim();
+    if (!rawContent) return null;
+
+    const jsonMatch = rawContent.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) return null;
+    const parsed = JSON.parse(jsonMatch[0]);
+
+    const validTypes = ['MNC', 'SME', 'GLC', 'Startup', 'Non-Profit'];
+    const normType = (parsed.companyType || '').toUpperCase().trim();
+    const companyType = validTypes.includes(normType) ? normType : (normType.includes('MNC') ? 'MNC' : 'SME');
+    const industry = (parsed.industry || '').replace(/["'`.#*]/g, '').trim().slice(0, 30);
+
+    return {
+      industry: industry.length >= 3 ? industry : null,
+      companyType: companyType || 'SME'
+    };
   } catch {
     return null; // Fail silently, keeping default
   }
@@ -989,12 +1003,13 @@ app.post('/api/search-companies', requireAuthAndCheckLimits, async (req, res) =>
   }
 });
 
-// Route: Scrape Website (SSRF-protected) & AI Industry Refinement
+// Route: Scrape Website (SSRF-protected) & AI Company Classification (Industry + Type)
 app.post('/api/scrape', requireAuthAndCheckLimits, async (req, res) => {
   res.setHeader('Cache-Control', 'private, no-store'); // be10
   const website = typeof req.body.website === 'string' ? req.body.website.trim() : '';
   const companyName = sanitise(req.body.companyName, 100);
   const currentIndustry = sanitise(req.body.currentIndustry, 100);
+  const address = sanitise(req.body.address, 200);
 
   let scrapedData = { emails: [], phones: [], socials: [], title: '', metaDesc: '' };
 
@@ -1004,17 +1019,18 @@ app.post('/api/scrape', requireAuthAndCheckLimits, async (req, res) => {
     }
   }
 
-  // Only trigger AI classification if the current industry is generic or missing
-  let refinedIndustry = null;
-  if (isGenericIndustry(currentIndustry) && (scrapedData.title || scrapedData.metaDesc || companyName)) {
-    refinedIndustry = await classifyIndustry(companyName, scrapedData.title, scrapedData.metaDesc);
+  // Trigger AI classification for industry refinement & company type detection
+  let classification = null;
+  if (companyName || scrapedData.title || scrapedData.metaDesc) {
+    classification = await classifyCompany(companyName, scrapedData.title, scrapedData.metaDesc, address);
   }
 
   res.json({
     emails: scrapedData.emails || [],
     phones: scrapedData.phones || [],
     socials: scrapedData.socials || [],
-    refinedIndustry: refinedIndustry || null
+    refinedIndustry: isGenericIndustry(currentIndustry) ? (classification?.industry || null) : null,
+    companyType: classification?.companyType || (companyName.toLowerCase().includes('sdn bhd') ? 'SME' : 'MNC')
   });
 });
 

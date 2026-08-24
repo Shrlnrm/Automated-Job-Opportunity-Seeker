@@ -579,6 +579,16 @@ function isGenericIndustry(ind) {
   return GENERIC_INDUSTRIES.includes(n) || n.length < 3;
 }
 
+// Company Type Tag Class Mapper (MNC, SME, GLC, Startup, Non-Profit)
+function getTypeTagClass(type) {
+  const t = (type || '').toLowerCase().trim();
+  if (t.includes('mnc')) return 'tag-type-mnc';
+  if (t.includes('sme') || t.includes('smb')) return 'tag-type-sme';
+  if (t.includes('glc') || t.includes('soe')) return 'tag-type-glc';
+  if (t.includes('startup')) return 'tag-type-startup';
+  return 'tag-type-default';
+}
+
 // HTML-escape to prevent XSS when injecting dynamic text via innerHTML
 function escapeHtml(str) {
   const div = document.createElement('div');
@@ -683,7 +693,7 @@ async function performSearch(isNextPage = false) {
         <div class="table-spinner">
           <div class="big-spinner"></div>
           <div class="empty-title">${searchMode === 'companies' ? 'Searching companies...' : 'Searching job listings...'}</div>
-          <div class="empty-subtitle">Discovering verified business entities, locations, and domain information.</div>
+          <div class="empty-subtitle">${searchMode === 'companies' ? 'Discovering verified business entities, locations, and domain information.' : 'Searching live job listings across JobStreet, Indeed, LinkedIn, and more.'}</div>
         </div>
       `;
     }
@@ -873,38 +883,42 @@ async function addCompanyRow(place, defaultIndustry, placeIndex = -1, sessionId 
   const address  = place.formattedAddress || '';
   const website  = place.websiteUri || '';
   const mapPhone = place.nationalPhoneNumber || '';
+  const initialType = place.companyType || (name.toLowerCase().includes('sdn bhd') ? 'SME' : 'MNC');
 
-  const tagClass = getTagClass(industry);
+  const tagClass     = getTagClass(industry);
+  const typeTagClass = getTypeTagClass(initialType);
 
   const safeName     = escapeHtml(name);
   const safeIndustry = escapeHtml(industry);
+  const safeType     = escapeHtml(initialType);
   const safeAddress  = escapeHtml(address);
   const safeWebsite  = escapeHtml(website);
 
   const tr = document.createElement('tr');
   tr.innerHTML = `
-    <td><span class="company-name">${safeName}</span></td>
-    <td><span class="tag ${tagClass}">${safeIndustry}</span></td>
-    <td>
+    <td class="col-company"><span class="company-name">${safeName}</span></td>
+    <td class="col-industry"><span class="tag ${tagClass}">${safeIndustry}</span></td>
+    <td class="col-type"><span class="tag ${typeTagClass}">${safeType}</span></td>
+    <td class="col-address">
       ${safeAddress 
         ? `<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(name + ', ' + address)}" target="_blank" rel="noopener noreferrer" class="address-link">
              ${safeAddress}
            </a>` 
         : '<span style="color:var(--text-muted)">N/A</span>'}
     </td>
-    <td>
+    <td class="col-website">
       ${website
         ? `<a href="${safeWebsite}" target="_blank" rel="noopener noreferrer" class="external-link">
              Visit
            </a>`
         : '<span style="color:var(--text-muted)">N/A</span>'}
     </td>
-    <td class="contacts-cell">
+    <td class="col-contacts contacts-cell">
       ${place.scrapedContactsHTML ? `<div class="contacts-inner">${place.scrapedContactsHTML}</div>` : '<span class="loader"></span>'}
     </td>
-    <td>
+    <td class="col-actions">
       <button class="draft-btn" data-company="${safeName}" data-industry="${safeIndustry}" ${!place.scrapedContactsHTML ? 'disabled' : ''}>
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 1 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>
         Draft
       </button>
     </td>
@@ -952,12 +966,12 @@ async function addCompanyRow(place, defaultIndustry, placeIndex = -1, sessionId 
     contactsHTML += `<div class="contact-chip">${iconPhone}${escapeHtml(mapPhone)}</div>`;
   }
 
-  if (website || isGenericIndustry(industry)) {
+  if (website || isGenericIndustry(industry) || !place.companyType) {
     try {
       const scrapeRes  = await fetchWithAuth('/api/scrape', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ website: website || '', companyName: name, currentIndustry: industry })
+        body: JSON.stringify({ website: website || '', companyName: name, currentIndustry: industry, address: address })
       });
       const scrapeData = await scrapeRes.json();
 
@@ -965,7 +979,7 @@ async function addCompanyRow(place, defaultIndustry, placeIndex = -1, sessionId 
       if (scrapeData.refinedIndustry) {
         const newIndustry = scrapeData.refinedIndustry;
         const newTagClass = getTagClass(newIndustry);
-        const tagEl = tr.querySelector('td .tag');
+        const tagEl = tr.querySelector('td.col-industry .tag') || tr.querySelector('td:nth-child(2) .tag');
         if (tagEl) {
           tagEl.className = `tag ${newTagClass}`;
           tagEl.textContent = newIndustry;
@@ -981,6 +995,20 @@ async function addCompanyRow(place, defaultIndustry, placeIndex = -1, sessionId 
           currentSearchData.places[placeIndex].primaryTypeDisplayName.text = newIndustry;
         }
         populateFilters();
+      }
+
+      // Dynamically refine company type if AI returned classification
+      if (scrapeData.companyType) {
+        const newType = scrapeData.companyType;
+        const newTypeClass = getTypeTagClass(newType);
+        const typeEl = tr.querySelector('td.col-type .tag') || tr.querySelector('td:nth-child(3) .tag');
+        if (typeEl) {
+          typeEl.className = `tag ${newTypeClass}`;
+          typeEl.textContent = newType;
+        }
+        if (placeIndex >= 0 && currentSearchData.places && currentSearchData.places[placeIndex]) {
+          currentSearchData.places[placeIndex].companyType = newType;
+        }
       }
 
       if (scrapeData.emails) {
@@ -1288,16 +1316,15 @@ function printTable() {
       tableData.push([jobTitle, company, location, platform, jobLink]);
       urls.push({ jobLink });
     } else {
-      const company = tds[0].querySelector('.company-name')?.textContent.trim() || tds[0].textContent.trim();
+      const company  = tds[0].querySelector('.company-name')?.textContent.trim() || tds[0].textContent.trim();
       const industry = tds[1].querySelector('.tag')?.textContent.trim() || tds[1].textContent.trim();
-      const address = tds[2].textContent.trim();
-      const addressLinkEl = tds[2].querySelector('a.address-link');
-      const addressUrl = addressLinkEl ? addressLinkEl.href : '';
-      
-      const websiteEl = tds[3].querySelector('a.external-link');
-      const website = websiteEl ? websiteEl.href : '';
-
-      const chips = tds[4].querySelectorAll('.contact-chip');
+      const type     = tds[2].querySelector('.tag')?.textContent.trim() || tds[2].textContent.trim();
+      const addressLink = tds[3].querySelector('a');
+      const address  = addressLink ? addressLink.textContent.trim() : tds[3].textContent.trim();
+      const addressUrl = addressLink ? addressLink.href : null;
+      const websiteLink = tds[4].querySelector('a');
+      const website  = websiteLink ? websiteLink.href : '';
+      const chips = tds[5].querySelectorAll('.contact-chip');
       const contacts = [];
       chips.forEach(chip => {
         const clone = chip.cloneNode(true);
@@ -1306,7 +1333,7 @@ function printTable() {
         if (txt) contacts.push(txt);
       });
 
-      tableData.push([company, industry, address, website, contacts.join('\n')]);
+      tableData.push([company, industry, type, address, website, contacts.join('\n')]);
       urls.push({ website, address: addressUrl });
     }
   });
@@ -1328,7 +1355,7 @@ function printTable() {
     startY: 24,
     head: isJobs
       ? [['Job Title', 'Company', 'Location', 'Platform', 'Job Link']]
-      : [['Company', 'Industry', 'Address', 'Website', 'Contacts']],
+      : [['Company', 'Industry', 'Type', 'Address', 'Website', 'Contacts']],
     body: tableData,
     styles: {
       font: 'helvetica',
@@ -1358,11 +1385,12 @@ function printTable() {
         4: { cellWidth: 'auto', textColor: [26, 86, 219] },
       }
       : {
-        0: { cellWidth: 45 },
-        1: { cellWidth: 35 },
-        2: { cellWidth: 60, textColor: [26, 86, 219] },
+        0: { cellWidth: 38 },
+        1: { cellWidth: 32 },
+        2: { cellWidth: 18 },
         3: { cellWidth: 50, textColor: [26, 86, 219] },
-        4: { cellWidth: 'auto', textColor: [30, 30, 30] },
+        4: { cellWidth: 38, textColor: [26, 86, 219] },
+        5: { cellWidth: 'auto', textColor: [30, 30, 30] },
       },
     didDrawCell: (data) => {
       if (data.section !== 'body') return;
@@ -1371,10 +1399,10 @@ function printTable() {
         const url = urls[data.row.index]?.jobLink;
         if (url) doc.link(data.cell.x, data.cell.y, data.cell.width, data.cell.height, { url });
       } else if (!isJobs) {
-        if (data.column.index === 3) {
+        if (data.column.index === 4) {
           const url = urls[data.row.index]?.website;
           if (url) doc.link(data.cell.x, data.cell.y, data.cell.width, data.cell.height, { url });
-        } else if (data.column.index === 2) {
+        } else if (data.column.index === 3) {
           const url = urls[data.row.index]?.address;
           if (url) doc.link(data.cell.x, data.cell.y, data.cell.width, data.cell.height, { url });
         }
