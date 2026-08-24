@@ -313,6 +313,15 @@ html, body {
   color: var(--text-muted);
 }
 
+.search-hint {
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+  white-space: nowrap;
+  user-select: none;
+  margin-left: 6px;
+  opacity: 0.85;
+}
+
 /* ── Sub-Toolbar (Sort/Filter) ──────────────────────────── */
 .sub-toolbar {
   display: flex;

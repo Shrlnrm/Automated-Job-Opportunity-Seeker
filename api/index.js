@@ -884,34 +884,43 @@ app.post('/api/search-companies', requireAuthAndCheckLimits, async (req, res) =>
   try {
     let data;
 
-    // Standalone Company Search (No location given):
-    // Run parallel multi-query lookups across Google Maps' global office, location, and brand indices
-    // to discover and aggregate all regional headquarters and offices worldwide.
+    // Worldwide Multi-Continent Company Search (No location given):
+    // Concurrently queries across 9 global continent and international indices
+    // to discover and aggregate all matching corporate entities, regional HQs, and branches globally.
     if (inputs.companyName && !inputs.location && !pageToken) {
-      const [resOffices, resLocations, resExact] = await Promise.all([
-        fetchPlaces(`${inputs.companyName} offices`),
-        fetchPlaces(`${inputs.companyName} locations`),
-        fetchPlaces(inputs.companyName)
-      ]);
+      const globalQueries = [
+        inputs.companyName,
+        `${inputs.companyName} global offices`,
+        `${inputs.companyName} worldwide`,
+        `${inputs.companyName} in North America`,
+        `${inputs.companyName} in Europe`,
+        `${inputs.companyName} in Asia`,
+        `${inputs.companyName} in Australia`,
+        `${inputs.companyName} in South America`,
+        `${inputs.companyName} in Middle East`
+      ];
 
-      const places1 = resOffices.places || [];
-      const places2 = resLocations.places || [];
-      const places3 = resExact.places || [];
+      const responses = await Promise.all(globalQueries.map(q => fetchPlaces(q)));
 
-      // Deduplicate by formatted address and name
+      // Deduplicate by normalized address and place name
       const seen = new Set();
       const mergedPlaces = [];
-      for (const p of [...places1, ...places2, ...places3]) {
-        const id = (p.formattedAddress || p.displayName?.text || '').toLowerCase().trim();
-        if (id && !seen.has(id)) {
-          seen.add(id);
-          mergedPlaces.push(p);
+      let nextPageToken = null;
+
+      for (const res of responses) {
+        if (res.nextPageToken && !nextPageToken) nextPageToken = res.nextPageToken;
+        for (const p of (res.places || [])) {
+          const id = (p.formattedAddress || p.displayName?.text || '').toLowerCase().trim();
+          if (id && !seen.has(id)) {
+            seen.add(id);
+            mergedPlaces.push(p);
+          }
         }
       }
 
       data = {
         places: mergedPlaces,
-        nextPageToken: resOffices.nextPageToken || resLocations.nextPageToken || resExact.nextPageToken || null
+        nextPageToken: nextPageToken
       };
     } else {
       let primaryQuery = query;
