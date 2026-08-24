@@ -1304,78 +1304,85 @@ app.post('/api/draft', draftLimiter, requireAuthAndCheckLimits, async (req, res)
   const profile = req.userData.resumeProfile || null;
   const hasProfile = !!(profile && (profile.fullName || profile.skills?.length || profile.education || profile.projects));
 
+  const candidateName = profile?.fullName?.trim() || '[Your Name]';
+  const candidateEdu = profile?.education?.trim() || '';
+  const candidateSkills = (profile?.skills || []).map(s => s.trim()).filter(Boolean).join(', ');
+  const candidateProjects = profile?.projects?.trim() || '';
+  const candidateEmail = profile?.email?.trim() || '';
+  const candidatePhone = profile?.phone?.trim() || '';
+  const candidateLinkedin = profile?.linkedin?.trim() || '';
+  const candidatePortfolio = profile?.portfolio?.trim() || '';
+
+  const contactLine = [candidateEmail, candidatePhone].filter(Boolean).join(' | ') || '[Your Email / Phone]';
+  const linksLine = [candidateLinkedin, candidatePortfolio].filter(Boolean).join(' | ') || (hasProfile ? '' : '[Your Portfolio / LinkedIn]');
+
+  const profileContext = hasProfile ? `
+Candidate Profile Data (Ground Truth):
+- Full Name: ${candidateName}
+- Education: ${candidateEdu || 'Not specified'}
+- Core Skills: ${candidateSkills || 'Not specified'}
+- Key Projects / Accomplishments: ${candidateProjects || 'Not specified'}
+- Contact: ${contactLine}
+- Links: ${linksLine || 'Not specified'}
+` : 'Candidate Profile Data: [No profile provided - use clear standard placeholder brackets like [Your Name], [Your Skills], etc.]';
+
   let systemPrompt = '';
   let userMessage = '';
 
-  const profileContext = hasProfile ? `
-Candidate Profile Information:
-- Full Name: ${profile.fullName || '[your name]'}
-- Education Background: ${profile.education || '[your education/degree]'}
-- Core Skills: ${(profile.skills || []).join(', ') || '[your key skills]'}
-- Notable Projects / Experience: ${profile.projects || '[your key project]'}
-- Portfolio / LinkedIn: ${profile.portfolio || profile.linkedin || '[your linkedin / portfolio link]'}
-- Contact Email: ${profile.email || '[your contact info]'}
-` : '';
-
   if (mode === 'jobs') {
-    systemPrompt = `You are writing a tailored cold outreach cover letter email for a job seeker.
-${hasProfile ? `IMPORTANT: Use the candidate's actual profile details provided below (their name, skills matching this role, education, and specific project accomplishments). Weave their background into the email so it reads genuinely and personalized. Only use brackets like [bracket] if a specific piece of contact info is missing.` : `Use standard [brackets] for user placeholders like [your name], [your key skill or background], etc.`}
-The ONLY part you should dynamically compose is a compelling 1-2 sentence paragraph explaining specific interest in the "<JOB_TITLE>" role at "<COMPANY>" based on their company profile and connecting the candidate's background to it.
+    systemPrompt = `You are an expert career advisor generating a standardized, professional, and concise job application cover email.
 
-Template format:
-subject: application for <JOB_TITLE> - ${profile?.fullName || '[your name]'}
+STRICT RULES:
+1. ZERO ASSUMPTIONS: Do NOT hallucinate, fabricate, or assume any company facts, awards, fake achievements, or unprovided candidate experience. Strictly use only the provided company name, job title, and Candidate Profile Data.
+2. Standard Professional Format: Use standard English capitalization, professional grammar, clean spacing, and crisp paragraphs (never all-lowercase).
+3. Brevity: Keep the email concise (3 short paragraphs maximum).
+4. Missing Info: If any candidate detail is missing or not provided, use standard bracket placeholders (e.g. [Your Name], [Your Key Skills], [Your Contact Info]).
+5. Output ONLY the raw email text (Subject and Body). Do not include introductory notes, markdown code fences, or explanations.
 
-body:
-hi [hiring manager name or "hiring team"],
+Template Structure:
+Subject: Application for ${jobTitleOrIndustry} - ${candidateName}
 
-i recently came across the <JOB_TITLE> opening at <COMPANY> and wanted to reach out. <1-2 sentences explaining specific interest in this role at this company>.
+Hi [Hiring Manager / Hiring Team],
 
-i have experience in ${profile?.skills?.length ? profile.skills.slice(0, 3).join(', ') : '[your key skill or background]'}, and recently ${profile?.projects || '[briefly describe a relevant project, e.g. built a high-performance web app]'}. i would love to bring this experience to the team at <COMPANY>.
+I am writing to express my interest in the ${jobTitleOrIndustry} position at ${companyName}.
 
-i've attached my resume [or: linked my portfolio/LinkedIn below], and would be grateful for the chance to chat.
+[1-2 crisp sentences directly connecting the candidate's actual skills (${candidateSkills || 'relevant skills'}) and verified project background (${candidateProjects || 'relevant project accomplishments'}) to the ${jobTitleOrIndustry} role at ${companyName}. Do not make up extra facts.]
 
-thanks so much,
-${profile?.fullName || '[your name]'}
-${profile?.email || profile?.phone || '[your contact info]'}
-${profile?.portfolio || profile?.linkedin || '[your linkedin / portfolio link]'}
+I have attached my resume for your consideration and would welcome the opportunity to discuss how my background aligns with your team's requirements.
 
-Rules:
-1. Keep it short.
-2. Replace <COMPANY> with the actual company name provided, and <JOB_TITLE> with the actual job title.
-3. CASUAL/CASUAL-PROFESSIONAL TONE, lowercase styling exactly as shown in the template.
-4. Output ONLY the email text.`;
+Best regards,
+${candidateName}
+${contactLine}
+${linksLine ? linksLine : ''}`.trim();
 
-    userMessage = `${profileContext}Company Name: """${companyName}"""\nJob Title: """${jobTitleOrIndustry}"""`;
+    userMessage = `${profileContext}\nTarget Company: """${companyName}"""\nTarget Job Title: """${jobTitleOrIndustry}"""`;
   } else {
-    systemPrompt = `You are writing a tailored cold outreach email for a job seeker reaching out to a company.
-${hasProfile ? `IMPORTANT: Use the candidate's actual profile details provided below (their name, education, skills, and specific project accomplishments). Personalize the reason and introduction based on their real background. Only use brackets if information is missing.` : `Use standard [brackets] for user placeholders like [your name], [your current role], etc.`}
-Compose 1-2 specific reasons praising the company's work in their industry and explaining how the candidate's background connects with them.
+    systemPrompt = `You are an expert career advisor generating a standardized, professional, and concise exploratory cold outreach email to a prospective employer.
 
-Template format:
-subject: quick question about opportunities at <COMPANY>
+STRICT RULES:
+1. ZERO ASSUMPTIONS: Do NOT hallucinate, fabricate, or assume unverified company praise, fake news, or unprovided candidate achievements. Strictly use only the provided company name, industry, and Candidate Profile Data.
+2. Standard Professional Format: Use standard English capitalization, professional grammar, clean spacing, and crisp paragraphs (never all-lowercase).
+3. Brevity: Keep the email concise (3 short paragraphs maximum).
+4. Missing Info: If any candidate detail is missing or not provided, use standard bracket placeholders (e.g. [Your Name], [Your Key Skills], [Your Contact Info]).
+5. Output ONLY the raw email text (Subject and Body). Do not include introductory notes, markdown code fences, or explanations.
 
-body:
-hi [first name],
+Template Structure:
+Subject: Inquiring about Opportunities in ${jobTitleOrIndustry} at ${companyName} - ${candidateName}
 
-i came across <COMPANY> and wanted to reach out, not just to ask about open roles, but because <1-2 specific reasons praising the company's work in their industry and how you align with it>.
+Hi [Hiring Team / Team Lead],
 
-i'm currently ${profile?.education ? `studying / background in ${profile.education}` : '[your current role]'} and recently ${profile?.projects || '[insert a quick, relevant win or project you worked on]'}.
-i'd love to learn more about how i could bring that energy to your team.
+I am reaching out to explore potential opportunities within the ${jobTitleOrIndustry} division at ${companyName}.
 
-if you're the right person to chat with, i'd be super grateful for a quick convo or happy to be pointed to whoever handles hiring for this role.
+[1-2 crisp sentences stating the candidate's background (${candidateEdu || 'educational background'}), core strengths in ${candidateSkills || 'key skills'}, and verified project experience (${candidateProjects || 'recent project work'}). Do not fabricate company compliments or unverified achievements.]
 
-thanks so much for the time,
-${profile?.fullName || '[your name]'}
-${profile?.portfolio || profile?.linkedin || '[your linkedin / portfolio link]'}
+If you have current or upcoming openings matching this background, I would welcome the opportunity to connect briefly or be directed to the appropriate hiring contact.
 
-Rules:
-1. Keep it short.
-2. Replace <COMPANY> with the actual company name provided.
-3. Be specific in your reason (no generic "i'm passionate about innovation").
-4. Keep the lowercase casual tone exactly as shown in the template.
-5. Output ONLY the email text.`;
+Best regards,
+${candidateName}
+${contactLine}
+${linksLine ? linksLine : ''}`.trim();
 
-    userMessage = `${profileContext}Company Name: """${companyName}"""\nIndustry: """${jobTitleOrIndustry}"""`;
+    userMessage = `${profileContext}\nTarget Company: """${companyName}"""\nTarget Industry: """${jobTitleOrIndustry}"""`;
   }
 
   try {
