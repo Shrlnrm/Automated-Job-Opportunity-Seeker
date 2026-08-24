@@ -1022,6 +1022,225 @@ html.dark-theme .moon-icon { display: none; }
   box-shadow: 0 4px 12px rgba(0,0,0,0.2);
 }
 
+/* ── Profile Page Styles ─────────────────────────────────── */
+.profile-container {
+  max-width: 960px;
+  margin: 28px auto;
+  padding: 0 20px 48px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.profile-hero {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 20px 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.profile-hero-info h1 {
+  font-size: var(--font-size-lg);
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+
+.profile-hero-info p {
+  font-size: var(--font-size-xs);
+  color: var(--text-secondary);
+}
+
+.profile-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.profile-grid-full {
+  grid-column: 1 / -1;
+}
+
+.profile-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.profile-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 12px;
+}
+
+.profile-card-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--text);
+}
+
+.profile-card-title svg {
+  color: var(--text-secondary);
+}
+
+.dropzone {
+  border: 2px dashed var(--border);
+  border-radius: var(--radius-md);
+  padding: 20px;
+  text-align: center;
+  background: var(--surface-2);
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.dropzone:hover, .dropzone.dragover {
+  border-color: var(--primary);
+  background: rgba(59, 130, 246, 0.05);
+}
+
+.dropzone-icon {
+  color: var(--text-secondary);
+}
+
+.dropzone-text {
+  font-size: var(--font-size-xs);
+  color: var(--text);
+  font-weight: 500;
+}
+
+.dropzone-subtext {
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.form-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-row label {
+  font-size: var(--font-size-xs);
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.form-row input,
+.form-row textarea {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 8px 12px;
+  color: var(--text);
+  font-size: var(--font-size-sm);
+  font-family: inherit;
+  transition: border-color 0.15s;
+  resize: vertical;
+}
+
+.form-row input:focus,
+.form-row textarea:focus {
+  outline: none;
+  border-color: var(--primary);
+}
+
+.password-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.password-input-wrapper input {
+  padding-right: 2.5rem !important;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.password-toggle-btn {
+  position: absolute;
+  right: 0.6rem;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  padding: 4px;
+  margin: 0;
+  cursor: pointer;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: color 0.15s;
+}
+
+.password-toggle-btn:hover {
+  color: var(--text);
+}
+
+.password-toggle-btn:focus-visible {
+  outline: 2px solid var(--primary, #3b82f6);
+}
+
+.form-row-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.badge-saved {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: #10b981;
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+}
+
+.profile-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+@media (max-width: 768px) {
+  .profile-grid {
+    grid-template-columns: 1fr;
+  }
+  .form-row-grid {
+    grid-template-columns: 1fr;
+  }
+  .profile-hero {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+}
+
 [data-tooltip]:hover::before {
   opacity: 1;
   visibility: visible;

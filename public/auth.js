@@ -16,17 +16,6 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const googleProvider = new GoogleAuthProvider();
 
-// Theme logic
-function applyTheme() {
-  const savedTheme = localStorage.getItem('theme');
-  if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-    document.body.classList.add('dark-theme');
-  } else {
-    document.body.classList.remove('dark-theme');
-  }
-}
-applyTheme();
-
 const errorMsg = document.getElementById('errorMsg');
 function showError(msg) {
   if (errorMsg) {
@@ -70,6 +59,30 @@ document.addEventListener('DOMContentLoaded', () => {
     sessionStorage.removeItem('pendingToast');
   }
 });
+
+// Password Visibility Toggle Logic
+function setupPasswordToggles() {
+  document.querySelectorAll('.password-toggle-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      const wrapper = btn.closest('.password-input-wrapper');
+      const input = wrapper ? wrapper.querySelector('input') : null;
+      if (!input) return;
+
+      const isPassword = input.type === 'password';
+      input.type = isPassword ? 'text' : 'password';
+      btn.setAttribute('aria-label', isPassword ? 'Hide password' : 'Show password');
+
+      const eyeIcon = btn.querySelector('.eye-icon');
+      const eyeOffIcon = btn.querySelector('.eye-off-icon');
+      if (eyeIcon && eyeOffIcon) {
+        eyeIcon.style.display = isPassword ? 'none' : 'block';
+        eyeOffIcon.style.display = isPassword ? 'block' : 'none';
+      }
+    });
+  });
+}
+setupPasswordToggles();
 
 // Redirect logged-in users to dashboard; block unverified emails
 onAuthStateChanged(auth, (user) => {

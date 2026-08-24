@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en" data-mode="profile">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AJOS - User Profile</title>
+  <link rel="stylesheet" href="style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <!-- PDF.js library for client-side PDF text extraction -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js" crossorigin="anonymous"></script>
+  <!-- Firebase Import Map for Native ES Modules -->
+  <script type="importmap">
+    {
+      "imports": {
+        "firebase/app": "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js",
+        "firebase/auth": "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js",
+        "firebase/firestore": "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js",
+        "firebase/analytics": "https://www.gstatic.com/firebasejs/10.12.2/firebase-analytics.js"
+      }
+    }
+  </script>
+</head>
+<body>
+
+  <script>
+    if (localStorage.getItem('theme') === 'dark') {
+      document.documentElement.classList.add('dark-theme');
+    }
+  </script>
+
+  <!-- Top Bar -->
+  <header class="topbar">
+    <div class="topbar-left">
+      <a href="#" onclick="window.location.reload(); return false;" class="logo-link">
+        <div class="app-icon">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <rect width="16" height="16" rx="4" fill="currentColor"/>
+            <circle cx="8" cy="8" r="3" fill="var(--bg-color, var(--bg))"/>
+          </svg>
+        </div>
+        <span class="app-name">AJOS</span>
+      </a>
+      <span class="divider">/</span>
+      <div class="mode-toggle">
+        <div class="custom-dropdown">
+          <a href="/job-search.html" class="mode-btn" style="text-decoration:none;">Job Search</a>
+          <div class="dropdown-menu tooltip-menu tooltip-menu-center">Discover and explore active job opportunities across Malaysia.</div>
+        </div>
+        <div class="custom-dropdown">
+          <a href="/company-search.html" class="mode-btn" style="text-decoration:none;">Company Search</a>
+          <div class="dropdown-menu tooltip-menu tooltip-menu-center">Research prospective employers and gather detailed insights on companies from your job search.</div>
+        </div>
+        <div class="custom-dropdown">
+          <a href="/profile.html" class="mode-btn active" style="text-decoration:none;">Profile</a>
+          <div class="dropdown-menu tooltip-menu tooltip-menu-center">Manage your resume AI context, skills, and account settings.</div>
+        </div>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <button id="themeToggleBtn" class="theme-toggle-btn" aria-label="Toggle theme" style="margin-right: 8px;" data-tooltip="Toggle dark mode">
+        <svg class="sun-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="5"></circle>
+          <line x1="12" y1="1" x2="12" y2="3"></line>
+          <line x1="12" y1="21" x2="12" y2="23"></line>
+          <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+          <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+          <line x1="1" y1="12" x2="3" y2="12"></line>
+          <line x1="21" y1="12" x2="23" y2="12"></line>
+          <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+          <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+        </svg>
+        <svg class="moon-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+        </svg>
+      </button>
+      <div id="limitsShowcase" class="limits-showcase" style="display: none;">
+        <div class="limit-label" id="limitLabel">Limits Loading...</div>
+        <div class="limit-bar-bg">
+          <div class="limit-bar-fill" id="limitBarFill"></div>
+        </div>
+      </div>
+      <button id="logoutBtn" class="btn btn-danger">Logout</button>
+    </div>
+  </header>
+
+  <!-- Profile Content Container -->
+  <main class="profile-container">
+
+    <!-- Hero Header -->
+    <section class="profile-hero">
+      <div class="profile-hero-info">
+        <h1>User Profile & Resume Intelligence</h1>
+        <p id="userEmailDisplay">Loading account information...</p>
+      </div>
+    </section>
+
+    <!-- Grid: Resume Extractor & Account Security -->
+    <div class="profile-grid">
+      
+      <!-- Card 1: Resume / CV Upload & AI Extraction -->
+      <section class="profile-card">
+        <div class="profile-card-header">
+          <div class="profile-card-title">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+            Resume / CV Extractor
+          </div>
+          <span style="font-size: var(--font-size-xs); color: var(--text-muted);">AI Powered</span>
+        </div>
+
+        <div class="dropzone" id="dropzone">
+          <input type="file" id="resumeFileInput" accept=".pdf,.txt,.docx,.md" style="display: none;"/>
+          <svg class="dropzone-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="17 8 12 3 7 8"/>
+            <line x1="12" y1="3" x2="12" y2="15"/>
+          </svg>
+          <div class="dropzone-text" id="dropzoneText">Click or Drag & Drop Resume (PDF or TXT)</div>
+          <div class="dropzone-subtext">Max file size: 10MB</div>
+        </div>
+
+        <div class="form-row">
+          <label for="rawResumeText">Or paste your Resume / CV text directly:</label>
+          <textarea id="rawResumeText" rows="4" placeholder="Paste resume, work history, projects, or education text here..."></textarea>
+        </div>
+
+        <div class="profile-card-actions">
+          <button id="extractBtn" class="btn btn-primary">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+            Extract Info with AI
+          </button>
+        </div>
+      </section>
+
+      <!-- Card 2: Account Security / Change Password -->
+      <section class="profile-card">
+        <div class="profile-card-header">
+          <div class="profile-card-title">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            Account Security
+          </div>
+          <span style="font-size: var(--font-size-xs); color: var(--text-muted);">Firebase Auth</span>
+        </div>
+
+        <form id="changePasswordForm" style="display: flex; flex-direction: column; gap: 12px;">
+          <div class="form-row">
+            <label for="currentPassword">Current Password (if prompted):</label>
+            <div class="password-input-wrapper">
+              <input type="password" id="currentPassword" placeholder="••••••••" autocomplete="current-password"/>
+              <button type="button" class="password-toggle-btn" aria-label="Toggle password visibility" tabindex="-1">
+                <svg class="eye-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                  <circle cx="12" cy="12" r="3"></circle>
+                </svg>
+                <svg class="eye-off-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none;">
+                  <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                  <line x1="1" y1="1" x2="23" y2="23"></line>
+                </svg>
+              </button>
+            </div>
+          </div>
+          <div class="form-row">
+            <label for="newPassword">New Password:</label>
+            <div class="password-input-wrapper">
+              <input type="password" id="newPassword" placeholder="At least 6 characters" autocomplete="new-password" required/>
+              <button type="button" class="password-toggle-btn" aria-label="Toggle password visibility" tabindex="-1">
+                <svg class="eye-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8z"></path>
+                  <circle cx="12" cy="12" r="3"></circle>
+                </svg>
+                <svg class="eye-off-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none;">
+                  <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                  <line x1="1" y1="1" x2="23" y2="23"></line>
+                </svg>
+              </button>
+            </div>
+          </div>
+          <div class="form-row">
+            <label for="confirmPassword">Confirm New Password:</label>
+            <div class="password-input-wrapper">
+              <input type="password" id="confirmPassword" placeholder="••••••••" autocomplete="new-password" required/>
+              <button type="button" class="password-toggle-btn" aria-label="Toggle password visibility" tabindex="-1">
+                <svg class="eye-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8z"></path>
+                  <circle cx="12" cy="12" r="3"></circle>
+                </svg>
+                <svg class="eye-off-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none;">
+                  <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                  <line x1="1" y1="1" x2="23" y2="23"></line>
+                </svg>
+              </button>
+            </div>
+          </div>
+          
+          <div class="profile-card-actions" style="margin-top: 4px;">
+            <button type="submit" id="updatePasswordBtn" class="btn btn-primary">
+              Update Password
+            </button>
+            <button type="button" id="sendResetEmailBtn" class="btn btn-ghost">
+              Send Reset Email
+            </button>
+          </div>
+        </form>
+      </section>
+
+      <!-- Card 3: Extracted Career Profile & Outreach Context (Full Width) -->
+      <section class="profile-card profile-grid-full">
+        <div class="profile-card-header">
+          <div class="profile-card-title">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            Extracted Career Profile (Used for Tailored Outreach)
+          </div>
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <div id="profileSavedBadge" style="display: none;">
+              <span class="badge-saved">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                Saved in Database
+              </span>
+            </div>
+            <button id="saveProfileBtn" class="btn btn-primary">
+              Save Profile
+            </button>
+          </div>
+        </div>
+
+        <div class="form-row-grid">
+          <div class="form-row">
+            <label for="profileName">Full Name:</label>
+            <input type="text" id="profileName" placeholder="e.g. Ahmad Razak" autocomplete="off"/>
+          </div>
+          <div class="form-row">
+            <label for="profileEducation">Education / Where you studied:</label>
+            <input type="text" id="profileEducation" placeholder="e.g. Universiti Malaya (Computer Science)" autocomplete="off"/>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <label for="profileSkills">Key Skills (Comma separated):</label>
+          <input type="text" id="profileSkills" placeholder="e.g. React, Node.js, Python, PCB Design, Test Engineering" autocomplete="off"/>
+        </div>
+
+        <div class="form-row">
+          <label for="profileProjects">Standout Projects / Work Accomplishments:</label>
+          <textarea id="profileProjects" rows="3" placeholder="e.g. Built automated hardware test benches; Developed web scraper processing 10k leads/day..."></textarea>
+        </div>
+
+        <div class="form-row-grid">
+          <div class="form-row">
+            <label for="profileLinkedin">LinkedIn Profile URL:</label>
+            <input type="text" id="profileLinkedin" placeholder="https://linkedin.com/in/username" autocomplete="off"/>
+          </div>
+          <div class="form-row">
+            <label for="profilePortfolio">Portfolio / GitHub URL:</label>
+            <input type="text" id="profilePortfolio" placeholder="https://github.com/username" autocomplete="off"/>
+          </div>
+        </div>
+
+        <div class="form-row-grid">
+          <div class="form-row">
+            <label for="profileEmail">Contact Email:</label>
+            <input type="email" id="profileEmail" placeholder="yourname@gmail.com" autocomplete="off"/>
+          </div>
+          <div class="form-row">
+            <label for="profilePhone">Phone Number:</label>
+            <input type="text" id="profilePhone" placeholder="+6012-3456789" autocomplete="off"/>
+          </div>
+        </div>
+
+      </section>
+
+    </div>
+
+  </main>
+
+  <!-- Toast Container -->
+  <div id="toast" class="toast"></div>
+
+  <!-- Profile Logic -->
+  <script type="module" src="profile.js"></script>
+
+  <!-- Standard Theme Toggle Script (identical across all pages) -->
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const btn = document.getElementById('themeToggleBtn');
+      if (btn) {
+        const isDarkInitial = document.documentElement.classList.contains('dark-theme');
+        btn.setAttribute('data-tooltip', isDarkInitial ? 'Toggle light mode' : 'Toggle dark mode');
+
+        btn.addEventListener('click', () => {
+          const isDarkNow = document.documentElement.classList.toggle('dark-theme');
+          localStorage.setItem('theme', isDarkNow ? 'dark' : 'light');
+          btn.setAttribute('data-tooltip', isDarkNow ? 'Toggle light mode' : 'Toggle dark mode');
+        });
+      }
+    });
+  </script>
+
+</body>
+</html>
