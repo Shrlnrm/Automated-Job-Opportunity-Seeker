@@ -3,60 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AJOS - Automated Job Opportunity Seeker</title>
+  <title>AJOS - Job Search & Company Contact Finder</title>
   <link rel="stylesheet" href="auth.css">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <style>
-    .landing-card {
-      max-width: 500px;
-      text-align: center;
-      padding: 3rem;
-    }
-    .landing-title {
-      font-size: 28px;
-      font-weight: 700;
-      color: var(--text-primary);
-      margin-bottom: 12px;
-    }
-    .landing-subtitle {
-      font-size: 15px;
-      color: var(--text-secondary);
-      margin-bottom: 20px;
-      line-height: 1.5;
-    }
-    .landing-logo {
-      margin-bottom: 24px;
-    }
-    .landing-logo svg {
-      width: 48px;
-      height: 48px;
-    }
-    .landing-actions {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
-  </style>
-</head>
-<body>
-
-  <button id="themeToggleBtn" class="theme-toggle-btn" aria-label="Toggle theme" data-tooltip="Toggle dark mode">
-    <svg class="sun-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-      <circle cx="12" cy="12" r="5"></circle>
-      <line x1="12" y1="1" x2="12" y2="3"></line>
-      <line x1="12" y1="21" x2="12" y2="23"></line>
-      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
-      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
-      <line x1="1" y1="12" x2="3" y2="12"></line>
-      <line x1="21" y1="12" x2="23" y2="12"></line>
-      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
-      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
-    </svg>
-    <svg class="moon-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
-    </svg>
-  </button>
-
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 
   <!-- Theme initialization to prevent flash -->
   <script>
@@ -65,36 +14,294 @@
       document.documentElement.classList.add('dark-theme');
     }
   </script>
+</head>
+<body class="landing-page-body" id="top">
 
-  <div class="auth-container">
-    <div class="auth-card landing-card">
-      <div class="landing-logo">
-        <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Sticky Navbar with 3-Column Centered Grid -->
+  <header class="landing-navbar">
+    <div class="nav-container">
+      <a href="index.html" class="nav-brand">
+        <svg width="24" height="24" viewBox="0 0 16 16" fill="none">
           <rect width="16" height="16" rx="4" fill="currentColor"/>
           <circle cx="8" cy="8" r="3" fill="var(--bg-color, var(--bg))"/>
         </svg>
-      </div>
-      <h1 class="landing-title">Welcome to AJOS</h1>
-      <p class="landing-subtitle">
-        Your automated job opportunity seeker and company lead generation tool. Find the perfect job or client in seconds.
-      </p>
-      
-      <div class="slots-badge" id="slotsBadge">
-        <span class="slots-dot"></span>
-        <span><b id="slotsCount">--/20</b> Registered</span>
-      </div>
+        AJOS
+      </a>
 
-      <div class="landing-actions">
-        <a href="login.html" class="btn btn-primary" style="text-decoration:none;">Log In</a>
-        <a href="register.html" class="btn btn-primary" style="text-decoration:none;">Register</a>
+      <nav class="nav-menu">
+        <a href="#features" class="nav-link">Features</a>
+        <a href="#how-it-works" class="nav-link">How It Works</a>
+        <a href="#early-access" class="nav-link">Early Access</a>
+      </nav>
+
+      <div class="nav-actions">
+        <button id="themeToggleBtn" class="theme-toggle-btn" aria-label="Toggle theme" data-tooltip="Toggle dark mode">
+          <svg class="sun-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="5"></circle>
+            <line x1="12" y1="1" x2="12" y2="3"></line>
+            <line x1="12" y1="21" x2="12" y2="23"></line>
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+            <line x1="1" y1="12" x2="3" y2="12"></line>
+            <line x1="21" y1="12" x2="23" y2="12"></line>
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+          </svg>
+          <svg class="moon-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+          </svg>
+        </button>
+        <a href="login.html" class="btn-nav-login">Log In</a>
+        <a href="register.html" class="btn-nav-register">Get Started</a>
       </div>
     </div>
-  </div>
+  </header>
 
-  <div style="position:fixed; bottom:1.5rem; width:100%; text-align:center; font-size:0.75rem; color:var(--text-muted);">
-    <a href="privacy.html" style="color:var(--text-muted); text-decoration:none; margin:0 0.75rem;">Privacy Policy</a>
-    <a href="terms.html" style="color:var(--text-muted); text-decoration:none; margin:0 0.75rem;">Terms of Service</a>
-  </div>
+  <main>
+    <!-- Hero Section -->
+    <section class="hero-section">
+      <h1 class="hero-title">Find jobs and reach out to companies faster</h1>
+      <p class="hero-subtitle">
+        Search job openings across the web, view company details, match skills from your resume, and write cover letters in seconds.
+      </p>
+
+      <div class="hero-actions">
+        <a href="register.html" class="hero-btn-primary">
+          Get Started
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 8h10M9 4l4 4-4 4"/>
+          </svg>
+        </a>
+        <a href="login.html" class="hero-btn-secondary">Sign In</a>
+        <a href="#features" class="hero-btn-secondary">Explore Features ↓</a>
+      </div>
+    </section>
+
+    <!-- Key Metrics Strip -->
+    <div class="metrics-container">
+      <div class="metrics-bar">
+        <div class="metric-item">
+          <div class="metric-value">10 Searches / mo</div>
+          <div class="metric-label">Job search quota</div>
+        </div>
+        <div class="metric-item">
+          <div class="metric-value">3,000 Lookups / mo</div>
+          <div class="metric-label">Company info quota</div>
+        </div>
+        <div class="metric-item">
+          <div class="metric-value">100% Private</div>
+          <div class="metric-label">Data never sold</div>
+        </div>
+        <div class="metric-item">
+          <div class="metric-value">AI Tools</div>
+          <div class="metric-label">Resume & cover letters</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Features Section -->
+    <section id="features" class="landing-section">
+      <div class="section-header">
+        <span class="section-eyebrow">Features</span>
+        <h2 class="section-title">Everything you need to find and apply for jobs</h2>
+        <p class="section-subtitle">
+          Simple tools to help you search openings, learn about companies, and apply.
+        </p>
+      </div>
+
+      <div class="bento-grid">
+        <!-- Feature 1 -->
+        <div class="bento-card">
+          <div class="bento-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+          </div>
+          <h3 class="bento-card-title">All-in-One Job Search</h3>
+          <p class="bento-card-desc">
+            Search live job listings from Google Jobs and top career sites. Filter easily by remote work, experience level, and job title.
+          </p>
+        </div>
+
+        <!-- Feature 2 -->
+        <div class="bento-card">
+          <div class="bento-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
+              <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
+            </svg>
+          </div>
+          <h3 class="bento-card-title">Company Details & Contacts</h3>
+          <p class="bento-card-desc">
+            Find company websites, office locations, and direct contact details so you know who you are applying to.
+          </p>
+        </div>
+
+        <!-- Feature 3 -->
+        <div class="bento-card">
+          <div class="bento-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+              <line x1="16" y1="13" x2="8" y2="13"></line>
+              <line x1="16" y1="17" x2="8" y2="17"></line>
+              <polyline points="10 9 9 9 8 9"></polyline>
+            </svg>
+          </div>
+          <h3 class="bento-card-title">Instant Resume Skill Reader</h3>
+          <p class="bento-card-desc">
+            Upload your resume as a PDF or text file. It reads your skills and experience directly on your device so your file stays private.
+          </p>
+        </div>
+
+        <!-- Feature 4 -->
+        <div class="bento-card">
+          <div class="bento-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+            </svg>
+          </div>
+          <h3 class="bento-card-title">Cover Letter Writer</h3>
+          <p class="bento-card-desc">
+            Create personalized cover letters matched to any job description with a single click.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- How It Works Section -->
+    <section id="how-it-works" class="landing-section">
+      <div class="section-header">
+        <span class="section-eyebrow">How It Works</span>
+        <h2 class="section-title">How AJOS works</h2>
+        <p class="section-subtitle">
+          Three simple steps to find jobs and send applications.
+        </p>
+      </div>
+
+      <div class="workflow-grid">
+        <div class="workflow-card">
+          <div class="workflow-num">01</div>
+          <h3 class="workflow-title">Search for jobs</h3>
+          <p class="workflow-desc">
+            Type in the job title you want and choose your location or remote preference.
+          </p>
+        </div>
+
+        <div class="workflow-card">
+          <div class="workflow-num">02</div>
+          <h3 class="workflow-title">Check the details</h3>
+          <p class="workflow-desc">
+            Read the job requirements, check the company website, and compare skills with your resume.
+          </p>
+        </div>
+
+        <div class="workflow-card">
+          <div class="workflow-num">03</div>
+          <h3 class="workflow-title">Apply with ease</h3>
+          <p class="workflow-desc">
+            Generate a cover letter tailored to the role and apply directly.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Early Access & Capacity Section -->
+    <section id="early-access" class="landing-section">
+      <div class="section-header">
+        <span class="section-eyebrow">Early Access</span>
+        <h2 class="section-title">Currently open to 20 users</h2>
+        <p class="section-subtitle">
+          We are keeping early access small to make sure the site runs fast and smoothly for everyone.
+        </p>
+
+        <div class="slots-badge-wrapper" style="margin-top: 1.5rem; margin-bottom: 0;">
+          <div class="slots-badge" id="slotsBadge">
+            <span>Early Access: <b id="slotsCount">--/20</b> spots taken</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="quota-grid">
+        <div class="quota-card">
+          <h3>20 Early User Spots</h3>
+          <p>Registration is open for the first 20 people. Once full, sign-ups will temporarily close.</p>
+          <ul class="quota-list">
+            <li>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+              Live counter of open spots
+            </li>
+            <li>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+              Full access to all search tools
+            </li>
+            <li>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+              No waitlist once registered
+            </li>
+          </ul>
+        </div>
+
+        <div class="quota-card">
+          <h3>Monthly Usage Limits</h3>
+          <p>Every user gets a generous monthly allowance that resets every 30 days.</p>
+          <ul class="quota-list">
+            <li>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+              10 job searches each month
+            </li>
+            <li>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+              3,000 company lookups each month
+            </li>
+            <li>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+              Limits reset automatically every 30 days
+            </li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- Bottom CTA Section (Borderless) -->
+    <section class="landing-section cta-section">
+      <h2 class="section-title" style="font-size: 2.25rem;">Ready to start your job search?</h2>
+      <p class="section-subtitle" style="max-width: 520px; margin: 0.75rem auto 2.25rem auto;">
+        Create an account today before the 20 early access spots fill up.
+      </p>
+      <div class="hero-actions">
+        <a href="register.html" class="hero-btn-primary">Get Started</a>
+        <a href="login.html" class="hero-btn-secondary">Sign In</a>
+      </div>
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <footer class="landing-footer">
+    <div class="footer-inner">
+      <div>
+        © 2026 AJOS (Automated Job Opportunity Seeker). All rights reserved.
+      </div>
+      <div class="footer-links">
+        <a href="privacy.html">Privacy Policy</a>
+        <a href="terms.html">Terms of Service</a>
+        <a href="#top">Back to top ↑</a>
+      </div>
+    </div>
+  </footer>
 
   <script>
     document.addEventListener('DOMContentLoaded', () => {
