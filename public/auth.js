@@ -242,6 +242,7 @@ if (loginForm) {
       if (!isUserVerified(userCred.user)) {
         window.location.href = '/verify-email.html';
       } else {
+        localStorage.setItem('lastActivityTime', Date.now().toString());
         window.location.href = '/job-search.html';
       }
     } catch (error) {
@@ -286,12 +287,12 @@ if (forgotForm) {
   });
 }
 
-// Google Auth (Login & Register)
 // Handle Google OAuth Redirect Result (Fallback for PCs / Browsers blocking popups)
 getRedirectResult(auth)
   .then(async (userCred) => {
     if (userCred && userCred.user) {
       try {
+        localStorage.setItem('lastActivityTime', Date.now().toString());
         const idToken = await userCred.user.getIdToken();
         await initUserOnBackend('google_bypass', idToken);
         window.location.href = '/job-search.html';
@@ -324,6 +325,7 @@ if (googleBtn) {
         setPersistence(auth, browserSessionPersistence).catch(() => {});
       }
       
+      localStorage.setItem('lastActivityTime', Date.now().toString());
       const idToken = await userCred.user.getIdToken();
       
       try {

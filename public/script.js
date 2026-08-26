@@ -98,10 +98,13 @@ onAuthStateChanged(auth, (user) => {
       return;
     }
     
-    // 5-day inactivity check
-    const lastActivityStr = localStorage.getItem('lastActivityTime');
+    // 5-day inactivity check (with fresh sign-in immunity)
     const now = Date.now();
-    if (lastActivityStr && (now - parseInt(lastActivityStr, 10)) > 5 * 24 * 60 * 60 * 1000) {
+    const lastSignInTime = user.metadata?.lastSignInTime ? new Date(user.metadata.lastSignInTime).getTime() : 0;
+    const isFreshLogin = (now - lastSignInTime) < 15 * 60 * 1000; // Logged in within the last 15 minutes
+
+    const lastActivityStr = localStorage.getItem('lastActivityTime');
+    if (!isFreshLogin && lastActivityStr && (now - parseInt(lastActivityStr, 10)) > 5 * 24 * 60 * 60 * 1000) {
       localStorage.removeItem('lastActivityTime');
       auth.signOut();
       sessionStorage.setItem('pendingToast', 'For your security, your session has expired due to inactivity. Please log in again.');
