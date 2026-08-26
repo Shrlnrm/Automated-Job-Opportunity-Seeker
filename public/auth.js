@@ -1,5 +1,5 @@
 import { initializeApp } from "firebase/app";
-import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, setPersistence, browserLocalPersistence, browserSessionPersistence, sendEmailVerification } from "firebase/auth";
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, onAuthStateChanged, setPersistence, browserLocalPersistence, browserSessionPersistence, sendEmailVerification } from "firebase/auth";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBJnS3EYawuCHHnegronWe_WPRH7TPbO1A",
@@ -287,14 +287,37 @@ if (forgotForm) {
 }
 
 // Google Auth (Login & Register)
+// Handle Google OAuth Redirect Result (Fallback for PCs / Browsers blocking popups)
+getRedirectResult(auth)
+  .then(async (userCred) => {
+    if (userCred && userCred.user) {
+      try {
+        const idToken = await userCred.user.getIdToken();
+        await initUserOnBackend('google_bypass', idToken);
+        window.location.href = '/job-search.html';
+      } catch (err) {
+        if (auth.currentUser) await auth.signOut();
+        showError(err);
+      }
+    }
+  })
+  .catch((error) => {
+    if (error && error.code && error.code !== 'auth/null-user') {
+      showError(error);
+    }
+  });
+
 // Google Auth (Login & Register)
 const googleBtn = document.getElementById('googleBtn');
 if (googleBtn) {
   googleBtn.addEventListener('click', async () => {
     hideError();
     const rememberMe = document.getElementById('rememberMe')?.checked ?? true;
+    googleBtn.disabled = true;
+    googleBtn.style.opacity = '0.7';
+
     try {
-      // Trigger popup directly within the user click gesture to avoid browser popup blockers
+      // 1. Attempt popup directly within click gesture
       const userCred = await signInWithPopup(auth, googleProvider);
       
       if (!rememberMe) {
@@ -308,12 +331,35 @@ if (googleBtn) {
       } catch (err) {
         if (auth.currentUser) await auth.signOut();
         showError(err);
+        googleBtn.disabled = false;
+        googleBtn.style.opacity = '1';
         return;
       }
       
       window.location.href = '/job-search.html';
     } catch (error) {
+      // 2. If popup is blocked by PC browser/adblocker/policy, automatically fall back to redirect
+      if (
+        error.code === 'auth/popup-blocked' ||
+        error.code === 'auth/cancelled-popup-request' ||
+        (error.code === 'auth/popup-closed-by-user' && error.message?.includes('blocked'))
+      ) {
+        try {
+          if (!rememberMe) {
+            await setPersistence(auth, browserSessionPersistence);
+          }
+          await signInWithRedirect(auth, googleProvider);
+          return;
+        } catch (redirectErr) {
+          showError(redirectErr);
+          googleBtn.disabled = false;
+          googleBtn.style.opacity = '1';
+          return;
+        }
+      }
       showError(error);
+      googleBtn.disabled = false;
+      googleBtn.style.opacity = '1';
     }
   });
 }
