@@ -141,6 +141,12 @@ onAuthStateChanged(auth, (user) => {
   if (user) {
     localStorage.setItem('lastActivityTime', Date.now().toString());
 
+    // Do NOT run redirect loops if user is already on verify-email or auth-action page
+    const pathname = window.location.pathname;
+    if (pathname.includes('verify-email') || pathname.includes('auth-action')) {
+      return;
+    }
+
     if (!isUserVerified(user)) {
       console.log('[AJOS Auth] User unverified -> /verify-email.html');
       window.location.replace('/verify-email.html');

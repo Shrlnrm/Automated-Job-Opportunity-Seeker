@@ -914,19 +914,20 @@ body, .topbar, .toolbar, .mode-toggle, .field-group, .btn, table, th, td, tbody 
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
   background: transparent;
-  border: none;
+  border: 1px solid var(--border);
   color: var(--text-muted);
   cursor: pointer;
-  transition: background-color 0.2s ease, color 0.2s ease;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
 }
 
 .theme-toggle-btn:hover {
   background-color: rgba(120, 119, 116, 0.1);
   color: var(--text);
+  border-color: var(--border-hover, var(--border));
 }
 
 html:not(.dark-theme) .sun-icon { display: none; }

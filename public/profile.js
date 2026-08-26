@@ -399,28 +399,4 @@ onAuthStateChanged(auth, async (user) => {
 
   // Load existing profile from database
   loadStoredProfile();
-
-  // Listen to Firestore doc for role / limits
-  const userDocRef = doc(db, 'users', user.uid);
-  onSnapshot(userDocRef, (docSnap) => {
-    if (!docSnap.exists()) return;
-    const userData = docSnap.data();
-    const isOwner = userData.role === 'owner';
-
-    if (limitsShowcase && limitLabel && limitBarFill) {
-      limitsShowcase.style.display = 'flex';
-      if (isOwner) {
-        limitLabel.textContent = 'Unlimited (Owner)';
-        limitBarFill.style.width = '100%';
-        limitBarFill.style.backgroundColor = 'var(--accent)';
-      } else {
-        const remaining = userData.companyLoadsRemaining ?? 0;
-        const total = 500;
-        const pct = Math.min(100, Math.max(0, (remaining / total) * 100));
-        limitLabel.textContent = `${remaining} / ${total} Limit`;
-        limitBarFill.style.width = `${pct}%`;
-        limitBarFill.style.backgroundColor = pct < 20 ? '#ef4444' : (pct < 50 ? '#f59e0b' : '#3b82f6');
-      }
-    }
-  });
 });
