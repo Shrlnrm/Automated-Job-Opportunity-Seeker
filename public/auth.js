@@ -308,11 +308,10 @@ getRedirectResult(auth)
     }
   });
 
-// Google Auth (Login & Register - Full Page Redirect Flow)
+// Google Auth (Login & Register - Popup Flow)
 const googleBtn = document.getElementById('googleBtn');
 if (googleBtn) {
   googleBtn.addEventListener('click', async () => {
-    console.log('[AJOS Auth] Google Sign-In button clicked');
     hideError();
     const rememberMe = document.getElementById('rememberMe')?.checked ?? true;
     googleBtn.disabled = true;
@@ -320,15 +319,34 @@ if (googleBtn) {
 
     try {
       if (!rememberMe) {
-        await setPersistence(auth, browserSessionPersistence);
+        setPersistence(auth, browserSessionPersistence).catch(() => {});
       } else {
-        await setPersistence(auth, browserLocalPersistence);
+        setPersistence(auth, browserLocalPersistence).catch(() => {});
       }
-      console.log('[AJOS Auth] Starting signInWithRedirect to Google...');
-      await signInWithRedirect(auth, googleProvider);
+
+      console.log('[AJOS Auth] Opening Google sign-in popup...');
+      const userCred = await signInWithPopup(auth, googleProvider);
+      
+      if (userCred && userCred.user) {
+        console.log('[AJOS Auth] Google popup success:', userCred.user.email);
+        localStorage.setItem('lastActivityTime', Date.now().toString());
+
+        // Fire-and-forget: initialize user in backend
+        userCred.user.getIdToken().then(idToken => {
+          initUserOnBackend('google_bypass', idToken).catch(err => {
+            console.warn('[AJOS Auth] Backend init background warning:', err);
+          });
+        }).catch(() => {});
+
+        console.log('[AJOS Auth] Navigating to /job-search.html');
+        window.location.replace('/job-search.html');
+      }
     } catch (error) {
-      console.error('[AJOS Auth Error] signInWithRedirect failed:', error);
-      showError(error);
+      console.warn('[AJOS Auth Error] Google popup:', error);
+      if (error.code !== 'auth/popup-closed-by-user') {
+        showError(error);
+      }
+    } finally {
       googleBtn.disabled = false;
       googleBtn.style.opacity = '1';
     }
