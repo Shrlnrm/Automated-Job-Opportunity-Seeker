@@ -66,58 +66,59 @@
     </a>
 
     <h1>Privacy Policy</h1>
-    <span class="updated">Last updated: June 2026</span>
+    <span class="updated">Last updated: August 2026</span>
 
-    <p>AJOS ("we", "our", "the platform") is committed to protecting your personal data in accordance with the Personal Data Protection Act 2010 (PDPA Malaysia). This policy explains what data we collect, why, and your rights.</p>
+    <p>AJOS ("we", "our", "the platform") is committed to protecting your personal data in accordance with the Personal Data Protection Act 2010 (PDPA Malaysia). This policy explains what data we collect, how it is handled, and your privacy rights.</p>
 
     <h2>1. What We Collect</h2>
     <ul>
-      <li><strong>Email address</strong> - for account creation, authentication, and platform access.</li>
-      <li><strong>Usage data</strong> - job search queries and company search queries are stored temporarily (up to 2 hours) to restore your last session. They are automatically overwritten on your next search.</li>
-      <li><strong>Account metadata</strong> - your remaining monthly search limits and account creation date, used to enforce fair usage.</li>
+      <li><strong>Account & Authentication:</strong> Email address, login method (email/password or Google OAuth), and account timestamps managed via Firebase Authentication.</li>
+      <li><strong>User Profile & Resume Information:</strong> Optional profile fields you provide (such as your full name, education history, technical skills, project links, portfolio/LinkedIn URLs, and uploaded resume text) used exclusively to personalize job search matching and generate cover letter drafts.</li>
+      <li><strong>Temporary Search Context:</strong> Your recent job search query, filters, and company lookups are stored temporarily (up to 2 hours) to restore your active work session across tab switches. Expired session caches are automatically deleted.</li>
+      <li><strong>Account Quota Metadata:</strong> Monthly search limits and rolling reset dates to enforce fair usage.</li>
     </ul>
 
-    <h2>2. What We Do NOT Collect</h2>
+    <h2>2. Data Privacy & Zero Monetization</h2>
     <ul>
-      <li>We do not collect your name, phone number, location, or payment information.</li>
-      <li>We do not sell or share your data with third parties for advertising purposes.</li>
-      <li>We do not store permanent search history.</li>
+      <li>We <strong>do NOT</strong> sell, rent, trade, or share your personal information, resume content, or search queries with third-party advertisers, data brokers, or recruitment agencies.</li>
+      <li>We do not collect or store financial or payment card data.</li>
+      <li>We do not retain permanent search histories or tracking profiles.</li>
     </ul>
 
     <h2>3. How We Use Your Data</h2>
-    <p>Your email and account data are used solely to:</p>
+    <p>Your data is strictly used to provide platform features:</p>
     <ul>
-      <li>Authenticate you securely via Firebase Authentication.</li>
-      <li>Enforce your monthly search quota.</li>
-      <li>Restore your most recent search session upon re-login.</li>
+      <li>Authenticate and protect your account session securely.</li>
+      <li>Enforce your monthly quota limits.</li>
+      <li>Extract resume details and generate AI-assisted cover letter and outreach suggestions at your explicit request.</li>
+      <li>Restore your immediate workspace state upon re-login.</li>
     </ul>
 
-    <h2>4. Data Retention</h2>
-    <p>Your account data is retained for as long as your account exists. Temporary search data is overwritten every 2 hours. You may request full deletion at any time (see Section 6).</p>
+    <h2>4. Data Retention & Deletion</h2>
+    <p>Your account profile data is retained as long as your account remains active. Temporary search caches expire within 2 hours. You have the right to request immediate and complete account and data erasure at any time.</p>
 
-    <h2>5. Third-Party Services</h2>
-    <p>We use the following third-party services which have their own privacy policies:</p>
+    <h2>5. Third-Party Sub-processors</h2>
+    <p>We work with vetted infrastructure and API providers to power core features:</p>
     <ul>
-      <li><strong>Firebase / Google</strong> - authentication and database storage.</li>
-      <li><strong>Cloudflare Turnstile</strong> - bot protection on login and registration.</li>
-      <li><strong>SerpAPI</strong> - fetching job listings from Google Jobs.</li>
-      <li><strong>Google Places API</strong> - fetching company location data.</li>
-      <li><strong>OpenRouter</strong> - generating email draft suggestions.</li>
+      <li><strong>Google Cloud & Firebase:</strong> Authentication, session management, and encrypted Firestore database hosting.</li>
+      <li><strong>Cloudflare:</strong> Turnstile bot detection and edge network security.</li>
+      <li><strong>Google Places & Serper APIs:</strong> Real-time job posting aggregation and company directory data.</li>
+      <li><strong>AI Model Services:</strong> Natural language processing for resume parsing and cover letter draft generation.</li>
     </ul>
 
-    <h2>6. Your Rights (PDPA Malaysia)</h2>
-    <p>You have the right to:</p>
+    <h2>6. Your Rights (PDPA Malaysia & Privacy Rights)</h2>
+    <p>You have full control over your personal data:</p>
     <ul>
-      <li><strong>Access</strong> - request a copy of the data we hold about you.</li>
-      <li><strong>Correction</strong> - update your email address via Firebase account settings.</li>
-      <li><strong>Erasure</strong> - permanently delete your account and all associated data by contacting us. We will process your request within 14 days.</li>
+      <li><strong>Access & Review:</strong> View and edit your profile and resume data directly in the Profile dashboard.</li>
+      <li><strong>Correction:</strong> Update your name, skills, links, or password at any time.</li>
+      <li><strong>Erasure:</strong> Permanently delete your account and all associated profile records by contacting platform administration.</li>
     </ul>
 
-    <h2>7. Security</h2>
-    <p>We enforce HTTPS on all connections, use Firebase security rules to restrict data access to authenticated users only, and apply rate limiting and bot protection on all endpoints.</p>
+    <h2>7. Security Controls</h2>
+    <p>All data in transit is encrypted using HTTPS/TLS. Database access is strictly governed by server-side Firebase Admin SDK rules, token validation, rate limiters, and anti-bot challenges.</p>
 
     <h2>8. Contact</h2>
-    <p>For any data-related requests or questions, please contact the platform owner directly.</p>
+    <p>For privacy inquiries, data export, or account deletion requests, please contact the platform administrator directly.</p>
 
 
   </div>
