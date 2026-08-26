@@ -305,7 +305,7 @@ getRedirectResult(auth)
     }
   });
 
-// Google Auth (Login & Register)
+// Google Auth (Login & Register - Full Page Redirect Flow)
 const googleBtn = document.getElementById('googleBtn');
 if (googleBtn) {
   googleBtn.addEventListener('click', async () => {
@@ -315,37 +315,13 @@ if (googleBtn) {
     googleBtn.style.opacity = '0.7';
 
     try {
-      // Attempt popup directly within click gesture
-      await signInWithPopup(auth, googleProvider);
-
       if (!rememberMe) {
-        setPersistence(auth, browserSessionPersistence).catch(() => {});
+        await setPersistence(auth, browserSessionPersistence);
+      } else {
+        await setPersistence(auth, browserLocalPersistence);
       }
-
-      // Auth succeeded — onAuthStateChanged handles backend init + redirect.
-      // Set activity timestamp as a safety net.
-      localStorage.setItem('lastActivityTime', Date.now().toString());
-      window.location.href = '/job-search.html';
+      await signInWithRedirect(auth, googleProvider);
     } catch (error) {
-      // If popup is blocked, automatically fall back to redirect
-      if (
-        error.code === 'auth/popup-blocked' ||
-        error.code === 'auth/cancelled-popup-request' ||
-        (error.code === 'auth/popup-closed-by-user' && error.message?.includes('blocked'))
-      ) {
-        try {
-          if (!rememberMe) {
-            await setPersistence(auth, browserSessionPersistence);
-          }
-          await signInWithRedirect(auth, googleProvider);
-          return;
-        } catch (redirectErr) {
-          showError(redirectErr);
-          googleBtn.disabled = false;
-          googleBtn.style.opacity = '1';
-          return;
-        }
-      }
       showError(error);
       googleBtn.disabled = false;
       googleBtn.style.opacity = '1';
