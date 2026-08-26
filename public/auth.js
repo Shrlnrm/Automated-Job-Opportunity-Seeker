@@ -14,6 +14,7 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
+setPersistence(auth, browserLocalPersistence).catch(() => {});
 const googleProvider = new GoogleAuthProvider();
 
 const errorMsg = document.getElementById('errorMsg');
@@ -308,23 +309,17 @@ getRedirectResult(auth)
     }
   });
 
-// Google Auth (Login & Register - Popup Flow)
+// Google Auth (Login & Register - Instant User Gesture Popup)
 const googleBtn = document.getElementById('googleBtn');
 if (googleBtn) {
   googleBtn.addEventListener('click', async () => {
     hideError();
-    const rememberMe = document.getElementById('rememberMe')?.checked ?? true;
     googleBtn.disabled = true;
     googleBtn.style.opacity = '0.7';
 
     try {
-      if (!rememberMe) {
-        setPersistence(auth, browserSessionPersistence).catch(() => {});
-      } else {
-        setPersistence(auth, browserLocalPersistence).catch(() => {});
-      }
-
       console.log('[AJOS Auth] Opening Google sign-in popup...');
+      // Invoke popup synchronously on user gesture tick
       const userCred = await signInWithPopup(auth, googleProvider);
       
       if (userCred && userCred.user) {
