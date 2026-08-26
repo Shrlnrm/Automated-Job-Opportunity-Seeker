@@ -131,23 +131,11 @@ export function isUserVerified(user) {
   return false;
 }
 
-// Redirect logged-in users to dashboard; block unverified emails (except Google users)
-onAuthStateChanged(auth, (user) => {
+// Redirect already logged-in users to dashboard; block unverified emails (except Google users)
+onAuthStateChanged(auth, async (user) => {
   if (user) {
-    // 5-day inactivity check
-    const lastActivityStr = localStorage.getItem('lastActivityTime');
-    const now = Date.now();
-    if (lastActivityStr && (now - parseInt(lastActivityStr, 10)) > 5 * 24 * 60 * 60 * 1000) {
-      localStorage.removeItem('lastActivityTime');
-      auth.signOut();
-      sessionStorage.setItem('pendingToast', 'For your security, your session has expired due to inactivity. Please log in again.');
-      if (!window.location.pathname.includes('login')) {
-        window.location.replace('/login.html');
-      }
-      return;
-    } else {
-      localStorage.setItem('lastActivityTime', now.toString());
-    }
+    // Unconditionally refresh activity timestamp on login pages
+    localStorage.setItem('lastActivityTime', Date.now().toString());
 
     const path = window.location.pathname;
     if (path.includes('login') || path.includes('register') || path.includes('forgot-password')) {
@@ -155,6 +143,18 @@ onAuthStateChanged(auth, (user) => {
         window.location.href = '/verify-email.html';
         return;
       }
+      
+      // If it's a Google user arriving on login/register, make sure they are initialized in backend before redirecting
+      const isGoogle = user.providerData && user.providerData.some(p => p.providerId === 'google.com');
+      if (isGoogle) {
+        try {
+          const idToken = await user.getIdToken();
+          await initUserOnBackend('google_bypass', idToken);
+        } catch (err) {
+          console.warn('Backend init during state change:', err);
+        }
+      }
+      
       window.location.href = '/job-search.html';
     }
   }
