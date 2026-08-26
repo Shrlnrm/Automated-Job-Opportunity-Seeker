@@ -133,28 +133,28 @@ export function isUserVerified(user) {
 
 // Redirect already logged-in users to dashboard; block unverified emails (except Google users)
 onAuthStateChanged(auth, (user) => {
+  console.log('[AJOS Auth] onAuthStateChanged state:', user ? user.email : 'No user logged in');
   if (user) {
     localStorage.setItem('lastActivityTime', Date.now().toString());
 
-    const path = window.location.pathname;
-    if (path.includes('login') || path.includes('register') || path.includes('forgot-password')) {
-      if (!isUserVerified(user)) {
-        window.location.href = '/verify-email.html';
-        return;
-      }
-
-      // Fire-and-forget: provision Google user on backend (don't block redirect)
-      const isGoogle = user.providerData && user.providerData.some(p => p.providerId === 'google.com');
-      if (isGoogle) {
-        user.getIdToken().then(idToken => {
-          initUserOnBackend('google_bypass', idToken).catch(err => {
-            console.warn('Background backend init:', err);
-          });
-        }).catch(() => {});
-      }
-
-      window.location.href = '/job-search.html';
+    if (!isUserVerified(user)) {
+      console.log('[AJOS Auth] User unverified -> /verify-email.html');
+      window.location.replace('/verify-email.html');
+      return;
     }
+
+    // Fire-and-forget: provision Google user on backend (don't block redirect)
+    const isGoogle = user.providerData && user.providerData.some(p => p.providerId === 'google.com');
+    if (isGoogle) {
+      user.getIdToken().then(idToken => {
+        initUserOnBackend('google_bypass', idToken).catch(err => {
+          console.warn('[AJOS Auth] Background backend init note:', err);
+        });
+      }).catch(() => {});
+    }
+
+    console.log('[AJOS Auth] User verified & active -> navigating to /job-search.html');
+    window.location.replace('/job-search.html');
   }
 });
 
@@ -285,21 +285,24 @@ if (forgotForm) {
   });
 }
 
-// Handle Google OAuth Redirect Result (Fallback for PCs / Browsers blocking popups)
+// Handle Google OAuth Redirect Result (Universal across PC & Mobile)
 getRedirectResult(auth)
   .then((userCred) => {
+    console.log('[AJOS Auth] getRedirectResult check:', userCred ? userCred.user?.email : 'No pending redirect');
     if (userCred && userCred.user) {
       localStorage.setItem('lastActivityTime', Date.now().toString());
       // Fire-and-forget backend init
       userCred.user.getIdToken().then(idToken => {
         initUserOnBackend('google_bypass', idToken).catch(err => {
-          console.warn('Background backend init (redirect):', err);
+          console.warn('[AJOS Auth] Background backend init (redirect):', err);
         });
       }).catch(() => {});
-      window.location.href = '/job-search.html';
+      console.log('[AJOS Auth] Redirect result success -> /job-search.html');
+      window.location.replace('/job-search.html');
     }
   })
   .catch((error) => {
+    console.error('[AJOS Auth Error] getRedirectResult:', error);
     if (error && error.code && error.code !== 'auth/null-user') {
       showError(error);
     }
@@ -309,6 +312,7 @@ getRedirectResult(auth)
 const googleBtn = document.getElementById('googleBtn');
 if (googleBtn) {
   googleBtn.addEventListener('click', async () => {
+    console.log('[AJOS Auth] Google Sign-In button clicked');
     hideError();
     const rememberMe = document.getElementById('rememberMe')?.checked ?? true;
     googleBtn.disabled = true;
@@ -320,8 +324,10 @@ if (googleBtn) {
       } else {
         await setPersistence(auth, browserLocalPersistence);
       }
+      console.log('[AJOS Auth] Starting signInWithRedirect to Google...');
       await signInWithRedirect(auth, googleProvider);
     } catch (error) {
+      console.error('[AJOS Auth Error] signInWithRedirect failed:', error);
       showError(error);
       googleBtn.disabled = false;
       googleBtn.style.opacity = '1';
