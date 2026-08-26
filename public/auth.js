@@ -16,6 +16,9 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 setPersistence(auth, browserLocalPersistence).catch(() => {});
 const googleProvider = new GoogleAuthProvider();
+googleProvider.setCustomParameters({
+  prompt: 'select_account'
+});
 
 const errorMsg = document.getElementById('errorMsg');
 
@@ -338,7 +341,21 @@ if (googleBtn) {
       }
     } catch (error) {
       console.warn('[AJOS Auth Error] Google popup:', error);
-      if (error.code !== 'auth/popup-closed-by-user') {
+      // Automatic fallback if popup is blocked by ad blocker
+      if (
+        error.code === 'auth/popup-blocked' ||
+        error.code === 'auth/cancelled-popup-request' ||
+        (error.code === 'auth/popup-closed-by-user' && error.message?.includes('blocked'))
+      ) {
+        console.log('[AJOS Auth] Popup blocked by ad-blocker. Falling back to signInWithRedirect...');
+        try {
+          await signInWithRedirect(auth, googleProvider);
+          return;
+        } catch (redirectErr) {
+          console.error('[AJOS Auth Error] Redirect fallback error:', redirectErr);
+          showError(redirectErr);
+        }
+      } else if (error.code !== 'auth/popup-closed-by-user') {
         showError(error);
       }
     } finally {
