@@ -618,3 +618,33 @@ a.policy-back-btn svg { flex-shrink: 0; }
     margin-top: 0.4rem;
   }
 }
+
+/* ── Registered Users Badge ────────────────────────────────────────── */
+.slots-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.35rem 0.8rem;
+  background-color: var(--surface-subtle);
+  border: 1px solid var(--border-color);
+  border-radius: 9999px;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  margin-bottom: 1.25rem;
+  letter-spacing: -0.01em;
+}
+
+.slots-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background-color: #10b981;
+  display: inline-block;
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
+}
+
+.slots-badge b {
+  color: var(--text-main);
+  font-weight: 600;
+}

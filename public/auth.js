@@ -335,12 +335,15 @@ if (googleBtn) {
         console.log('[AJOS Auth] Google popup success:', userCred.user.email);
         localStorage.setItem('lastActivityTime', Date.now().toString());
 
-        // Fire-and-forget: initialize user in backend
-        userCred.user.getIdToken().then(idToken => {
-          initUserOnBackend('google_bypass', idToken).catch(err => {
-            console.warn('[AJOS Auth] Backend init background warning:', err);
-          });
-        }).catch(() => {});
+        // Initialize user in backend and check for registration capacity
+        const idToken = await userCred.user.getIdToken();
+        try {
+          await initUserOnBackend('google_bypass', idToken);
+        } catch (initErr) {
+          if (auth.currentUser) await auth.signOut();
+          showError(initErr.message || 'Registration closed: Maximum user capacity (20/20) reached.');
+          return;
+        }
 
         console.log('[AJOS Auth] Navigating to /job-search.html');
         window.location.replace('/job-search.html');

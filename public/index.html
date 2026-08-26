@@ -78,10 +78,15 @@
       <p class="landing-subtitle">
         Your automated job opportunity seeker and company lead generation tool. Find the perfect job or client in seconds.
       </p>
+      
+      <div class="slots-badge" id="slotsBadge">
+        <span class="slots-dot"></span>
+        <span><b id="slotsCount">--/20</b> Registered</span>
+      </div>
+
       <div class="landing-actions">
         <a href="login.html" class="btn btn-primary" style="text-decoration:none;">Log In</a>
         <a href="register.html" class="btn btn-primary" style="text-decoration:none;">Register</a>
-      </div>
       </div>
     </div>
   </div>
@@ -91,12 +96,11 @@
     <a href="terms.html" style="color:var(--text-muted); text-decoration:none; margin:0 0.75rem;">Terms of Service</a>
   </div>
 
-
   <script>
     document.addEventListener('DOMContentLoaded', () => {
+      // Theme Toggle Logic
       const btn = document.getElementById('themeToggleBtn');
       if (btn) {
-        // Initial setup
         const isDarkInitial = document.documentElement.classList.contains('dark-theme');
         btn.setAttribute('data-tooltip', isDarkInitial ? 'Toggle light mode' : 'Toggle dark mode');
 
@@ -106,6 +110,17 @@
           btn.setAttribute('data-tooltip', isDarkNow ? 'Toggle light mode' : 'Toggle dark mode');
         });
       }
+
+      // Fetch Live Registered Users Count
+      fetch('/api/registered-users-count')
+        .then(res => res.json())
+        .then(data => {
+          const countEl = document.getElementById('slotsCount');
+          if (countEl && data.display) {
+            countEl.textContent = data.display;
+          }
+        })
+        .catch(() => {});
     });
   </script>
 

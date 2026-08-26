@@ -313,7 +313,27 @@ app.get('/api/user-limits', requireAuthAndCheckLimits, (req, res) => {
   });
 });
 
-
+// Route: Get Live Registered Users Count for Landing Page
+app.get('/api/registered-users-count', async (req, res) => {
+  try {
+    const snapshot = await db.collection('users').count().get();
+    const totalUsers = snapshot.data().count;
+    // Exclude 1 owner slot from the 21 cap
+    const registered = Math.max(0, totalUsers - 1);
+    const maxSlots = 20;
+    
+    res.setHeader('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=120');
+    return res.json({
+      registered,
+      max: maxSlots,
+      display: `${registered}/${maxSlots}`,
+      isFull: registered >= maxSlots
+    });
+  } catch (error) {
+    console.error('Error getting registered users count:', error);
+    return res.json({ registered: 0, max: 20, display: '0/20', isFull: false });
+  }
+});
 
 // Route: Initialize New User & Verify Turnstile
 app.post('/api/init-user', initUserLimiter, async (req, res) => {
@@ -360,14 +380,14 @@ app.post('/api/init-user', initUserLimiter, async (req, res) => {
     const doc = await userRef.get();
     
     if (!doc.exists) {
-      // It's a new user. Enforce the 21 user maximum limit.
+      // It's a new user. Enforce the 21 user maximum limit (20 users + 1 owner).
       const snapshot = await db.collection('users').count().get();
       const totalUsers = snapshot.data().count;
       
       if (totalUsers >= 21) {
         // Limit reached. Delete their Auth account so they aren't a ghost user.
         await getAuth().deleteUser(uid);
-        return res.status(403).json({ error: 'Registration closed: Maximum user capacity reached.' });
+        return res.status(403).json({ error: 'Registration closed: Maximum user capacity (20/20) reached.' });
       }
 
       const now = new Date();
