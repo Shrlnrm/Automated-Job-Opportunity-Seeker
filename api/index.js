@@ -213,8 +213,9 @@ async function requireAuthAndCheckLimits(req, res, next) {
   try {
     const decodedToken = await getAuth().verifyIdToken(idToken);
 
-    // au4: Enforce email verification
-    if (!decodedToken.email_verified) {
+    // au4: Enforce email verification (Google OAuth users are pre-verified)
+    const isGoogleAuth = decodedToken.firebase?.sign_in_provider === 'google.com' || (decodedToken.provider_id === 'google.com');
+    if (!decodedToken.email_verified && !isGoogleAuth) {
       return res.status(403).json({ error: 'Please verify your email before using the app.' });
     }
 
@@ -334,6 +335,9 @@ app.post('/api/init-user', initUserLimiter, async (req, res) => {
       const isGoogle = userRecord.providerData.some(p => p.providerId === 'google.com');
       if (!isGoogle) {
         return res.status(403).json({ error: 'Bot verification failed. Invalid Google auth.' });
+      }
+      if (!userRecord.emailVerified) {
+        await getAuth().updateUser(uid, { emailVerified: true });
       }
     } else {
       // Normal Turnstile validation

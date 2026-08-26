@@ -60,9 +60,12 @@ body {
   color: var(--text-main);
   display: flex;
   flex-direction: column;
-  min-height: 100%;
+  min-height: 100vh;
+  min-height: 100dvh;
   align-items: center;
   justify-content: center;
+  box-sizing: border-box;
+  overflow-x: hidden;
   transition: background-color 0.2s;
 }
 
@@ -232,15 +235,74 @@ body {
 }
 
 .terms-text {
-  margin-top: 3rem;
+  margin-top: 1.25rem;
   font-size: 0.75rem;
   color: var(--text-muted);
   text-align: center;
+  line-height: 1.4;
 }
 
 .terms-text a {
   color: var(--text-muted);
   text-decoration: underline;
+}
+
+/* ── Spam Alert Box ─────────────────────────────────────────────────── */
+.spam-alert-box {
+  background: rgba(245, 158, 11, 0.09);
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  border-radius: 8px;
+  padding: 0.85rem 1rem;
+  margin: 1rem 0;
+  text-align: left;
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  color: var(--text-main);
+  box-sizing: border-box;
+}
+
+.dark-theme .spam-alert-box {
+  background: rgba(245, 158, 11, 0.15);
+  border-color: rgba(245, 158, 11, 0.45);
+}
+
+.spam-alert-header {
+  font-weight: 700;
+  font-size: 0.775rem;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: #d97706;
+  margin-bottom: 0.35rem;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.dark-theme .spam-alert-header {
+  color: #fbbf24;
+}
+
+.spam-alert-box ul {
+  margin: 0.35rem 0 0 0;
+  padding-left: 1.15rem;
+  color: var(--text-muted);
+}
+
+.spam-alert-box li {
+  margin-bottom: 0.25rem;
+}
+
+.spam-alert-box code {
+  font-family: monospace;
+  background: rgba(0, 0, 0, 0.06);
+  padding: 1px 4px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  word-break: break-all;
+}
+
+.dark-theme .spam-alert-box code {
+  background: rgba(255, 255, 255, 0.1);
 }
 
 .back-btn {
@@ -326,12 +388,13 @@ a.policy-back-btn:hover {
 }
 a.policy-back-btn svg { flex-shrink: 0; }
 
-/* ── Mobile Responsiveness ────────────────────────────────────────────── */
+/* ── Mobile Responsiveness & Zero-Scroll Fit ──────────────────────────── */
 @media (max-width: 768px) {
   .auth-container {
     padding: 1.25rem;
-    margin-top: 1.5rem;
-    width: 90%;
+    margin-top: 0;
+    width: 92%;
+    max-width: 390px;
   }
   .auth-logo, .back-btn {
     top: 1rem;
@@ -340,6 +403,112 @@ a.policy-back-btn svg { flex-shrink: 0; }
   .theme-toggle-btn {
     top: 1rem;
     right: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  body {
+    padding: 0.25rem;
+    justify-content: center;
+  }
+  .auth-container {
+    padding: 0.75rem 1rem;
+    margin-top: 0;
+    width: 100%;
+    max-width: 375px;
+  }
+  .auth-title {
+    font-size: 1.25rem;
+    margin-top: 0.25rem;
+    margin-bottom: 0.2rem;
+  }
+  .auth-subtitle {
+    font-size: 0.8rem;
+    margin-bottom: 0.65rem;
+    line-height: 1.35;
+  }
+  .btn {
+    padding: 0.55rem 0.85rem;
+    font-size: 0.8125rem;
+    margin-bottom: 0.5rem;
+  }
+  .divider {
+    margin: 0.5rem 0;
+    font-size: 0.8rem;
+  }
+  .input-group {
+    margin-bottom: 0.5rem;
+  }
+  .input-group label {
+    font-size: 0.725rem;
+    margin-bottom: 0.25rem;
+  }
+  .input-group input {
+    padding: 0.5rem 0.6rem;
+    font-size: 0.8125rem;
+  }
+  .turnstile-container {
+    margin-bottom: 0.5rem;
+    min-height: 65px;
+    transform: scale(0.95);
+    transform-origin: center;
+  }
+  .footer-links {
+    margin-top: 0.65rem;
+    font-size: 0.8rem;
+  }
+  .terms-text {
+    margin-top: 0.65rem;
+    font-size: 0.7rem;
+  }
+  .auth-logo, .back-btn {
+    top: 0.75rem;
+    left: 0.75rem;
+    font-size: 1.1rem;
+  }
+  .theme-toggle-btn {
+    top: 0.75rem;
+    right: 0.75rem;
+  }
+  a.policy-back-btn {
+    margin-bottom: 0.65rem;
+    font-size: 0.8rem;
+  }
+  .spam-alert-box {
+    padding: 0.65rem 0.85rem;
+    margin: 0.65rem 0;
+    font-size: 0.75rem;
+  }
+}
+
+@media (max-height: 720px) {
+  .auth-container {
+    padding: 0.5rem 1rem;
+  }
+  .auth-title {
+    font-size: 1.2rem;
+    margin-top: 0.15rem;
+    margin-bottom: 0.15rem;
+  }
+  .auth-subtitle {
+    margin-bottom: 0.45rem;
+    font-size: 0.775rem;
+  }
+  .divider {
+    margin: 0.35rem 0;
+  }
+  .input-group {
+    margin-bottom: 0.4rem;
+  }
+  .btn {
+    margin-bottom: 0.4rem;
+    padding: 0.5rem 0.8rem;
+  }
+  .turnstile-container {
+    margin-bottom: 0.4rem;
+  }
+  .terms-text {
+    margin-top: 0.45rem;
   }
 }
 

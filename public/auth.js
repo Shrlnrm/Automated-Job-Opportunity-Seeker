@@ -84,7 +84,15 @@ function setupPasswordToggles() {
 }
 setupPasswordToggles();
 
-// Redirect logged-in users to dashboard; block unverified emails
+// Helper to determine if user is verified (Google OAuth users are pre-verified)
+export function isUserVerified(user) {
+  if (!user) return false;
+  if (user.emailVerified) return true;
+  if (user.providerData && user.providerData.some(p => p.providerId === 'google.com')) return true;
+  return false;
+}
+
+// Redirect logged-in users to dashboard; block unverified emails (except Google users)
 onAuthStateChanged(auth, (user) => {
   if (user) {
     // 5-day inactivity check
@@ -104,8 +112,8 @@ onAuthStateChanged(auth, (user) => {
 
     const path = window.location.pathname;
     if (path.includes('login') || path.includes('register') || path.includes('forgot-password')) {
-      if (!user.emailVerified) {
-        sessionStorage.setItem('pendingToast', 'Please verify your email address to access the platform.');
+      if (!isUserVerified(user)) {
+        sessionStorage.setItem('pendingToast', 'Please verify your email address to access the platform. (Check your Spam/Junk folder!)');
         window.location.href = '/verify-email.html';
         return;
       }
@@ -155,7 +163,7 @@ if (registerForm) {
       await sendEmailVerification(userCred.user, actionCodeSettings);
       const idToken = await userCred.user.getIdToken();
       await initUserOnBackend(turnstileToken, idToken);
-      sessionStorage.setItem('pendingToast', 'Welcome! A verification link has been sent to your inbox.');
+      sessionStorage.setItem('pendingToast', 'Welcome! A verification link has been sent. Check your inbox and Spam/Junk folder.');
       window.location.href = '/verify-email.html';
     } catch (error) {
       // If backend init failed, sign them out locally so they aren't stuck in limbo
@@ -194,8 +202,8 @@ if (loginForm) {
     try {
       await setPersistence(auth, rememberMe ? browserLocalPersistence : browserSessionPersistence);
       const userCred = await signInWithEmailAndPassword(auth, email, password);
-      if (!userCred.user.emailVerified) {
-        sessionStorage.setItem('pendingToast', 'Please verify your email address to access the platform.');
+      if (!isUserVerified(userCred.user)) {
+        sessionStorage.setItem('pendingToast', 'Please verify your email address to access the platform. (Check your Spam/Junk folder!)');
         window.location.href = '/verify-email.html';
       } else {
         window.location.href = '/job-search.html';

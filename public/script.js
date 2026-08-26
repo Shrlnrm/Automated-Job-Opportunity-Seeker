@@ -91,8 +91,9 @@ onAuthStateChanged(auth, (user) => {
   if (!user) {
     window.location.replace('/login.html');
   } else {
-    if (!user.emailVerified) {
-      sessionStorage.setItem('pendingToast', 'Please verify your email address to access the platform.');
+    const isGoogle = user.providerData && user.providerData.some(p => p.providerId === 'google.com');
+    if (!user.emailVerified && !isGoogle) {
+      sessionStorage.setItem('pendingToast', 'Please verify your email address to access the platform. (Check your Spam/Junk folder!)');
       window.location.replace('/verify-email.html');
       return;
     }

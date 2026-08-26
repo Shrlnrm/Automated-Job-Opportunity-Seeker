@@ -375,6 +375,12 @@ onAuthStateChanged(auth, async (user) => {
     return;
   }
 
+  const isGoogleUser = user.providerData && user.providerData.some(p => p.providerId === 'google.com');
+  if (!user.emailVerified && !isGoogleUser) {
+    window.location.href = '/verify-email.html';
+    return;
+  }
+
   if (userEmailDisplay) {
     userEmailDisplay.textContent = `Signed in as ${user.email}`;
   }
@@ -383,7 +389,6 @@ onAuthStateChanged(auth, async (user) => {
   }
 
   // Handle Google OAuth users
-  const isGoogleUser = user.providerData && user.providerData.some(p => p.providerId === 'google.com');
   if (isGoogleUser) {
     if (googleAuthNotice) googleAuthNotice.style.display = 'block';
     if (changePasswordForm) changePasswordForm.style.display = 'none';

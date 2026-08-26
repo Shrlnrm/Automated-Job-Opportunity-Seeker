@@ -60,17 +60,30 @@
       </a>
     </div>
     
-    <div style="display:flex; justify-content:center; margin-bottom:1.5rem; color:var(--text-main); margin-top: 2rem;">
-      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+    <div style="display:flex; justify-content:center; margin-bottom:1rem; color:var(--text-main); margin-top: 0.5rem;">
+      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
     </div>
     <div class="auth-title">Check your inbox</div>
     <div class="auth-subtitle">We sent a verification link to your email address. Click it to activate your account before logging in.</div>
 
+    <div class="spam-alert-box">
+      <div class="spam-alert-header">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        CAN'T FIND IT? CHECK YOUR SPAM / JUNK FOLDER!
+      </div>
+      <div>Automated verification emails may be filtered:</div>
+      <ul>
+        <li>Check your <b>Spam</b>, <b>Junk</b>, or <b>Promotions</b> folder.</li>
+        <li>Search sender: <code>noreply@ajos-544d6.firebaseapp.com</code> or <code>AJOS</code>.</li>
+        <li><b>iOS / Apple Mail</b>: Tap <b>Junk</b> or <b>All Inboxes</b> in the mailbox list.</li>
+      </ul>
+    </div>
+
     <div class="error-msg" id="errorMsg"></div>
 
-    <button class="btn btn-primary" id="resendBtn" style="margin-top:1.5rem;">Resend verification email</button>
+    <button class="btn btn-primary" id="resendBtn" style="margin-top:0.75rem;">Resend verification email</button>
 
-    <div class="footer-links" style="margin-top:1rem;">
+    <div class="footer-links" style="margin-top:0.75rem;">
       <div><a href="login.html">Back to Login</a></div>
     </div>
   </div>
@@ -82,10 +95,11 @@
     const errorMsg = document.getElementById('errorMsg');
     const resendBtn = document.getElementById('resendBtn');
 
-    // If user is already verified, send to dashboard
+    // If user is already verified or logged in via Google OAuth, send to dashboard
     onAuthStateChanged(auth, (user) => {
       if (!user) { window.location.href = '/login.html'; return; }
-      if (user.emailVerified) { window.location.href = '/job-search.html'; }
+      const isGoogle = user.providerData && user.providerData.some(p => p.providerId === 'google.com');
+      if (user.emailVerified || isGoogle) { window.location.href = '/job-search.html'; }
     });
 
     resendBtn.addEventListener('click', async () => {
@@ -98,16 +112,27 @@
         await sendEmailVerification(user, actionCodeSettings);
         errorMsg.style.display = 'block';
         errorMsg.style.color = '#10b981';
-        errorMsg.textContent = 'Verification email sent! Check your inbox.';
-      } catch {
+        errorMsg.textContent = 'Verification email sent! Check your inbox AND Spam/Junk folder.';
+      } catch (err) {
         errorMsg.style.display = 'block';
-        errorMsg.textContent = 'Failed to send. Please wait a few minutes before trying again.';
+        errorMsg.style.color = '#ef4444';
+        if (err.code === 'auth/too-many-requests') {
+          errorMsg.textContent = 'Too many attempts. Please wait a moment before trying again.';
+        } else {
+          errorMsg.textContent = 'Failed to send. Please wait a few minutes before trying again.';
+        }
       } finally {
-        // Prevent resend spam — re-enable after 60s
-        setTimeout(() => {
-          resendBtn.disabled = false;
-          resendBtn.textContent = 'Resend verification email';
-        }, 60000);
+        let countdown = 60;
+        const interval = setInterval(() => {
+          countdown--;
+          if (countdown > 0) {
+            resendBtn.textContent = `Resend in ${countdown}s`;
+          } else {
+            clearInterval(interval);
+            resendBtn.disabled = false;
+            resendBtn.textContent = 'Resend verification email';
+          }
+        }, 1000);
       }
     });
   </script>
