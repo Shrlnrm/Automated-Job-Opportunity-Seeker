@@ -132,9 +132,8 @@ export function isUserVerified(user) {
 }
 
 // Redirect already logged-in users to dashboard; block unverified emails (except Google users)
-onAuthStateChanged(auth, async (user) => {
+onAuthStateChanged(auth, (user) => {
   if (user) {
-    // Unconditionally refresh activity timestamp on login pages
     localStorage.setItem('lastActivityTime', Date.now().toString());
 
     const path = window.location.pathname;
@@ -143,18 +142,17 @@ onAuthStateChanged(auth, async (user) => {
         window.location.href = '/verify-email.html';
         return;
       }
-      
-      // If it's a Google user arriving on login/register, make sure they are initialized in backend before redirecting
+
+      // Fire-and-forget: provision Google user on backend (don't block redirect)
       const isGoogle = user.providerData && user.providerData.some(p => p.providerId === 'google.com');
       if (isGoogle) {
-        try {
-          const idToken = await user.getIdToken();
-          await initUserOnBackend('google_bypass', idToken);
-        } catch (err) {
-          console.warn('Backend init during state change:', err);
-        }
+        user.getIdToken().then(idToken => {
+          initUserOnBackend('google_bypass', idToken).catch(err => {
+            console.warn('Background backend init:', err);
+          });
+        }).catch(() => {});
       }
-      
+
       window.location.href = '/job-search.html';
     }
   }
@@ -289,17 +287,16 @@ if (forgotForm) {
 
 // Handle Google OAuth Redirect Result (Fallback for PCs / Browsers blocking popups)
 getRedirectResult(auth)
-  .then(async (userCred) => {
+  .then((userCred) => {
     if (userCred && userCred.user) {
-      try {
-        localStorage.setItem('lastActivityTime', Date.now().toString());
-        const idToken = await userCred.user.getIdToken();
-        await initUserOnBackend('google_bypass', idToken);
-        window.location.href = '/job-search.html';
-      } catch (err) {
-        if (auth.currentUser) await auth.signOut();
-        showError(err);
-      }
+      localStorage.setItem('lastActivityTime', Date.now().toString());
+      // Fire-and-forget backend init
+      userCred.user.getIdToken().then(idToken => {
+        initUserOnBackend('google_bypass', idToken).catch(err => {
+          console.warn('Background backend init (redirect):', err);
+        });
+      }).catch(() => {});
+      window.location.href = '/job-search.html';
     }
   })
   .catch((error) => {
@@ -318,29 +315,19 @@ if (googleBtn) {
     googleBtn.style.opacity = '0.7';
 
     try {
-      // 1. Attempt popup directly within click gesture
-      const userCred = await signInWithPopup(auth, googleProvider);
-      
+      // Attempt popup directly within click gesture
+      await signInWithPopup(auth, googleProvider);
+
       if (!rememberMe) {
         setPersistence(auth, browserSessionPersistence).catch(() => {});
       }
-      
+
+      // Auth succeeded — onAuthStateChanged handles backend init + redirect.
+      // Set activity timestamp as a safety net.
       localStorage.setItem('lastActivityTime', Date.now().toString());
-      const idToken = await userCred.user.getIdToken();
-      
-      try {
-        await initUserOnBackend('google_bypass', idToken);
-      } catch (err) {
-        if (auth.currentUser) await auth.signOut();
-        showError(err);
-        googleBtn.disabled = false;
-        googleBtn.style.opacity = '1';
-        return;
-      }
-      
       window.location.href = '/job-search.html';
     } catch (error) {
-      // 2. If popup is blocked by PC browser/adblocker/policy, automatically fall back to redirect
+      // If popup is blocked, automatically fall back to redirect
       if (
         error.code === 'auth/popup-blocked' ||
         error.code === 'auth/cancelled-popup-request' ||
