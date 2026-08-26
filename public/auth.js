@@ -17,9 +17,48 @@ const auth = getAuth(app);
 const googleProvider = new GoogleAuthProvider();
 
 const errorMsg = document.getElementById('errorMsg');
-function showError(msg) {
+
+function formatAuthError(error) {
+  if (!error) return 'An unexpected error occurred. Please try again.';
+  const code = error.code || '';
+  const message = typeof error === 'string' ? error : (error.message || '');
+
+  if (code === 'auth/popup-blocked' || message.includes('popup-blocked')) {
+    return 'Sign-in popup was blocked by your browser. Please allow popups for this site or try again.';
+  }
+  if (code === 'auth/popup-closed-by-user' || message.includes('popup-closed-by-user')) {
+    return 'Sign-in window was closed before finishing. Please try again.';
+  }
+  if (code === 'auth/cancelled-popup-request') {
+    return 'A sign-in window is already open. Please complete or close it first.';
+  }
+  if (code === 'auth/invalid-credential' || code === 'auth/user-not-found' || code === 'auth/wrong-password') {
+    return 'Invalid email or password. Please check your credentials.';
+  }
+  if (code === 'auth/email-already-in-use') {
+    return 'An account with this email already exists. Please log in instead.';
+  }
+  if (code === 'auth/weak-password') {
+    return 'Password must be at least 6 characters long.';
+  }
+  if (code === 'auth/too-many-requests') {
+    return 'Too many attempts. Please wait a moment before trying again.';
+  }
+  if (code === 'auth/network-request-failed') {
+    return 'Network connection failed. Please check your internet connection.';
+  }
+
+  // Clean raw Firebase string wrappers if any
+  return message
+    .replace(/^Firebase:\s*/i, '')
+    .replace(/Error\s*\((.*?)\)\.?/i, '$1')
+    .trim() || 'Authentication failed. Please try again.';
+}
+
+function showError(err) {
   if (errorMsg) {
-    errorMsg.textContent = msg;
+    const formatted = typeof err === 'object' ? formatAuthError(err) : err;
+    errorMsg.textContent = formatted;
     errorMsg.style.display = 'block';
   }
 }
@@ -248,43 +287,33 @@ if (forgotForm) {
 }
 
 // Google Auth (Login & Register)
+// Google Auth (Login & Register)
 const googleBtn = document.getElementById('googleBtn');
 if (googleBtn) {
   googleBtn.addEventListener('click', async () => {
     hideError();
     const rememberMe = document.getElementById('rememberMe')?.checked ?? true;
     try {
-      await setPersistence(auth, rememberMe ? browserLocalPersistence : browserSessionPersistence);
+      // Trigger popup directly within the user click gesture to avoid browser popup blockers
       const userCred = await signInWithPopup(auth, googleProvider);
       
-      // We still need to initialize the user in the backend if they are new.
-      // Since Google Sign-In bypasses Turnstile widget, we can pass a special flag or 
-      // rely on a robust backend logic. For now, since they authenticated via Google, 
-      // we consider them human. We will pass a dummy turnstile token that the backend 
-      // should ideally bypass for Google providers, OR we update our backend to check 
-      // providerData. 
-      // Wait, the backend requires Turnstile to be valid. 
-      // If we use Google Auth, we still need to initialize the user limits in Firestore.
-      // We will need to make the backend accept Google users without Turnstile, or 
-      // we can just silently render Turnstile and verify it? 
-      // Let's pass 'google_bypass' and handle it securely in backend.
+      if (!rememberMe) {
+        setPersistence(auth, browserSessionPersistence).catch(() => {});
+      }
       
       const idToken = await userCred.user.getIdToken();
       
-      // Just call init-user, if backend fails Turnstile it might throw. 
-      // We will catch it.
       try {
         await initUserOnBackend('google_bypass', idToken);
       } catch (err) {
-        // If backend init failed (e.g. 21 user limit reached), sign them out locally
         if (auth.currentUser) await auth.signOut();
-        showError(err.message || "Login failed.");
-        return; // Do not redirect to job-search
+        showError(err);
+        return;
       }
       
       window.location.href = '/job-search.html';
     } catch (error) {
-      showError(error.message.replace('Firebase: ', ''));
+      showError(error);
     }
   });
 }
