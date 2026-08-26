@@ -313,16 +313,56 @@ app.get('/api/user-limits', requireAuthAndCheckLimits, (req, res) => {
   });
 });
 
+// Helper: Get authoritative live registered user count with multiple fallbacks
+async function getLiveRegisteredUsersCount() {
+  const ownerEmail = (process.env.OWNER_EMAIL || 'aminmod06@gmail.com').toLowerCase();
+
+  // Strategy 1 (Primary): Live Firebase Authentication directory
+  try {
+    const authUsers = await getAuth().listUsers(1000);
+    if (authUsers && Array.isArray(authUsers.users)) {
+      const nonOwnerUsers = authUsers.users.filter(u => (u.email || '').toLowerCase() !== ownerEmail);
+      return nonOwnerUsers.length;
+    }
+  } catch (authErr) {
+    console.warn('Strategy 1 (Auth directory count) failed, trying fallback:', authErr.message);
+  }
+
+  // Strategy 2 (Fallback 1): Firestore users collection document scan
+  try {
+    const usersSnapshot = await db.collection('users').get();
+    if (usersSnapshot && !usersSnapshot.empty) {
+      let count = 0;
+      usersSnapshot.forEach(doc => {
+        const data = doc.data();
+        if ((data.email || '').toLowerCase() !== ownerEmail && data.role !== 'owner') {
+          count++;
+        }
+      });
+      return count;
+    }
+  } catch (dbErr) {
+    console.warn('Strategy 2 (Firestore document scan) failed:', dbErr.message);
+  }
+
+  // Strategy 3 (Fallback 2): Firestore aggregate count query
+  try {
+    const countSnapshot = await db.collection('users').count().get();
+    const total = countSnapshot.data().count || 0;
+    return Math.max(0, total - 1);
+  } catch (aggErr) {
+    console.error('All user count strategies failed:', aggErr.message);
+    return 0;
+  }
+}
+
 // Route: Get Live Registered Users Count for Landing Page
 app.get('/api/registered-users-count', async (req, res) => {
   try {
-    const snapshot = await db.collection('users').count().get();
-    const totalUsers = snapshot.data().count;
-    // Exclude 1 owner slot from the 21 cap
-    const registered = Math.max(0, totalUsers - 1);
+    const registered = await getLiveRegisteredUsersCount();
     const maxSlots = 20;
-    
-    res.setHeader('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=120');
+
+    res.setHeader('Cache-Control', 'public, s-maxage=10, stale-while-revalidate=30');
     return res.json({
       registered,
       max: maxSlots,
@@ -380,11 +420,11 @@ app.post('/api/init-user', initUserLimiter, async (req, res) => {
     const doc = await userRef.get();
     
     if (!doc.exists) {
-      // It's a new user. Enforce the 21 user maximum limit (20 users + 1 owner).
-      const snapshot = await db.collection('users').count().get();
-      const totalUsers = snapshot.data().count;
+      // It's a new user. Enforce the 20 general users limit using live multi-fallback count.
+      const currentRegistered = await getLiveRegisteredUsersCount();
       
-      if (totalUsers >= 21) {
+      // If registered users exceed the 20 slots cap (excluding owner)
+      if (currentRegistered > 20) {
         // Limit reached. Delete their Auth account so they aren't a ghost user.
         await getAuth().deleteUser(uid);
         return res.status(403).json({ error: 'Registration closed: Maximum user capacity (20/20) reached.' });
