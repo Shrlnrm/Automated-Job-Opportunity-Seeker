@@ -28,7 +28,7 @@ function formatAuthError(error) {
   const message = typeof error === 'string' ? error : (error.message || '');
 
   if (code === 'auth/popup-blocked' || message.includes('popup-blocked')) {
-    return 'Sign-in popup was blocked by your browser. Please allow popups for this site or try again.';
+    return 'Sign-in popup was blocked by your browser or an ad blocker. Please allow popups for this site to sign in with Google.';
   }
   if (code === 'auth/popup-closed-by-user' || message.includes('popup-closed-by-user')) {
     return 'Sign-in window was closed before finishing. Please try again.';
@@ -341,21 +341,7 @@ if (googleBtn) {
       }
     } catch (error) {
       console.warn('[AJOS Auth Error] Google popup:', error);
-      // Automatic fallback if popup is blocked by ad blocker
-      if (
-        error.code === 'auth/popup-blocked' ||
-        error.code === 'auth/cancelled-popup-request' ||
-        (error.code === 'auth/popup-closed-by-user' && error.message?.includes('blocked'))
-      ) {
-        console.log('[AJOS Auth] Popup blocked by ad-blocker. Falling back to signInWithRedirect...');
-        try {
-          await signInWithRedirect(auth, googleProvider);
-          return;
-        } catch (redirectErr) {
-          console.error('[AJOS Auth Error] Redirect fallback error:', redirectErr);
-          showError(redirectErr);
-        }
-      } else if (error.code !== 'auth/popup-closed-by-user') {
+      if (error.code !== 'auth/popup-closed-by-user') {
         showError(error);
       }
     } finally {
