@@ -74,7 +74,7 @@ body {
 }
 
 .theme-toggle-btn {
-  position: absolute;
+  position: absolute !important;
   top: 1.5rem;
   right: 1.5rem;
   background: transparent;
@@ -88,6 +88,7 @@ body {
   align-items: center;
   justify-content: center;
   transition: background-color 0.15s, border-color 0.15s, color 0.15s;
+  z-index: 100;
 }
 
 .theme-toggle-btn:hover {
@@ -453,7 +454,7 @@ a.policy-back-btn svg { flex-shrink: 0; }
   background: #18181b;
   color: #fafafa;
   border: 1px solid rgba(255, 255, 255, 0.15);
-  padding: 10px 16px;
+  padding: 10px 14px;
   border-radius: var(--radius-md, 8px);
   font-size: 0.8125rem;
   font-weight: 500;
@@ -466,6 +467,36 @@ a.policy-back-btn svg { flex-shrink: 0; }
   text-align: left;
   word-wrap: break-word;
   pointer-events: auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.toast-text {
+  flex: 1;
+  word-break: break-word;
+}
+
+.toast-close-btn {
+  background: transparent;
+  border: none;
+  color: inherit;
+  opacity: 0.65;
+  cursor: pointer;
+  padding: 3px;
+  margin: -3px -2px -3px 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  flex-shrink: 0;
+  transition: opacity 0.15s ease, background-color 0.15s ease;
+}
+
+.toast-close-btn:hover {
+  opacity: 1;
+  background-color: rgba(255, 255, 255, 0.15);
 }
 
 /* Inverted High-Contrast Toast: Dark mode = White background + Dark text */
@@ -476,6 +507,12 @@ body.dark-theme .toast {
   border-color: rgba(0, 0, 0, 0.08);
   color: #09090b;
   box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.5), 0 8px 12px -6px rgba(0, 0, 0, 0.35);
+}
+
+.dark-theme .toast-close-btn:hover,
+html.dark-theme .toast-close-btn:hover,
+body.dark-theme .toast-close-btn:hover {
+  background-color: rgba(0, 0, 0, 0.08);
 }
 
 .toast.show {

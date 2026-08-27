@@ -32,16 +32,35 @@ function showToast(message) {
   }
   const toast = document.createElement('div');
   toast.className = 'toast';
-  toast.textContent = message;
+  
+  const textSpan = document.createElement('span');
+  textSpan.className = 'toast-text';
+  textSpan.textContent = message;
+  
+  const closeBtn = document.createElement('button');
+  closeBtn.className = 'toast-close-btn';
+  closeBtn.setAttribute('aria-label', 'Close notification');
+  closeBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>';
+  
+  toast.appendChild(textSpan);
+  toast.appendChild(closeBtn);
   container.appendChild(toast);
   
   toast.offsetHeight;
   toast.classList.add('show');
   
-  setTimeout(() => {
+  let dismissed = false;
+  const dismiss = () => {
+    if (dismissed) return;
+    dismissed = true;
+    clearTimeout(timeoutId);
     toast.classList.remove('show');
-    toast.addEventListener('transitionend', () => toast.remove());
-  }, 3000);
+    toast.addEventListener('transitionend', () => toast.remove(), { once: true });
+    setTimeout(() => toast.remove(), 400);
+  };
+
+  closeBtn.addEventListener('click', dismiss);
+  const timeoutId = setTimeout(dismiss, 5000);
 }
 
 // Check for pending toasts on load
