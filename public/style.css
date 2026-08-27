@@ -173,6 +173,7 @@ html, body {
   color: var(--text-muted);
   margin-bottom: 5px;
   font-weight: 500;
+  white-space: nowrap;
 }
 
 .limit-bar-bg {

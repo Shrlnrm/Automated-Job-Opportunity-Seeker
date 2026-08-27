@@ -202,6 +202,17 @@ function isDuplicate(userId, query) {
   return false;
 }
 
+// Helper to format ISO date string to dd/mm/yy
+function formatResetDate(dateStr) {
+  if (!dateStr) return 'next billing cycle';
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return 'next billing cycle';
+  const day = String(d.getDate()).padStart(2, '0');
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const year = String(d.getFullYear()).slice(-2);
+  return `${day}/${month}/${year}`;
+}
+
 // ── Auth & Limits Middleware ─────────────────────────────────
 async function requireAuthAndCheckLimits(req, res, next) {
   const authHeader = req.headers.authorization;
@@ -245,12 +256,18 @@ async function requireAuthAndCheckLimits(req, res, next) {
       userData = doc.data();
     }
     
-    // Fallback for legacy users missing limit fields
+    // Fallback for legacy users missing limit fields or reset dates
     if (userData.jobSearchesRemaining === undefined) {
       userData.jobSearchesRemaining = 10;
     }
     if (userData.companyLoadsRemaining === undefined) {
       userData.companyLoadsRemaining = 3000;
+    }
+    if (!userData.nextLimitResetDate) {
+      const nextReset = new Date();
+      nextReset.setMonth(nextReset.getMonth() + 1);
+      userData.nextLimitResetDate = nextReset.toISOString();
+      userRef.update({ nextLimitResetDate: userData.nextLimitResetDate }).catch(() => {});
     }
 
     req.userData = userData;
@@ -280,7 +297,7 @@ async function requireAuthAndCheckLimits(req, res, next) {
     const now = new Date();
     const resetDate = new Date(userData.nextLimitResetDate);
     
-    if (now >= resetDate) {
+    if (!isNaN(resetDate.getTime()) && now >= resetDate) {
       const nextReset = new Date(resetDate);
       while (nextReset <= now) {
         nextReset.setMonth(nextReset.getMonth() + 1);
@@ -309,7 +326,8 @@ app.get('/api/user-limits', requireAuthAndCheckLimits, (req, res) => {
   res.json({
     role: req.userData.role,
     jobSearchesRemaining: req.userData.jobSearchesRemaining,
-    companyLoadsRemaining: req.userData.companyLoadsRemaining
+    companyLoadsRemaining: req.userData.companyLoadsRemaining,
+    nextLimitResetDate: req.userData.nextLimitResetDate
   });
 });
 
@@ -881,8 +899,11 @@ app.post('/api/search', requireAuthAndCheckLimits, async (req, res) => {
 
   // Check Limits (if not owner)
   if (req.userData.role !== 'owner') {
-    if (req.userData.jobSearchesRemaining <= 0) {
-      return res.status(429).json({ error: 'Monthly job search limit reached.' });
+    if ((req.userData.jobSearchesRemaining ?? 10) <= 0) {
+      return res.status(429).json({
+        error: `Monthly job search limit reached. Next reset on ${formatResetDate(req.userData.nextLimitResetDate)}.`,
+        nextLimitResetDate: req.userData.nextLimitResetDate
+      });
     }
   }
 
@@ -979,8 +1000,9 @@ app.post('/api/search', requireAuthAndCheckLimits, async (req, res) => {
     if (req.userData.role !== 'owner' && items.length > 0) {
       await db.runTransaction(async (tx) => {
         const snap = await tx.get(req.userRef);
-        if ((snap.data().jobSearchesRemaining ?? 0) <= 0) {
-          throw Object.assign(new Error('Monthly job search limit reached.'), { status: 429 });
+        const current = snap.data().jobSearchesRemaining ?? 0;
+        if (current <= 0) {
+          throw Object.assign(new Error(`Monthly job search limit reached. Next reset on ${formatResetDate(req.userData.nextLimitResetDate)}.`), { status: 429 });
         }
         tx.update(req.userRef, { jobSearchesRemaining: FieldValue.increment(-1) });
       });
@@ -1039,8 +1061,11 @@ app.post('/api/search-companies', requireAuthAndCheckLimits, async (req, res) =>
 
   // Check Limits (if not owner)
   // For companies, we deduct based on how many companies are returned. We'll deduct them after fetching.
-  if (req.userData.role !== 'owner' && req.userData.companyLoadsRemaining <= 0) {
-    return res.status(429).json({ error: 'Monthly company loads limit reached.' });
+  if (req.userData.role !== 'owner' && (req.userData.companyLoadsRemaining ?? 3000) <= 0) {
+    return res.status(429).json({
+      error: `Monthly company loads limit reached. Next reset on ${formatResetDate(req.userData.nextLimitResetDate)}.`,
+      nextLimitResetDate: req.userData.nextLimitResetDate
+    });
   }
 
   const referer = req.headers.referer || req.headers.origin || 'https://automated-job-opportunity-seeker.vercel.app/';
@@ -1189,8 +1214,9 @@ app.post('/api/search-companies', requireAuthAndCheckLimits, async (req, res) =>
       const placesLoaded = data.places.length;
       await db.runTransaction(async (tx) => {
         const snap = await tx.get(req.userRef);
-        if ((snap.data().companyLoadsRemaining ?? 0) <= 0) {
-          throw Object.assign(new Error('Monthly company loads limit reached.'), { status: 429 });
+        const current = snap.data().companyLoadsRemaining ?? 0;
+        if (current <= 0) {
+          throw Object.assign(new Error(`Monthly company loads limit reached. Next reset on ${formatResetDate(req.userData.nextLimitResetDate)}.`), { status: 429 });
         }
         tx.update(req.userRef, { companyLoadsRemaining: FieldValue.increment(-placesLoaded) });
       });

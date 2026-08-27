@@ -502,6 +502,17 @@ async function fetchLimits() {
   }
 }
 
+// Helper to format ISO date string to dd/mm/yy
+function formatResetDate(dateStr) {
+  if (!dateStr) return 'next cycle';
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return 'next cycle';
+  const day = String(d.getDate()).padStart(2, '0');
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const year = String(d.getFullYear()).slice(-2);
+  return `${day}/${month}/${year}`;
+}
+
 function renderLimitsShowcase() {
   const showcase = document.getElementById('limitsShowcase');
   const label = document.getElementById('limitLabel');
@@ -515,21 +526,65 @@ function renderLimitsShowcase() {
     label.textContent = 'Unlimited (Owner)';
     barFill.style.width = '100%';
     barFill.style.backgroundColor = 'var(--accent)';
+    if (searchBtn && (!nextBtn || !nextBtn.style.display || nextBtn.style.display === 'none')) {
+      searchBtn.disabled = false;
+    }
     return;
   }
 
+  const resetFormatted = formatResetDate(userLimits.nextLimitResetDate);
+
   if (searchMode === 'jobs') {
     const remain = userLimits.jobSearchesRemaining ?? 10;
-    label.textContent = `Job Search: ${remain}/10 left`;
-    const pct = Math.max(0, Math.min(100, (remain / 10) * 100));
-    barFill.style.width = `${pct}%`;
-    barFill.style.backgroundColor = remain <= 2 ? '#ef4444' : 'var(--accent)';
+    if (remain <= 0) {
+      label.textContent = `Next reset ${resetFormatted}`;
+      barFill.style.width = '0%';
+      barFill.style.backgroundColor = '#ef4444';
+      if (searchBtn) {
+        searchBtn.disabled = true;
+        const searchWrapper = searchBtn.parentElement.classList.contains('tooltip-wrapper') ? searchBtn.parentElement : searchBtn;
+        searchWrapper.setAttribute('data-tooltip', `Monthly limit reached. Next reset on ${resetFormatted}.`);
+      }
+    } else {
+      label.textContent = `Job Search: ${remain}/10 left`;
+      const pct = Math.max(0, Math.min(100, (remain / 10) * 100));
+      barFill.style.width = `${pct}%`;
+      barFill.style.backgroundColor = remain <= 2 ? '#ef4444' : 'var(--accent)';
+      if (searchBtn) {
+        searchBtn.disabled = false;
+        const searchWrapper = searchBtn.parentElement.classList.contains('tooltip-wrapper') ? searchBtn.parentElement : searchBtn;
+        searchWrapper.setAttribute('data-tooltip', 'Start a new search.');
+      }
+    }
   } else {
     const remain = userLimits.companyLoadsRemaining ?? 3000;
-    label.textContent = `Company Load: ${remain}/3000 left`;
-    const pct = Math.max(0, Math.min(100, (remain / 3000) * 100));
-    barFill.style.width = `${pct}%`;
-    barFill.style.backgroundColor = remain <= 500 ? '#ef4444' : 'var(--accent)';
+    const showNext = !!(nextPageToken);
+    if (remain <= 0) {
+      label.textContent = `Next reset ${resetFormatted}`;
+      barFill.style.width = '0%';
+      barFill.style.backgroundColor = '#ef4444';
+      if (searchBtn) {
+        searchBtn.disabled = true;
+        const searchWrapper = searchBtn.parentElement.classList.contains('tooltip-wrapper') ? searchBtn.parentElement : searchBtn;
+        searchWrapper.setAttribute('data-tooltip', `Monthly limit reached. Next reset on ${resetFormatted}.`);
+      }
+      if (nextBtn) {
+        nextBtn.disabled = true;
+      }
+    } else {
+      label.textContent = `Company Load: ${remain}/3000 left`;
+      const pct = Math.max(0, Math.min(100, (remain / 3000) * 100));
+      barFill.style.width = `${pct}%`;
+      barFill.style.backgroundColor = remain <= 500 ? '#ef4444' : 'var(--accent)';
+      if (searchBtn) {
+        searchBtn.disabled = showNext;
+        const searchWrapper = searchBtn.parentElement.classList.contains('tooltip-wrapper') ? searchBtn.parentElement : searchBtn;
+        searchWrapper.setAttribute('data-tooltip', showNext ? 'Clear your current session data to initiate a new search.' : 'Start a new search.');
+      }
+      if (nextBtn && showNext) {
+        nextBtn.disabled = false;
+      }
+    }
   }
 }
 
@@ -695,6 +750,19 @@ function setStatus(text, active = false) {
 
 // Search
 async function performSearch(isNextPage = false) {
+  // Client-side Limit Enforcement Guard
+  if (userLimits && userLimits.role !== 'owner') {
+    const resetFormatted = formatResetDate(userLimits.nextLimitResetDate);
+    if (searchMode === 'jobs' && (userLimits.jobSearchesRemaining ?? 10) <= 0) {
+      showToast(`Monthly job search limit reached. Your limit will reset on ${resetFormatted}.`);
+      return;
+    }
+    if (searchMode === 'companies' && (userLimits.companyLoadsRemaining ?? 3000) <= 0) {
+      showToast(`Monthly company loads limit reached. Your limit will reset on ${resetFormatted}.`);
+      return;
+    }
+  }
+
   const thisSessionId = ++currentSearchSessionId;
   let query;
   let endpoint = '/api/search';
@@ -896,6 +964,7 @@ async function performSearch(isNextPage = false) {
         searchWrapper.setAttribute('data-tooltip', showNext ? 'Clear your current session data to initiate a new search.' : 'Start a new search.');
       }
     }
+    renderLimitsShowcase();
     populateFilters();
     applyFilters();
   }
