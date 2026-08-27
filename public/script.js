@@ -93,26 +93,54 @@ onAuthStateChanged(auth, (user) => {
   } else {
     const isGoogle = user.providerData && user.providerData.some(p => p.providerId === 'google.com');
     if (!user.emailVerified && !isGoogle) {
-      sessionStorage.setItem('pendingToast', 'Please verify your email address to access the platform. (Check your Spam/Junk folder!)');
+      try {
+        sessionStorage.setItem('pendingToast', 'Please verify your email address to access the platform. (Check your Spam/Junk folder!)');
+      } catch (e) {}
       window.location.replace('/verify-email.html');
       return;
     }
     
-    // 5-day inactivity check (with fresh sign-in immunity)
+    // Inactivity check (5 days) with fresh sign-in immunity
     const now = Date.now();
-    const lastSignInTime = user.metadata?.lastSignInTime ? new Date(user.metadata.lastSignInTime).getTime() : 0;
-    const isFreshLogin = (now - lastSignInTime) < 15 * 60 * 1000; // Logged in within the last 15 minutes
+    let isFreshLogin = false;
+    try {
+      if (sessionStorage.getItem('freshLogin') === 'true') {
+        isFreshLogin = true;
+        sessionStorage.removeItem('freshLogin');
+      }
+    } catch (e) {}
 
-    const lastActivityStr = localStorage.getItem('lastActivityTime');
-    if (!isFreshLogin && lastActivityStr && (now - parseInt(lastActivityStr, 10)) > 5 * 24 * 60 * 60 * 1000) {
-      localStorage.removeItem('lastActivityTime');
+    if (!isFreshLogin && user.metadata?.lastSignInTime) {
+      const parsedTime = Date.parse(user.metadata.lastSignInTime);
+      if (!isNaN(parsedTime) && (now - parsedTime) < 15 * 60 * 1000) {
+        isFreshLogin = true;
+      }
+    }
+
+    let isSessionExpired = false;
+    try {
+      const lastActivityStr = localStorage.getItem('lastActivityTime');
+      if (!isFreshLogin && lastActivityStr) {
+        const lastActivity = parseInt(lastActivityStr, 10);
+        if (!isNaN(lastActivity) && (now - lastActivity) > 5 * 24 * 60 * 60 * 1000) {
+          isSessionExpired = true;
+        }
+      }
+    } catch (e) {}
+
+    if (isSessionExpired) {
+      try { localStorage.removeItem('lastActivityTime'); } catch (e) {}
       auth.signOut();
-      sessionStorage.setItem('pendingToast', 'For your security, your session has expired due to inactivity. Please log in again.');
+      try {
+        sessionStorage.setItem('pendingToast', 'For your security, your session has expired due to inactivity. Please log in again.');
+      } catch (e) {}
       window.location.replace('/login.html');
       return;
-    } else {
-      localStorage.setItem('lastActivityTime', now.toString());
     }
+
+    try {
+      localStorage.setItem('lastActivityTime', now.toString());
+    } catch (e) {}
 
     // FIX: Removed buggy fetchLimits() call that was overwriting snapshot listener and causing freezing (2026-06-26)
 

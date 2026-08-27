@@ -381,6 +381,10 @@ onAuthStateChanged(auth, async (user) => {
     return;
   }
 
+  try {
+    localStorage.setItem('lastActivityTime', Date.now().toString());
+  } catch (e) {}
+
   if (userEmailDisplay) {
     userEmailDisplay.textContent = `Signed in as ${user.email}`;
   }

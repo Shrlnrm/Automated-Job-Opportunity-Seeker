@@ -127,6 +127,17 @@ function setupPasswordToggles() {
 }
 setupPasswordToggles();
 
+// Helper to mark active session and avoid stale inactivity timeout
+export function stampFreshActivity() {
+  try {
+    const now = Date.now().toString();
+    localStorage.setItem('lastActivityTime', now);
+    sessionStorage.setItem('freshLogin', 'true');
+  } catch (e) {
+    console.warn('[AJOS Auth] Storage stamp note:', e);
+  }
+}
+
 // Helper to determine if user is verified (Google OAuth users are pre-verified)
 export function isUserVerified(user) {
   if (!user) return false;
@@ -139,7 +150,7 @@ export function isUserVerified(user) {
 onAuthStateChanged(auth, (user) => {
   console.log('[AJOS Auth] onAuthStateChanged state:', user ? user.email : 'No user logged in');
   if (user) {
-    localStorage.setItem('lastActivityTime', Date.now().toString());
+    stampFreshActivity();
 
     // Do NOT run redirect loops if user is already on verify-email or auth-action page
     const pathname = window.location.pathname;
@@ -250,7 +261,7 @@ if (loginForm) {
       if (!isUserVerified(userCred.user)) {
         window.location.href = '/verify-email.html';
       } else {
-        localStorage.setItem('lastActivityTime', Date.now().toString());
+        stampFreshActivity();
         window.location.href = '/job-search.html';
       }
     } catch (error) {
@@ -300,7 +311,7 @@ getRedirectResult(auth)
   .then((userCred) => {
     console.log('[AJOS Auth] getRedirectResult check:', userCred ? userCred.user?.email : 'No pending redirect');
     if (userCred && userCred.user) {
-      localStorage.setItem('lastActivityTime', Date.now().toString());
+      stampFreshActivity();
       // Fire-and-forget backend init
       userCred.user.getIdToken().then(idToken => {
         initUserOnBackend('google_bypass', idToken).catch(err => {
@@ -318,7 +329,7 @@ getRedirectResult(auth)
     }
   });
 
-// Google Auth (Login & Register - Instant User Gesture Popup)
+// Google Auth (Login & Register - Resilient Popup with Mobile Redirect Fallback)
 const googleBtn = document.getElementById('googleBtn');
 if (googleBtn) {
   googleBtn.addEventListener('click', async () => {
@@ -328,12 +339,11 @@ if (googleBtn) {
 
     try {
       console.log('[AJOS Auth] Opening Google sign-in popup...');
-      // Invoke popup synchronously on user gesture tick
       const userCred = await signInWithPopup(auth, googleProvider);
       
       if (userCred && userCred.user) {
         console.log('[AJOS Auth] Google popup success:', userCred.user.email);
-        localStorage.setItem('lastActivityTime', Date.now().toString());
+        stampFreshActivity();
 
         // Initialize user in backend and check for registration capacity
         const idToken = await userCred.user.getIdToken();
@@ -350,7 +360,17 @@ if (googleBtn) {
       }
     } catch (error) {
       console.warn('[AJOS Auth Error] Google popup:', error);
-      if (error.code !== 'auth/popup-closed-by-user') {
+      // Fall back to redirect if popup is blocked on mobile browsers / strict privacy settings
+      if (error.code === 'auth/popup-blocked' || error.code === 'auth/cancelled-popup-request') {
+        console.log('[AJOS Auth] Popup blocked or cancelled. Falling back to signInWithRedirect...');
+        try {
+          await signInWithRedirect(auth, googleProvider);
+          return;
+        } catch (redirectErr) {
+          console.error('[AJOS Auth] Redirect fallback failed:', redirectErr);
+          showError(redirectErr);
+        }
+      } else if (error.code !== 'auth/popup-closed-by-user') {
         showError(error);
       }
     } finally {

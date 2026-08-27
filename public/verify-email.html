@@ -96,11 +96,11 @@
   </div>
 
   <script type="module">
-    import { auth } from './auth.js';
+    import { auth, stampFreshActivity } from './auth.js';
     import { sendEmailVerification, onAuthStateChanged } from 'firebase/auth';
 
     // Clear redundant pending toast on verify-email page
-    sessionStorage.removeItem('pendingToast');
+    try { sessionStorage.removeItem('pendingToast'); } catch (e) {}
 
     const errorMsg = document.getElementById('errorMsg');
     const resendBtn = document.getElementById('resendBtn');
@@ -110,6 +110,7 @@
       if (user) {
         const isGoogle = user.providerData && user.providerData.some(p => p.providerId === 'google.com');
         if (user.emailVerified || isGoogle) {
+          stampFreshActivity();
           window.location.replace('/job-search.html');
         }
       }
