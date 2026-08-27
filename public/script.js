@@ -974,38 +974,108 @@ async function performSearch(isNextPage = false) {
   }
 }
 
+function detectPlatformClient(url, title = '') {
+  const u = (url || '').toLowerCase();
+  const t = (title || '').toLowerCase();
+
+  if (u.includes('prosple') || t.includes('prosple')) return 'Prosple';
+  if (u.includes('jobstreet') || t.includes('jobstreet')) return 'JobStreet';
+  if (u.includes('indeed') || t.includes('indeed')) return 'Indeed';
+  if (u.includes('linkedin') || t.includes('linkedin')) return 'LinkedIn';
+  if (u.includes('glassdoor') || t.includes('glassdoor')) return 'Glassdoor';
+  if (u.includes('jobsdb') || t.includes('jobsdb')) return 'JobsDB';
+  if (u.includes('hiredly') || t.includes('hiredly') || u.includes('wobb') || t.includes('wobb')) return 'Hiredly';
+  if (u.includes('graduan') || t.includes('graduan')) return 'Graduan';
+  if (u.includes('internsheeps') || t.includes('internsheeps')) return 'Internsheeps';
+  if (u.includes('maukerja') || t.includes('maukerja')) return 'Maukerja';
+  if (u.includes('ricebowl') || t.includes('ricebowl')) return 'Ricebowl';
+  if (u.includes('fastjobs') || t.includes('fastjobs')) return 'FastJobs';
+  if (u.includes('myfuturejobs') || t.includes('myfuturejobs')) return 'MyFutureJobs';
+  if (u.includes('foundit') || t.includes('foundit') || u.includes('monster') || t.includes('monster')) return 'Foundit';
+  if (u.includes('seek.') || t.includes('seek')) return 'SEEK';
+  if (u.includes('ziprecruiter') || t.includes('ziprecruiter')) return 'ZipRecruiter';
+  if (u.includes('simplyhired') || t.includes('simplyhired')) return 'SimplyHired';
+  if (u.includes('workday') || u.includes('myworkdayjobs')) return 'Workday';
+  if (u.includes('greenhouse.io')) return 'Greenhouse';
+  if (u.includes('lever.co')) return 'Lever';
+  if (u.includes('smartrecruiters.com')) return 'SmartRecruiters';
+  if (u.includes('taleo.net')) return 'Taleo';
+  if (u.includes('icims.com')) return 'iCIMS';
+  if (u.includes('ashbyhq.com')) return 'Ashby';
+  if (u.includes('bamboohr.com')) return 'BambooHR';
+  if (u.includes('workable.com')) return 'Workable';
+
+  if (title && title.trim()) {
+    const cleaned = title
+      .replace(/^via\s+/i, '')
+      .replace(/^apply\s+(on|at|via)\s+/i, '')
+      .trim();
+    if (cleaned && !cleaned.toLowerCase().includes('apply') && cleaned.length < 30) {
+      return cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
+    }
+  }
+
+  if (url) {
+    try {
+      const parsed = new URL(url);
+      let hostname = parsed.hostname.toLowerCase().replace(/^www\./, '');
+      const parts = hostname.split('.');
+      if (parts.length >= 2) {
+        const mainPart = (parts[0] === 'careers' || parts[0] === 'jobs' || parts[0] === 'my') ? (parts[1] || parts[0]) : parts[0];
+        if (mainPart && mainPart.length > 2) {
+          return mainPart.charAt(0).toUpperCase() + mainPart.slice(1);
+        }
+      }
+    } catch {}
+  }
+
+  if (t.includes('company') || t.includes('employer')) return 'Company Site';
+  return 'Direct Site';
+}
+
 function addJobRow(job) {
   rowCount++;
   const title       = job.title || 'Unknown Title';
   const companyName = job.companyName || 'Unknown Company';
   const location    = job.location || 'Malaysia';
-  const site        = job.site || 'Other';
   const link        = job.link || '#';
-  // 'via' is the platform label from Google Jobs (e.g. "Indeed", "LinkedIn", "JobStreet")
-  // Fall back to site if via not available
-  const platform    = job.via || site;
-
-  const tagClass = getTagClass(platform);
 
   const safeTitle    = escapeHtml(title);
   const safeCompany  = escapeHtml(companyName);
   const safeLoc      = escapeHtml(location);
-  const safePlatform = escapeHtml(platform);
   const safeLink     = escapeHtml(link);
 
   let applyHtml = '';
   if (job.applyOptions && job.applyOptions.length > 0) {
+    // Deduplicate apply options by normalized site name
+    const seen = new Set();
+    const uniqueOptions = [];
+    job.applyOptions.forEach(opt => {
+      let optSite = opt.site;
+      if (!optSite || optSite === 'Direct Site' || optSite === 'Other') {
+        optSite = detectPlatformClient(opt.link, opt.title);
+      }
+      const key = (optSite || '').toLowerCase();
+      if (!seen.has(key)) {
+        seen.add(key);
+        uniqueOptions.push({
+          link: opt.link,
+          title: opt.title || optSite,
+          site: optSite
+        });
+      }
+    });
+
     applyHtml = `<div class="apply-options-container">` +
-      job.applyOptions.map(opt => {
-        const optTitle = opt.title || 'Apply';
-        const optSite = opt.site || optTitle;
-        return `<a href="${escapeHtml(opt.link)}" target="_blank" rel="noopener noreferrer" class="apply-chip" title="${escapeHtml(optTitle)}">${escapeHtml(optSite)}</a>`;
+      uniqueOptions.map(opt => {
+        return `<a href="${escapeHtml(opt.link)}" target="_blank" rel="noopener noreferrer" class="apply-chip" title="${escapeHtml(opt.title)}">${escapeHtml(opt.site)}</a>`;
       }).join('') +
       `</div>`;
   } else {
+    const fallbackSite = detectPlatformClient(link, job.via || job.site);
     applyHtml = `
-      <a href="${safeLink}" target="_blank" rel="noopener noreferrer" class="external-link">
-        View Job
+      <a href="${safeLink}" target="_blank" rel="noopener noreferrer" class="apply-chip">
+        ${escapeHtml(fallbackSite)}
       </a>
     `;
   }
@@ -1017,9 +1087,6 @@ function addJobRow(job) {
     </td>
     <td>${safeCompany}</td>
     <td>${safeLoc}</td>
-    <td>
-      <span class="tag ${tagClass}">${safePlatform}</span>
-    </td>
     <td class="col-contacts">
       ${applyHtml}
     </td>
@@ -1337,9 +1404,7 @@ function populateFilters() {
   if (searchMode === 'jobs' && filterPlatformMenu) {
     const platforms = new Set();
     rows.forEach(row => {
-      const platform = row.querySelectorAll('td')[3]?.querySelector('.tag')?.textContent.trim() || row.querySelectorAll('td')[3]?.textContent.trim();
-      if (platform) platforms.add(platform);
-      row.querySelectorAll('td')[4]?.querySelectorAll('.apply-chip').forEach(chip => {
+      row.querySelectorAll('td')[3]?.querySelectorAll('.apply-chip').forEach(chip => {
         const txt = chip.textContent.trim();
         if (txt) platforms.add(txt);
       });
@@ -1394,9 +1459,8 @@ function applyFilters() {
   const rows = Array.from(tbody.querySelectorAll('tr'));
   if (searchMode === 'jobs') {
     rows.forEach(row => {
-      const platform = row.querySelectorAll('td')[3]?.querySelector('.tag')?.textContent.trim() || row.querySelectorAll('td')[3]?.textContent.trim();
-      const chipTexts = Array.from(row.querySelectorAll('td')[4]?.querySelectorAll('.apply-chip')).map(c => c.textContent.trim());
-      const matches = (currentPlatformFilter === 'all' || platform === currentPlatformFilter || chipTexts.includes(currentPlatformFilter));
+      const chipTexts = Array.from(row.querySelectorAll('td')[3]?.querySelectorAll('.apply-chip')).map(c => c.textContent.trim().toLowerCase());
+      const matches = (currentPlatformFilter === 'all' || chipTexts.includes(currentPlatformFilter.toLowerCase()));
       row.style.display = matches ? '' : 'none';
     });
   } else if (searchMode === 'companies') {
@@ -1527,17 +1591,18 @@ function printTable() {
 
   rows.forEach(tr => {
     const tds = tr.querySelectorAll('td');
-    if (tds.length < 6) return;
+    if (tds.length < (isJobs ? 5 : 6)) return;
 
     if (isJobs) {
       const jobTitle = tds[0].querySelector('.job-title')?.textContent.trim() || tds[0].textContent.trim();
       const company = tds[1].textContent.trim();
       const location = tds[2].textContent.trim();
-      const platform = tds[3].querySelector('.tag')?.textContent.trim() || tds[3].textContent.trim();
-      const linkEl = tds[4].querySelector('a');
+      const applyChips = Array.from(tds[3].querySelectorAll('.apply-chip, .external-link'));
+      const jobLinksText = applyChips.map(c => c.textContent.trim()).join(', ') || 'View Job';
+      const linkEl = tds[3].querySelector('a');
       const jobLink = linkEl ? linkEl.href : '';
 
-      tableData.push([jobTitle, company, location, platform, jobLink]);
+      tableData.push([jobTitle, company, location, jobLinksText]);
       urls.push({ jobLink });
     } else {
       const company  = tds[0].querySelector('.company-name')?.textContent.trim() || tds[0].textContent.trim();
@@ -1578,7 +1643,7 @@ function printTable() {
   doc.autoTable({
     startY: 24,
     head: isJobs
-      ? [['Job Title', 'Company', 'Location', 'Platform', 'Job Link']]
+      ? [['Job Title', 'Company', 'Location', 'Job Link (Platforms)']]
       : [['Company', 'Industry', 'Type', 'Address', 'Website', 'Contacts']],
     body: tableData,
     styles: {
@@ -1602,11 +1667,10 @@ function printTable() {
     },
     columnStyles: isJobs
       ? {
-        0: { cellWidth: 60 },
-        1: { cellWidth: 50 },
-        2: { cellWidth: 50 },
-        3: { cellWidth: 25 },
-        4: { cellWidth: 'auto', textColor: [26, 86, 219] },
+        0: { cellWidth: 70 },
+        1: { cellWidth: 55 },
+        2: { cellWidth: 55 },
+        3: { cellWidth: 'auto', textColor: [26, 86, 219] },
       }
       : {
         0: { cellWidth: 38 },
@@ -1619,7 +1683,7 @@ function printTable() {
     didDrawCell: (data) => {
       if (data.section !== 'body') return;
 
-      if (isJobs && data.column.index === 4) {
+      if (isJobs && data.column.index === 3) {
         const url = urls[data.row.index]?.jobLink;
         if (url) doc.link(data.cell.x, data.cell.y, data.cell.width, data.cell.height, { url });
       } else if (!isJobs) {

@@ -837,20 +837,89 @@ app.post('/api/search', requireAuthAndCheckLimits, async (req, res) => {
       const detectSite = (url, title = '') => {
         const u = (url || '').toLowerCase();
         const t = (title || '').toLowerCase();
+
+        // 1. Well-known job platforms and ATS systems
+        if (u.includes('prosple') || t.includes('prosple')) return 'Prosple';
         if (u.includes('jobstreet') || t.includes('jobstreet')) return 'JobStreet';
         if (u.includes('indeed') || t.includes('indeed')) return 'Indeed';
         if (u.includes('linkedin') || t.includes('linkedin')) return 'LinkedIn';
-        if (u.includes('jobsdb') || t.includes('jobsdb')) return 'JobsDB';
         if (u.includes('glassdoor') || t.includes('glassdoor')) return 'Glassdoor';
+        if (u.includes('jobsdb') || t.includes('jobsdb')) return 'JobsDB';
+        if (u.includes('hiredly') || t.includes('hiredly') || u.includes('wobb') || t.includes('wobb')) return 'Hiredly';
+        if (u.includes('graduan') || t.includes('graduan')) return 'Graduan';
+        if (u.includes('internsheeps') || t.includes('internsheeps')) return 'Internsheeps';
+        if (u.includes('maukerja') || t.includes('maukerja')) return 'Maukerja';
+        if (u.includes('ricebowl') || t.includes('ricebowl')) return 'Ricebowl';
+        if (u.includes('fastjobs') || t.includes('fastjobs')) return 'FastJobs';
+        if (u.includes('myfuturejobs') || t.includes('myfuturejobs')) return 'MyFutureJobs';
+        if (u.includes('foundit') || t.includes('foundit') || u.includes('monster') || t.includes('monster')) return 'Foundit';
+        if (u.includes('seek.') || t.includes('seek')) return 'SEEK';
+        if (u.includes('ziprecruiter') || t.includes('ziprecruiter')) return 'ZipRecruiter';
+        if (u.includes('simplyhired') || t.includes('simplyhired')) return 'SimplyHired';
+        if (u.includes('workday') || u.includes('myworkdayjobs')) return 'Workday';
+        if (u.includes('greenhouse.io')) return 'Greenhouse';
+        if (u.includes('lever.co')) return 'Lever';
+        if (u.includes('smartrecruiters.com')) return 'SmartRecruiters';
+        if (u.includes('taleo.net')) return 'Taleo';
+        if (u.includes('icims.com')) return 'iCIMS';
+        if (u.includes('ashbyhq.com')) return 'Ashby';
+        if (u.includes('bamboohr.com')) return 'BambooHR';
+        if (u.includes('workable.com')) return 'Workable';
+
+        // 2. Clean SerpApi Title if present (e.g. "via Prosple" -> "Prosple", "Careers at ExxonMobil")
+        if (title && title.trim()) {
+          const cleanedTitle = title
+            .replace(/^via\s+/i, '')
+            .replace(/^apply\s+(on|at|via)\s+/i, '')
+            .trim();
+          if (cleanedTitle && !cleanedTitle.toLowerCase().includes('apply') && cleanedTitle.length < 30) {
+            return cleanedTitle.charAt(0).toUpperCase() + cleanedTitle.slice(1);
+          }
+        }
+
+        // 3. Clean domain parsing from URL
+        if (url) {
+          try {
+            const parsed = new URL(url);
+            let hostname = parsed.hostname.toLowerCase().replace(/^www\./, '');
+            const parts = hostname.split('.');
+            if (parts.length >= 2) {
+              const mainPart = (parts[0] === 'careers' || parts[0] === 'jobs' || parts[0] === 'my') ? (parts[1] || parts[0]) : parts[0];
+              if (mainPart && mainPart.length > 2) {
+                return mainPart.charAt(0).toUpperCase() + mainPart.slice(1);
+              }
+            }
+          } catch {
+            // Ignore URL parsing error
+          }
+        }
+
         if (t.includes('company') || t.includes('employer')) return 'Company Site';
         return 'Direct Site';
       };
 
-      const applyOptions = (item.apply_options || []).map(opt => ({
-        title: opt.title || 'Apply',
-        link: cleanUrl(opt.link),
-        site: detectSite(opt.link, opt.title)
-      })).filter(opt => opt.link);
+      // Deduplicate apply options by normalized site name and link
+      const seenSites = new Set();
+      const seenUrls = new Set();
+      const applyOptions = [];
+
+      for (const opt of (item.apply_options || [])) {
+        const cleaned = cleanUrl(opt.link);
+        if (!cleaned) continue;
+        const site = detectSite(cleaned, opt.title);
+        const siteKey = site.toLowerCase();
+
+        // Skip duplicates for the same platform or identical link
+        if (seenUrls.has(cleaned) || seenSites.has(siteKey)) continue;
+        seenUrls.add(cleaned);
+        seenSites.add(siteKey);
+
+        applyOptions.push({
+          title: opt.title || site,
+          link: cleaned,
+          site
+        });
+      }
 
       // Default site and link (fallback to search if no direct link)
       let site = 'Other';
