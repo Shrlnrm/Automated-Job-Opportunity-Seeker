@@ -501,56 +501,63 @@ html, body {
   color: #ffffff;
 }
 
-/* Dark mode buttons: Solid white with black text */
-.dark-theme .btn,
-html.dark-theme .btn,
-body.dark-theme .btn,
-.dark-theme .btn-primary,
-html.dark-theme .btn-primary,
-body.dark-theme .btn-primary,
-.dark-theme .btn-ghost,
-html.dark-theme .btn-ghost,
-body.dark-theme .btn-ghost {
+/* Dark mode buttons: Solid white with black text (Strictly exclude btn-danger) */
+.dark-theme .btn:not(.btn-danger),
+html.dark-theme .btn:not(.btn-danger),
+body.dark-theme .btn:not(.btn-danger),
+.dark-theme .btn-primary:not(.btn-danger),
+html.dark-theme .btn-primary:not(.btn-danger),
+body.dark-theme .btn-primary:not(.btn-danger),
+.dark-theme .btn-ghost:not(.btn-danger),
+html.dark-theme .btn-ghost:not(.btn-danger),
+body.dark-theme .btn-ghost:not(.btn-danger) {
   background-color: #ffffff !important;
   color: #09090b !important;
   border-color: #ffffff !important;
 }
 
-.dark-theme .btn:hover:not(:disabled),
-html.dark-theme .btn:hover:not(:disabled),
-body.dark-theme .btn:hover:not(:disabled),
-.dark-theme .btn-primary:hover:not(:disabled),
-html.dark-theme .btn-primary:hover:not(:disabled),
-body.dark-theme .btn-primary:hover:not(:disabled),
-.dark-theme .btn-ghost:hover:not(:disabled),
-html.dark-theme .btn-ghost:hover:not(:disabled),
-body.dark-theme .btn-ghost:hover:not(:disabled) {
+.dark-theme .btn:not(.btn-danger):hover:not(:disabled),
+html.dark-theme .btn:not(.btn-danger):hover:not(:disabled),
+body.dark-theme .btn:not(.btn-danger):hover:not(:disabled),
+.dark-theme .btn-primary:not(.btn-danger):hover:not(:disabled),
+html.dark-theme .btn-primary:not(.btn-danger):hover:not(:disabled),
+body.dark-theme .btn-primary:not(.btn-danger):hover:not(:disabled),
+.dark-theme .btn-ghost:not(.btn-danger):hover:not(:disabled),
+html.dark-theme .btn-ghost:not(.btn-danger):hover:not(:disabled),
+body.dark-theme .btn-ghost:not(.btn-danger):hover:not(:disabled) {
   background-color: #f4f4f5 !important;
   border-color: #f4f4f5 !important;
   color: #09090b !important;
 }
 
-.dark-theme .btn svg,
-html.dark-theme .btn svg,
-body.dark-theme .btn svg,
-.dark-theme .btn-primary svg,
-html.dark-theme .btn-primary svg,
-body.dark-theme .btn-primary svg,
-.dark-theme .btn-ghost svg,
-html.dark-theme .btn-ghost svg,
-body.dark-theme .btn-ghost svg {
+.dark-theme .btn:not(.btn-danger) svg,
+html.dark-theme .btn:not(.btn-danger) svg,
+body.dark-theme .btn:not(.btn-danger) svg,
+.dark-theme .btn-primary:not(.btn-danger) svg,
+html.dark-theme .btn-primary:not(.btn-danger) svg,
+body.dark-theme .btn-primary:not(.btn-danger) svg,
+.dark-theme .btn-ghost:not(.btn-danger) svg,
+html.dark-theme .btn-ghost:not(.btn-danger) svg,
+body.dark-theme .btn-ghost:not(.btn-danger) svg {
   stroke: currentColor !important;
   color: #09090b !important;
 }
 
-.btn-danger {
-  background-color: #dc2626 !important; /* Solid Red */
+/* Logout Button is ALWAYS Red in both light & dark mode */
+.btn-danger,
+.dark-theme .btn-danger,
+html.dark-theme .btn-danger,
+body.dark-theme .btn-danger {
+  background-color: #dc2626 !important;
   color: #ffffff !important;
   border-color: #dc2626 !important;
 }
 
-.btn-danger:hover:not(:disabled) {
-  background-color: #b91c1c !important; /* Darker red on hover */
+.btn-danger:hover:not(:disabled),
+.dark-theme .btn-danger:hover:not(:disabled),
+html.dark-theme .btn-danger:hover:not(:disabled),
+body.dark-theme .btn-danger:hover:not(:disabled) {
+  background-color: #b91c1c !important;
   border-color: #b91c1c !important;
   color: #ffffff !important;
 }
@@ -624,7 +631,6 @@ tbody tr:hover {
   background: var(--surface-2);
 }
 
-
 .company-name {
   font-size: var(--font-size-sm);
   font-weight: 500;
@@ -632,31 +638,34 @@ tbody tr:hover {
   word-break: break-word;
 }
 
-/* ── Tags / Chips ───────────────────────────────────────── */
+/* ── Tags / Chips (Default Natural Card Styling) ────────── */
 .tag {
   display: inline-flex;
   align-items: center;
-  padding: 2px 8px;
+  padding: 1px 6px;
   border-radius: var(--radius-sm);
   font-size: var(--font-size-xs);
   font-weight: 500;
-  background-color: #09090b;
-  color: #ffffff;
-  border: 1px solid #09090b;
-  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+  border: 1px solid transparent;
 }
 
-/* Tag colour variants – uniform high contrast */
-.tag-0, .tag-1, .tag-2, .tag-3, .tag-4,
+/* Tag colour variants – cycle through these */
+.tag-0 { background: var(--tag-bg-0); color: var(--tag-color-0); border-color: var(--tag-border-0); }
+.tag-1 { background: var(--tag-bg-1); color: var(--tag-color-1); border-color: var(--tag-border-1); }
+.tag-2 { background: var(--tag-bg-2); color: var(--tag-color-2); border-color: var(--tag-border-2); }
+.tag-3 { background: var(--tag-bg-3); color: var(--tag-color-3); border-color: var(--tag-border-3); }
+.tag-4 { background: var(--tag-bg-4); color: var(--tag-color-4); border-color: var(--tag-border-4); }
+
+/* Company Type Badges (Neutral, uncolored) */
 .col-type .tag,
 .tag-type-mnc,
 .tag-type-sme,
 .tag-type-glc,
 .tag-type-startup,
 .tag-type-default {
-  background-color: #09090b;
-  color: #ffffff;
-  border: 1px solid #09090b;
+  background: var(--surface-2);
+  color: var(--text-secondary);
+  border-color: var(--border);
 }
 
 /* ── Contact Chips ──────────────────────────────────────── */
@@ -671,58 +680,47 @@ tbody tr:hover {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  padding: 2px 8px;
+  padding: 1px 7px;
   border-radius: var(--radius-sm);
   font-size: var(--font-size-xs);
-  font-weight: 500;
-  color: #ffffff;
-  background-color: #09090b;
-  border: 1px solid #09090b;
+  color: var(--text-secondary);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
   white-space: nowrap;
-  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
 }
 
-.contact-chip .chip-icon,
-.contact-chip svg {
+.contact-chip .chip-icon {
   flex-shrink: 0;
-  color: #ffffff;
-  stroke: currentColor;
+  color: var(--text-muted);
   display: inline-block;
   vertical-align: middle;
 }
 
 a.social-link,
 a.website-link {
-  color: #ffffff;
+  color: inherit;
   text-decoration: none;
 }
 
 a.social-link:hover,
 a.website-link:hover {
-  color: #ffffff;
+  color: var(--text);
   text-decoration: underline;
   text-underline-offset: 2px;
 }
 
 a.external-link {
-  color: #ffffff;
-  background-color: #09090b;
-  border: 1px solid #09090b;
-  padding: 2px 8px;
-  border-radius: var(--radius-sm);
+  color: var(--accent);
   text-decoration: none;
   font-size: var(--font-size-xs);
-  font-weight: 500;
   display: inline-flex;
   align-items: center;
   gap: 3px;
-  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
 }
 
 a.external-link:hover {
-  background-color: #27272a;
-  border-color: #27272a;
-  color: #ffffff;
+  text-decoration: underline;
+  text-underline-offset: 2px;
 }
 
 /* ── Multi-Platform Apply Chips ─────────────────────────── */
@@ -737,22 +735,23 @@ a.external-link:hover {
   display: inline-flex;
   align-items: center;
   gap: 3px;
-  padding: 2px 8px;
+  padding: 1px 7px;
   border-radius: var(--radius-sm);
   font-size: var(--font-size-xs);
   font-weight: 500;
-  color: #ffffff;
-  background-color: #09090b;
-  border: 1px solid #09090b;
+  color: var(--accent);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
   text-decoration: none;
-  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+  transition: all 0.15s ease;
   white-space: nowrap;
 }
 
 .apply-chip:hover {
-  background-color: #27272a;
-  border-color: #27272a;
-  color: #ffffff;
+  background: var(--surface);
+  color: var(--text);
+  border-color: var(--accent);
+  text-decoration: none;
 }
 
 /* ── Address Link ───────────────────────────────────────── */
@@ -768,7 +767,7 @@ a.address-link:hover {
   border-bottom-color: var(--text-muted);
 }
 
-/* ── Draft Button ───────────────────────────────────────── */
+/* ── Draft Button (White in Dark Mode, Black in Light Mode) ── */
 .draft-btn {
   display: inline-flex;
   align-items: center;
@@ -806,42 +805,15 @@ a.address-link:hover {
   color: #ffffff;
 }
 
-/* ── Dark Mode Inversions: Solid White with Black Text ──── */
-.dark-theme .tag,
-html.dark-theme .tag,
-body.dark-theme .tag,
-.dark-theme .tag-0, html.dark-theme .tag-0, body.dark-theme .tag-0,
-.dark-theme .tag-1, html.dark-theme .tag-1, body.dark-theme .tag-1,
-.dark-theme .tag-2, html.dark-theme .tag-2, body.dark-theme .tag-2,
-.dark-theme .tag-3, html.dark-theme .tag-3, body.dark-theme .tag-3,
-.dark-theme .tag-4, html.dark-theme .tag-4, body.dark-theme .tag-4,
-.dark-theme .col-type .tag, html.dark-theme .col-type .tag, body.dark-theme .col-type .tag,
-.dark-theme .tag-type-mnc, html.dark-theme .tag-type-mnc, body.dark-theme .tag-type-mnc,
-.dark-theme .tag-type-sme, html.dark-theme .tag-type-sme, body.dark-theme .tag-type-sme,
-.dark-theme .tag-type-glc, html.dark-theme .tag-type-glc, body.dark-theme .tag-type-glc,
-.dark-theme .tag-type-startup, html.dark-theme .tag-type-startup, body.dark-theme .tag-type-startup,
-.dark-theme .tag-type-default, html.dark-theme .tag-type-default, body.dark-theme .tag-type-default,
-.dark-theme .contact-chip, html.dark-theme .contact-chip, body.dark-theme .contact-chip,
-.dark-theme a.external-link, html.dark-theme a.external-link, body.dark-theme a.external-link,
-.dark-theme .apply-chip, html.dark-theme .apply-chip, body.dark-theme .apply-chip,
-.dark-theme .draft-btn, html.dark-theme .draft-btn, body.dark-theme .draft-btn {
+/* Dark mode draft button: Solid white with black text */
+.dark-theme .draft-btn,
+html.dark-theme .draft-btn,
+body.dark-theme .draft-btn {
   background-color: #ffffff !important;
   color: #09090b !important;
   border-color: #ffffff !important;
 }
 
-.dark-theme .contact-chip .chip-icon,
-html.dark-theme .contact-chip .chip-icon,
-body.dark-theme .contact-chip .chip-icon,
-.dark-theme .contact-chip svg,
-html.dark-theme .contact-chip svg,
-body.dark-theme .contact-chip svg,
-.dark-theme a.external-link svg,
-html.dark-theme a.external-link svg,
-body.dark-theme a.external-link svg,
-.dark-theme .apply-chip svg,
-html.dark-theme .apply-chip svg,
-body.dark-theme .apply-chip svg,
 .dark-theme .draft-btn svg,
 html.dark-theme .draft-btn svg,
 body.dark-theme .draft-btn svg {
@@ -849,21 +821,6 @@ body.dark-theme .draft-btn svg {
   stroke: currentColor !important;
 }
 
-.dark-theme a.social-link,
-html.dark-theme a.social-link,
-body.dark-theme a.social-link,
-.dark-theme a.website-link,
-html.dark-theme a.website-link,
-body.dark-theme a.website-link {
-  color: #09090b !important;
-}
-
-.dark-theme .apply-chip:hover,
-html.dark-theme .apply-chip:hover,
-body.dark-theme .apply-chip:hover,
-.dark-theme a.external-link:hover,
-html.dark-theme a.external-link:hover,
-body.dark-theme a.external-link:hover,
 .dark-theme .draft-btn:hover:not(:disabled),
 html.dark-theme .draft-btn:hover:not(:disabled),
 body.dark-theme .draft-btn:hover:not(:disabled) {
