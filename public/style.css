@@ -454,8 +454,10 @@ html, body {
   font-size: var(--font-size-sm);
   font-weight: 500;
   cursor: pointer;
-  border: 1px solid transparent;
-  transition: background 0.15s, color 0.15s, opacity 0.15s;
+  background-color: #09090b;
+  color: #ffffff;
+  border: 1px solid #09090b;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease, opacity 0.15s ease;
   white-space: nowrap;
 }
 
@@ -464,36 +466,93 @@ html, body {
   cursor: not-allowed;
 }
 
+.btn:hover:not(:disabled) {
+  background-color: #27272a;
+  border-color: #27272a;
+  color: #ffffff;
+}
+
+.btn svg {
+  stroke: currentColor;
+  flex-shrink: 0;
+}
+
 .btn-primary {
-  background: var(--accent);
-  color: var(--bg);
-  border-color: transparent;
+  background-color: #09090b;
+  color: #ffffff;
+  border: 1px solid #09090b;
 }
 
 .btn-primary:hover:not(:disabled) {
-  background: var(--accent-hover);
+  background-color: #27272a;
+  border-color: #27272a;
+  color: #ffffff;
 }
 
 .btn-ghost {
-  background: transparent;
-  color: var(--text-secondary);
-  border-color: var(--border);
+  background-color: #09090b;
+  color: #ffffff;
+  border: 1px solid #09090b;
 }
 
 .btn-ghost:hover:not(:disabled) {
-  background: var(--surface-2);
-  color: var(--text);
+  background-color: #27272a;
+  border-color: #27272a;
+  color: #ffffff;
+}
+
+/* Dark mode buttons: Solid white with black text */
+.dark-theme .btn,
+html.dark-theme .btn,
+body.dark-theme .btn,
+.dark-theme .btn-primary,
+html.dark-theme .btn-primary,
+body.dark-theme .btn-primary,
+.dark-theme .btn-ghost,
+html.dark-theme .btn-ghost,
+body.dark-theme .btn-ghost {
+  background-color: #ffffff !important;
+  color: #09090b !important;
+  border-color: #ffffff !important;
+}
+
+.dark-theme .btn:hover:not(:disabled),
+html.dark-theme .btn:hover:not(:disabled),
+body.dark-theme .btn:hover:not(:disabled),
+.dark-theme .btn-primary:hover:not(:disabled),
+html.dark-theme .btn-primary:hover:not(:disabled),
+body.dark-theme .btn-primary:hover:not(:disabled),
+.dark-theme .btn-ghost:hover:not(:disabled),
+html.dark-theme .btn-ghost:hover:not(:disabled),
+body.dark-theme .btn-ghost:hover:not(:disabled) {
+  background-color: #f4f4f5 !important;
+  border-color: #f4f4f5 !important;
+  color: #09090b !important;
+}
+
+.dark-theme .btn svg,
+html.dark-theme .btn svg,
+body.dark-theme .btn svg,
+.dark-theme .btn-primary svg,
+html.dark-theme .btn-primary svg,
+body.dark-theme .btn-primary svg,
+.dark-theme .btn-ghost svg,
+html.dark-theme .btn-ghost svg,
+body.dark-theme .btn-ghost svg {
+  stroke: currentColor !important;
+  color: #09090b !important;
 }
 
 .btn-danger {
-  background: #dc2626; /* Solid Red */
-  color: #ffffff;
-  border-color: transparent;
+  background-color: #dc2626 !important; /* Solid Red */
+  color: #ffffff !important;
+  border-color: #dc2626 !important;
 }
 
 .btn-danger:hover:not(:disabled) {
-  background: #b91c1c; /* Darker red on hover */
-  color: #ffffff;
+  background-color: #b91c1c !important; /* Darker red on hover */
+  border-color: #b91c1c !important;
+  color: #ffffff !important;
 }
 
 /* ── Table ──────────────────────────────────────────────── */
@@ -577,30 +636,27 @@ tbody tr:hover {
 .tag {
   display: inline-flex;
   align-items: center;
-  padding: 1px 6px;
+  padding: 2px 8px;
   border-radius: var(--radius-sm);
   font-size: var(--font-size-xs);
   font-weight: 500;
-  border: 1px solid transparent;
+  background-color: #09090b;
+  color: #ffffff;
+  border: 1px solid #09090b;
+  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
 }
 
-/* Tag colour variants – cycle through these */
-.tag-0 { background: var(--tag-bg-0); color: var(--tag-color-0); border-color: var(--tag-border-0); }
-.tag-1 { background: var(--tag-bg-1); color: var(--tag-color-1); border-color: var(--tag-border-1); }
-.tag-2 { background: var(--tag-bg-2); color: var(--tag-color-2); border-color: var(--tag-border-2); }
-.tag-3 { background: var(--tag-bg-3); color: var(--tag-color-3); border-color: var(--tag-border-3); }
-.tag-4 { background: var(--tag-bg-4); color: var(--tag-color-4); border-color: var(--tag-border-4); }
-
-/* Company Type Badges (Neutral, uncolored) */
+/* Tag colour variants – uniform high contrast */
+.tag-0, .tag-1, .tag-2, .tag-3, .tag-4,
 .col-type .tag,
 .tag-type-mnc,
 .tag-type-sme,
 .tag-type-glc,
 .tag-type-startup,
 .tag-type-default {
-  background: var(--surface-2);
-  color: var(--text-secondary);
-  border-color: var(--border);
+  background-color: #09090b;
+  color: #ffffff;
+  border: 1px solid #09090b;
 }
 
 /* ── Contact Chips ──────────────────────────────────────── */
@@ -615,47 +671,58 @@ tbody tr:hover {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  padding: 1px 7px;
+  padding: 2px 8px;
   border-radius: var(--radius-sm);
   font-size: var(--font-size-xs);
-  color: var(--text-secondary);
-  background: var(--surface-2);
-  border: 1px solid var(--border);
+  font-weight: 500;
+  color: #ffffff;
+  background-color: #09090b;
+  border: 1px solid #09090b;
   white-space: nowrap;
+  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
 }
 
-.contact-chip .chip-icon {
+.contact-chip .chip-icon,
+.contact-chip svg {
   flex-shrink: 0;
-  color: var(--text-muted);
+  color: #ffffff;
+  stroke: currentColor;
   display: inline-block;
   vertical-align: middle;
 }
 
 a.social-link,
 a.website-link {
-  color: inherit;
+  color: #ffffff;
   text-decoration: none;
 }
 
 a.social-link:hover,
 a.website-link:hover {
-  color: var(--text);
+  color: #ffffff;
   text-decoration: underline;
   text-underline-offset: 2px;
 }
 
 a.external-link {
-  color: var(--accent);
+  color: #ffffff;
+  background-color: #09090b;
+  border: 1px solid #09090b;
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
   text-decoration: none;
   font-size: var(--font-size-xs);
+  font-weight: 500;
   display: inline-flex;
   align-items: center;
   gap: 3px;
+  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
 }
 
 a.external-link:hover {
-  text-decoration: underline;
-  text-underline-offset: 2px;
+  background-color: #27272a;
+  border-color: #27272a;
+  color: #ffffff;
 }
 
 /* ── Multi-Platform Apply Chips ─────────────────────────── */
@@ -670,23 +737,22 @@ a.external-link:hover {
   display: inline-flex;
   align-items: center;
   gap: 3px;
-  padding: 1px 7px;
+  padding: 2px 8px;
   border-radius: var(--radius-sm);
   font-size: var(--font-size-xs);
   font-weight: 500;
-  color: var(--accent);
-  background: var(--surface-2);
-  border: 1px solid var(--border);
+  color: #ffffff;
+  background-color: #09090b;
+  border: 1px solid #09090b;
   text-decoration: none;
-  transition: all 0.15s ease;
+  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
   white-space: nowrap;
 }
 
 .apply-chip:hover {
-  background: var(--surface);
-  color: var(--text);
-  border-color: var(--accent);
-  text-decoration: none;
+  background-color: #27272a;
+  border-color: #27272a;
+  color: #ffffff;
 }
 
 /* ── Address Link ───────────────────────────────────────── */
@@ -714,9 +780,9 @@ a.address-link:hover {
   font-size: var(--font-size-xs);
   font-weight: 500;
   cursor: pointer;
-  background: #ffffff;
-  color: #09090b;
-  border: 1px solid #ffffff;
+  background-color: #09090b;
+  color: #ffffff;
+  border: 1px solid #09090b;
   white-space: nowrap;
   transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease, opacity 0.15s ease;
 }
@@ -724,7 +790,8 @@ a.address-link:hover {
 .draft-btn svg {
   flex-shrink: 0;
   stroke: currentColor;
-  opacity: 0.85;
+  color: #ffffff;
+  opacity: 0.9;
   transition: opacity 0.15s;
 }
 
@@ -734,32 +801,75 @@ a.address-link:hover {
 }
 
 .draft-btn:hover:not(:disabled) {
-  background: #f4f4f5;
-  color: #09090b;
-  border-color: #f4f4f5;
-  box-shadow: 0 2px 8px rgba(255, 255, 255, 0.12);
-}
-
-.draft-btn:hover:not(:disabled) svg {
-  opacity: 1;
-}
-
-/* Light mode draft button: Solid black with white text */
-.light-theme .draft-btn,
-html.light-theme .draft-btn,
-body.light-theme .draft-btn {
-  background: #09090b;
-  color: #ffffff;
-  border: 1px solid #09090b;
-}
-
-.light-theme .draft-btn:hover:not(:disabled),
-html.light-theme .draft-btn:hover:not(:disabled),
-body.light-theme .draft-btn:hover:not(:disabled) {
-  background: #27272a;
+  background-color: #27272a;
   border-color: #27272a;
   color: #ffffff;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* ── Dark Mode Inversions: Solid White with Black Text ──── */
+.dark-theme .tag,
+html.dark-theme .tag,
+body.dark-theme .tag,
+.dark-theme .tag-0, html.dark-theme .tag-0, body.dark-theme .tag-0,
+.dark-theme .tag-1, html.dark-theme .tag-1, body.dark-theme .tag-1,
+.dark-theme .tag-2, html.dark-theme .tag-2, body.dark-theme .tag-2,
+.dark-theme .tag-3, html.dark-theme .tag-3, body.dark-theme .tag-3,
+.dark-theme .tag-4, html.dark-theme .tag-4, body.dark-theme .tag-4,
+.dark-theme .col-type .tag, html.dark-theme .col-type .tag, body.dark-theme .col-type .tag,
+.dark-theme .tag-type-mnc, html.dark-theme .tag-type-mnc, body.dark-theme .tag-type-mnc,
+.dark-theme .tag-type-sme, html.dark-theme .tag-type-sme, body.dark-theme .tag-type-sme,
+.dark-theme .tag-type-glc, html.dark-theme .tag-type-glc, body.dark-theme .tag-type-glc,
+.dark-theme .tag-type-startup, html.dark-theme .tag-type-startup, body.dark-theme .tag-type-startup,
+.dark-theme .tag-type-default, html.dark-theme .tag-type-default, body.dark-theme .tag-type-default,
+.dark-theme .contact-chip, html.dark-theme .contact-chip, body.dark-theme .contact-chip,
+.dark-theme a.external-link, html.dark-theme a.external-link, body.dark-theme a.external-link,
+.dark-theme .apply-chip, html.dark-theme .apply-chip, body.dark-theme .apply-chip,
+.dark-theme .draft-btn, html.dark-theme .draft-btn, body.dark-theme .draft-btn {
+  background-color: #ffffff !important;
+  color: #09090b !important;
+  border-color: #ffffff !important;
+}
+
+.dark-theme .contact-chip .chip-icon,
+html.dark-theme .contact-chip .chip-icon,
+body.dark-theme .contact-chip .chip-icon,
+.dark-theme .contact-chip svg,
+html.dark-theme .contact-chip svg,
+body.dark-theme .contact-chip svg,
+.dark-theme a.external-link svg,
+html.dark-theme a.external-link svg,
+body.dark-theme a.external-link svg,
+.dark-theme .apply-chip svg,
+html.dark-theme .apply-chip svg,
+body.dark-theme .apply-chip svg,
+.dark-theme .draft-btn svg,
+html.dark-theme .draft-btn svg,
+body.dark-theme .draft-btn svg {
+  color: #09090b !important;
+  stroke: currentColor !important;
+}
+
+.dark-theme a.social-link,
+html.dark-theme a.social-link,
+body.dark-theme a.social-link,
+.dark-theme a.website-link,
+html.dark-theme a.website-link,
+body.dark-theme a.website-link {
+  color: #09090b !important;
+}
+
+.dark-theme .apply-chip:hover,
+html.dark-theme .apply-chip:hover,
+body.dark-theme .apply-chip:hover,
+.dark-theme a.external-link:hover,
+html.dark-theme a.external-link:hover,
+body.dark-theme a.external-link:hover,
+.dark-theme .draft-btn:hover:not(:disabled),
+html.dark-theme .draft-btn:hover:not(:disabled),
+body.dark-theme .draft-btn:hover:not(:disabled) {
+  background-color: #f4f4f5 !important;
+  border-color: #f4f4f5 !important;
+  color: #09090b !important;
 }
 
 /* ── Table Empty & Loading State ────────────────────────── */
