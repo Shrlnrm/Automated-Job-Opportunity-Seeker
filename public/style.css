@@ -714,33 +714,52 @@ a.address-link:hover {
   font-size: var(--font-size-xs);
   font-weight: 500;
   cursor: pointer;
-  background: transparent;
-  color: var(--accent);
-  border: 1px solid var(--draft-btn-border);
+  background: #ffffff;
+  color: #09090b;
+  border: 1px solid #ffffff;
   white-space: nowrap;
-  transition: all 0.2s ease;
+  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease, opacity 0.15s ease;
 }
 
 .draft-btn svg {
   flex-shrink: 0;
-  opacity: 0.7;
-  transition: opacity 0.2s;
+  stroke: currentColor;
+  opacity: 0.85;
+  transition: opacity 0.15s;
 }
 
 .draft-btn:disabled {
-  opacity: 0.25;
+  opacity: 0.35;
   cursor: not-allowed;
 }
 
 .draft-btn:hover:not(:disabled) {
-  background: var(--accent);
-  color: #fff;
-  border-color: var(--accent);
-  box-shadow: 0 0 12px rgba(94, 106, 210, 0.25);
+  background: #f4f4f5;
+  color: #09090b;
+  border-color: #f4f4f5;
+  box-shadow: 0 2px 8px rgba(255, 255, 255, 0.12);
 }
 
 .draft-btn:hover:not(:disabled) svg {
   opacity: 1;
+}
+
+/* Light mode draft button: Solid black with white text */
+.light-theme .draft-btn,
+html.light-theme .draft-btn,
+body.light-theme .draft-btn {
+  background: #09090b;
+  color: #ffffff;
+  border: 1px solid #09090b;
+}
+
+.light-theme .draft-btn:hover:not(:disabled),
+html.light-theme .draft-btn:hover:not(:disabled),
+body.light-theme .draft-btn:hover:not(:disabled) {
+  background: #27272a;
+  border-color: #27272a;
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
 /* ── Table Empty & Loading State ────────────────────────── */

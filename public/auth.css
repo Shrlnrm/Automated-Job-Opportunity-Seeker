@@ -74,9 +74,6 @@ body {
 }
 
 .theme-toggle-btn {
-  position: absolute !important;
-  top: 1.5rem;
-  right: 1.5rem;
   background: transparent;
   border: 1px solid var(--border-color);
   color: var(--text-muted);
@@ -88,6 +85,13 @@ body {
   align-items: center;
   justify-content: center;
   transition: background-color 0.15s, border-color 0.15s, color 0.15s;
+}
+
+/* Standalone auth/legal page theme toggle: top-right corner */
+body:not(.landing-page-body) .theme-toggle-btn {
+  position: absolute;
+  top: 1.5rem;
+  right: 1.5rem;
   z-index: 100;
 }
 
@@ -773,42 +777,77 @@ body.landing-page-body {
 
 .btn-nav-login {
   text-decoration: none;
-  color: var(--text-main);
-  font-size: 0.875rem;
-  font-weight: 500;
-  padding: 0.45rem 0.9rem;
-  border-radius: var(--radius-md);
-  transition: background-color 0.15s, color 0.15s;
-}
-
-.btn-nav-login:hover {
-  background-color: var(--surface-hover);
-}
-
-.btn-nav-register {
-  text-decoration: none;
-  background-color: var(--btn-bg);
-  color: var(--btn-text);
+  background-color: #09090b;
+  color: #ffffff;
+  border: 1px solid #09090b;
   font-size: 0.875rem;
   font-weight: 500;
   padding: 0.45rem 1rem;
   border-radius: var(--radius-md);
-  transition: background-color 0.15s, opacity 0.15s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.btn-nav-login:hover {
+  background-color: #27272a;
+  border-color: #27272a;
+  color: #ffffff;
+}
+
+.btn-nav-register {
+  text-decoration: none;
+  background-color: #09090b;
+  color: #ffffff;
+  border: 1px solid #09090b;
+  font-size: 0.875rem;
+  font-weight: 500;
+  padding: 0.45rem 1.1rem;
+  border-radius: var(--radius-md);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
 }
 
 .btn-nav-register:hover {
-  background-color: var(--btn-hover);
+  background-color: #27272a;
+  border-color: #27272a;
+  color: #ffffff;
 }
 
-/* Nav theme button override */
+/* Dark mode navbar buttons: Solid white with black text */
+.dark-theme .btn-nav-login,
+html.dark-theme .btn-nav-login,
+.dark-theme .btn-nav-register,
+html.dark-theme .btn-nav-register {
+  background-color: #ffffff;
+  color: #09090b;
+  border-color: #ffffff;
+}
+
+.dark-theme .btn-nav-login:hover,
+html.dark-theme .btn-nav-login:hover,
+.dark-theme .btn-nav-register:hover,
+html.dark-theme .btn-nav-register:hover {
+  background-color: #f4f4f5;
+  border-color: #f4f4f5;
+  color: #09090b;
+}
+
+/* Nav theme button override: strictly relative in navbar flex flow */
 .landing-navbar .theme-toggle-btn {
-  position: relative;
-  top: auto;
-  right: auto;
+  position: relative !important;
+  top: auto !important;
+  right: auto !important;
+  left: auto !important;
+  bottom: auto !important;
   width: 34px;
   height: 34px;
   border-radius: var(--radius-md);
   border: 1px solid var(--border-color);
+  flex-shrink: 0;
 }
 
 /* Section Shared Rules */
@@ -892,36 +931,59 @@ body.landing-page-body {
   align-items: center;
   gap: 0.5rem;
   padding: 0.75rem 1.5rem;
-  background-color: var(--btn-bg);
-  color: var(--btn-text);
+  background-color: #09090b;
+  color: #ffffff;
+  border: 1px solid #09090b;
   border-radius: var(--radius-md);
   font-weight: 500;
   font-size: 0.95rem;
   text-decoration: none;
-  transition: background-color 0.15s;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
 }
 
 .hero-btn-primary:hover {
-  background-color: var(--btn-hover);
+  background-color: #27272a;
+  border-color: #27272a;
+  color: #ffffff;
 }
 
 .hero-btn-secondary {
   display: inline-flex;
   align-items: center;
   padding: 0.75rem 1.5rem;
-  background-color: var(--surface);
-  color: var(--text-main);
-  border: 1px solid var(--border-color);
+  background-color: #09090b;
+  color: #ffffff;
+  border: 1px solid #09090b;
   border-radius: var(--radius-md);
   font-weight: 500;
   font-size: 0.95rem;
   text-decoration: none;
-  transition: background-color 0.15s, border-color 0.15s;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
 }
 
 .hero-btn-secondary:hover {
-  background-color: var(--surface-hover);
-  border-color: var(--border-focus);
+  background-color: #27272a;
+  border-color: #27272a;
+  color: #ffffff;
+}
+
+/* Dark mode hero and CTA buttons: Solid white with black text */
+.dark-theme .hero-btn-primary,
+html.dark-theme .hero-btn-primary,
+.dark-theme .hero-btn-secondary,
+html.dark-theme .hero-btn-secondary {
+  background-color: #ffffff;
+  color: #09090b;
+  border-color: #ffffff;
+}
+
+.dark-theme .hero-btn-primary:hover,
+html.dark-theme .hero-btn-primary:hover,
+.dark-theme .hero-btn-secondary:hover,
+html.dark-theme .hero-btn-secondary:hover {
+  background-color: #f4f4f5;
+  border-color: #f4f4f5;
+  color: #09090b;
 }
 
 /* Metrics Bar */
