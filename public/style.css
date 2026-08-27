@@ -982,37 +982,52 @@ html.dark-theme .moon-icon { display: none; }
 /* ── Toast Notifications & Tooltips ──────────────────────── */
 #toast-container {
   position: fixed;
-  bottom: 24px;
-  left: 50%;
-  transform: translateX(-50%);
+  top: 20px;
+  right: 20px;
+  left: auto;
+  bottom: auto;
+  transform: none;
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  z-index: 9999;
+  align-items: flex-end;
+  gap: 8px;
+  z-index: 99999;
   pointer-events: none;
+  max-width: min(420px, calc(100vw - 32px));
 }
 
 .toast {
-  background: var(--surface);
-  color: var(--text-secondary);
-  border: 1px solid var(--border);
-  padding: 10px 12px;
-  border-radius: var(--radius-md);
-  font-size: var(--font-size-xs);
+  background: #ffffff;
+  color: #09090b;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  padding: 10px 16px;
+  border-radius: var(--radius-md, 8px);
+  font-size: var(--font-size-xs, 12px);
+  font-weight: 500;
   line-height: 1.4;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.5), 0 8px 12px -6px rgba(0, 0, 0, 0.35);
   opacity: 0;
-  transform: translateY(20px);
-  transition: opacity 0.3s ease, transform 0.3s ease;
+  transform: translateX(16px) scale(0.96);
+  transition: opacity 0.22s cubic-bezier(0.16, 1, 0.3, 1), transform 0.22s cubic-bezier(0.16, 1, 0.3, 1);
   white-space: normal;
-  max-width: 90vw;
-  text-align: center;
+  text-align: left;
   word-wrap: break-word;
+  pointer-events: auto;
+}
+
+/* Inverted High-Contrast Toast: Light mode = Dark background + White text */
+.light-theme .toast,
+html.light-theme .toast,
+body.light-theme .toast {
+  background: #18181b;
+  color: #fafafa;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.35), 0 8px 10px -6px rgba(0, 0, 0, 0.25);
 }
 
 .toast.show {
   opacity: 1;
-  transform: translateY(0);
+  transform: translateX(0) scale(1);
 }
 
 [data-tooltip] {
@@ -1020,6 +1035,7 @@ html.dark-theme .moon-icon { display: none; }
 }
 
 .tooltip-wrapper {
+  position: relative;
   display: inline-flex;
 }
 
@@ -1035,24 +1051,24 @@ html.dark-theme .moon-icon { display: none; }
   top: calc(100% + 8px);
   left: 50%;
   transform: translateX(-50%);
-  background: var(--surface);
-  color: var(--text-secondary);
-  padding: 10px 12px;
-  border-radius: var(--radius-md);
-  font-size: var(--font-size-xs);
-  line-height: 1.4;
-  white-space: normal;
-  width: max-content;
+  background: var(--surface-2, #1f1f23);
+  color: var(--text, #ffffff);
+  padding: 6px 10px;
+  border-radius: var(--radius-md, 6px);
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.35;
+  white-space: nowrap;
   max-width: 250px;
   text-align: center;
   word-wrap: break-word;
   opacity: 0;
   visibility: hidden;
-  transition: opacity 0.2s, visibility 0.2s;
+  transition: opacity 0.15s ease, visibility 0.15s ease;
   pointer-events: none;
-  z-index: 1000;
-  border: 1px solid var(--border);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  z-index: 9999;
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.12));
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
 }
 
 /* ── Profile Page Styles ─────────────────────────────────── */
