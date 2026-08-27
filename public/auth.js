@@ -20,6 +20,9 @@ googleProvider.setCustomParameters({
   prompt: 'select_account'
 });
 
+// ponytail: flag prevents onAuthStateChanged from racing the Google click handler
+let _googleSignInActive = false;
+
 const errorMsg = document.getElementById('errorMsg');
 
 function formatAuthError(error) {
@@ -155,6 +158,12 @@ onAuthStateChanged(auth, (user) => {
     // Do NOT run redirect loops if user is already on verify-email or auth-action page
     const pathname = window.location.pathname;
     if (pathname.includes('verify-email') || pathname.includes('auth-action')) {
+      return;
+    }
+
+    // Defer to Google click handler — it will redirect after backend init completes
+    if (_googleSignInActive) {
+      console.log('[AJOS Auth] Google sign-in active, deferring redirect to click handler');
       return;
     }
 
@@ -336,6 +345,7 @@ if (googleBtn) {
     hideError();
     googleBtn.disabled = true;
     googleBtn.style.opacity = '0.7';
+    _googleSignInActive = true;
 
     try {
       console.log('[AJOS Auth] Opening Google sign-in popup...');
@@ -350,12 +360,20 @@ if (googleBtn) {
         try {
           await initUserOnBackend('google_bypass', idToken);
         } catch (initErr) {
-          if (auth.currentUser) await auth.signOut();
-          showError(initErr.message || 'Registration closed: Maximum user capacity (20/20) reached.');
-          return;
+          // Only sign out on genuine backend rejections (capacity limit), not fetch aborts from navigation
+          const msg = (initErr.message || '').toLowerCase();
+          if (msg.includes('capacity') || msg.includes('registration closed') || msg.includes('limit')) {
+            if (auth.currentUser) await auth.signOut();
+            showError(initErr.message || 'Registration closed: Maximum user capacity (20/20) reached.');
+            _googleSignInActive = false;
+            return;
+          }
+          // Network/abort errors — user is signed in, just proceed to dashboard
+          console.warn('[AJOS Auth] Backend init non-fatal error (proceeding):', initErr.message);
         }
 
         console.log('[AJOS Auth] Navigating to /job-search.html');
+        _googleSignInActive = false;
         window.location.replace('/job-search.html');
       }
     } catch (error) {
@@ -374,6 +392,7 @@ if (googleBtn) {
         showError(error);
       }
     } finally {
+      _googleSignInActive = false;
       googleBtn.disabled = false;
       googleBtn.style.opacity = '1';
     }
