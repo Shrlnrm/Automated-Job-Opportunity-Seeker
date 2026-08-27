@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>AJOS - User Profile</title>
-  <link rel="stylesheet" href="style.css?v=23">
+  <link rel="stylesheet" href="style.css?v=24">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
   <!-- Theme initialization to prevent flash -->
   <script>
@@ -43,22 +43,13 @@
       </a>
       <span class="divider">/</span>
       <div class="mode-toggle">
-        <div class="custom-dropdown">
-          <a href="/job-search.html" class="mode-btn" style="text-decoration:none;">Job Search</a>
-          <div class="dropdown-menu tooltip-menu tooltip-menu-center">Discover and explore active job opportunities across Malaysia.</div>
-        </div>
-        <div class="custom-dropdown">
-          <a href="/company-search.html" class="mode-btn" style="text-decoration:none;">Company Search</a>
-          <div class="dropdown-menu tooltip-menu tooltip-menu-center">Research prospective employers and gather detailed insights on companies from your job search.</div>
-        </div>
-        <div class="custom-dropdown">
-          <a href="/profile.html" class="mode-btn active" style="text-decoration:none;">Profile</a>
-          <div class="dropdown-menu tooltip-menu tooltip-menu-center">Manage your resume AI context, skills, and account settings.</div>
-        </div>
+        <a href="/job-search.html" class="mode-btn" style="text-decoration:none;" data-tooltip="Discover and explore active job opportunities across Malaysia.">Job Search</a>
+        <a href="/company-search.html" class="mode-btn" style="text-decoration:none;" data-tooltip="Research prospective employers and gather detailed insights on companies from your job search.">Company Search</a>
+        <a href="/profile.html" class="mode-btn active" style="text-decoration:none;" data-tooltip="Manage your resume AI context, skills, and account settings.">Profile</a>
       </div>
     </div>
     <div class="topbar-right">
-      <button id="themeToggleBtn" class="theme-toggle-btn" aria-label="Toggle theme" style="margin-right: 8px;" data-tooltip="Toggle dark mode">
+      <button id="themeToggleBtn" class="theme-toggle-btn" aria-label="Toggle theme" style="margin-right: 8px;" data-tooltip="Toggle dark mode" data-tooltip-pos="right">
         <svg class="sun-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <circle cx="12" cy="12" r="5"></circle>
           <line x1="12" y1="1" x2="12" y2="3"></line>

@@ -529,11 +529,9 @@ body.dark-theme .toast-close-btn:hover {
   position: relative;
 }
 
-/* Right-align tooltip on standalone corner theme toggle buttons to prevent viewport overflow */
-body:not(.landing-page-body) .theme-toggle-btn[data-tooltip]::before {
-  left: auto;
-  right: 0;
-  transform: none;
+.tooltip-wrapper {
+  position: relative;
+  display: inline-flex;
 }
 
 [data-tooltip]::before {
@@ -547,11 +545,12 @@ body:not(.landing-page-body) .theme-toggle-btn[data-tooltip]::before {
   padding: 6px 10px;
   border-radius: var(--radius-sm, 6px);
   font-size: 11px;
-  font-family: var(--font-family);
+  font-family: var(--font-family, 'Inter', sans-serif);
   font-weight: 500;
   line-height: 1.35;
-  white-space: nowrap;
-  max-width: 240px;
+  white-space: normal;
+  width: max-content;
+  max-width: min(240px, calc(100vw - 32px));
   text-align: center;
   word-wrap: break-word;
   opacity: 0;
@@ -561,6 +560,7 @@ body:not(.landing-page-body) .theme-toggle-btn[data-tooltip]::before {
   z-index: 9999;
   border: 1px solid rgba(255, 255, 255, 0.15);
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+  box-sizing: border-box;
 }
 
 .dark-theme [data-tooltip]::before,
@@ -568,11 +568,39 @@ html.dark-theme [data-tooltip]::before {
   background: #27272a;
   color: #f4f4f5;
   border-color: rgba(255, 255, 255, 0.12);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
+}
+
+/* Positional alignments to prevent viewport clipping */
+[data-tooltip-pos="right"]::before,
+.theme-toggle-btn[data-tooltip]::before,
+body:not(.landing-page-body) .theme-toggle-btn[data-tooltip]::before {
+  left: auto;
+  right: 0;
+  transform: none;
+}
+
+[data-tooltip-pos="left"]::before {
+  left: 0;
+  right: auto;
+  transform: none;
+}
+
+[data-tooltip-pos="top"]::before {
+  top: auto;
+  bottom: calc(100% + 8px);
 }
 
 [data-tooltip]:hover::before {
   opacity: 1;
   visibility: visible;
+}
+
+/* Suppress sticky hover tooltips on touch devices */
+@media (hover: none) and (pointer: coarse) {
+  [data-tooltip]::before {
+    display: none !important;
+  }
 }
 
 /* ── Mobile Viewports (Max Width 480px) ──────────────────────────── */

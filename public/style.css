@@ -252,9 +252,6 @@ body {
   box-sizing: border-box;
 }
 
-.mode-toggle .custom-dropdown {
-  height: 100%;
-}
 
 .mode-btn {
   font-family: var(--font);
@@ -427,28 +424,6 @@ body {
   color: var(--text);
 }
 
-/* Tooltip styles that extend dropdown-menu */
-.tooltip-menu {
-  padding: 10px 12px;
-  font-size: var(--font-size-xs);
-  color: var(--text-secondary);
-  white-space: normal;
-  width: 220px;
-  text-align: center;
-  pointer-events: none;
-  line-height: 1.4;
-  z-index: 1000;
-}
-
-.tooltip-menu-center {
-  left: 50%;
-  transform: translateX(-50%);
-}
-
-.tooltip-menu-right {
-  left: auto;
-  right: 0;
-}
 
 .dropdown-item.active {
   background: var(--accent);
@@ -1188,6 +1163,7 @@ body.light-theme .toast-close-btn:hover {
   transform: translateX(0) scale(1);
 }
 
+/* ── Tooltips ────────────────────────────────────────────────────── */
 [data-tooltip] {
   position: relative;
 }
@@ -1197,27 +1173,23 @@ body.light-theme .toast-close-btn:hover {
   display: inline-flex;
 }
 
-[data-tooltip].theme-toggle-btn::before {
-  left: auto;
-  right: 0;
-  transform: none;
-}
-
 [data-tooltip]::before {
   content: attr(data-tooltip);
   position: absolute;
   top: calc(100% + 8px);
   left: 50%;
   transform: translateX(-50%);
-  background: var(--surface-2, #1f1f23);
-  color: var(--text, #ffffff);
+  background: #18181b;
+  color: #fafafa;
   padding: 6px 10px;
   border-radius: var(--radius-md, 6px);
   font-size: 11px;
+  font-family: var(--font, 'Inter', sans-serif);
   font-weight: 500;
   line-height: 1.35;
-  white-space: nowrap;
-  max-width: 250px;
+  white-space: normal;
+  width: max-content;
+  max-width: min(240px, calc(100vw - 32px));
   text-align: center;
   word-wrap: break-word;
   opacity: 0;
@@ -1225,8 +1197,48 @@ body.light-theme .toast-close-btn:hover {
   transition: opacity 0.15s ease, visibility 0.15s ease;
   pointer-events: none;
   z-index: 9999;
-  border: 1px solid var(--border, rgba(255, 255, 255, 0.12));
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+  box-sizing: border-box;
+}
+
+.dark-theme [data-tooltip]::before,
+html.dark-theme [data-tooltip]::before {
+  background: #27272a;
+  color: #f4f4f5;
+  border-color: rgba(255, 255, 255, 0.12);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
+}
+
+/* Positional alignments to prevent viewport clipping */
+[data-tooltip-pos="right"]::before,
+.theme-toggle-btn[data-tooltip]::before {
+  left: auto;
+  right: 0;
+  transform: none;
+}
+
+[data-tooltip-pos="left"]::before {
+  left: 0;
+  right: auto;
+  transform: none;
+}
+
+[data-tooltip-pos="top"]::before {
+  top: auto;
+  bottom: calc(100% + 8px);
+}
+
+[data-tooltip]:hover::before {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* Suppress sticky hover tooltips on touch devices */
+@media (hover: none) and (pointer: coarse) {
+  [data-tooltip]::before {
+    display: none !important;
+  }
 }
 
 /* ── Profile Page Styles ─────────────────────────────────── */
@@ -1481,7 +1493,3 @@ body:has(.profile-container) {
   }
 }
 
-[data-tooltip]:hover::before {
-  opacity: 1;
-  visibility: visible;
-}
