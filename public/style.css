@@ -1218,8 +1218,7 @@ html.dark-theme [data-tooltip]::before {
 }
 
 /* Positional alignments to prevent viewport clipping */
-[data-tooltip-pos="right"]::before,
-.theme-toggle-btn[data-tooltip]::before {
+[data-tooltip-pos="right"]::before {
   left: auto;
   right: 0;
   transform: none;
@@ -1253,6 +1252,14 @@ html.dark-theme [data-tooltip]::before {
     max-width: min(200px, calc(100vw - 28px));
     line-height: 1.3;
     border-radius: 5px;
+  }
+
+  /* When topbar items wrap on mobile, ensure left-anchored tooltips extend cleanly to the right */
+  .topbar-left [data-tooltip-pos="left"]::before,
+  .topbar-right .theme-toggle-btn[data-tooltip]::before {
+    left: 0;
+    right: auto;
+    transform: none;
   }
 }
 
