@@ -747,130 +747,6 @@ Respond with valid JSON ONLY in this format: {"industry":"...","companyType":"..
   }
 }
 
-// Helper to parse search results for JobStreet, Indeed, and LinkedIn
-function parseJobDetails(title, link, snippet) {
-  let jobTitle = title || 'Unknown Title';
-  let companyName = 'Unknown Company';
-  let location = 'Malaysia';
-  let site = 'Other';
-
-  // Detect site from URL
-  if (link.includes('jobstreet.com')) site = 'JobStreet';
-  else if (link.includes('indeed.com')) site = 'Indeed';
-  else if (link.includes('linkedin.com')) site = 'LinkedIn';
-  else if (link.includes('jobsdb.com')) site = 'JobsDB';
-
-  const cleanTitle = title
-    ? title.replace(/ \| JobStreet| - Indeed| \| LinkedIn| \| JobsDB/gi, '').trim()
-    : '';
-
-  if (site === 'Indeed') {
-    // Indeed titles: "Job Title - City" or "Job Title - Company Name"
-    const parts = cleanTitle.split(' - ');
-    if (parts.length >= 2) {
-      jobTitle = parts.slice(0, parts.length - 1).join(' - ').trim();
-      const lastPart = parts[parts.length - 1].trim();
-      // If last part looks like a location (e.g. "Kuala Lumpur"), use it as location
-      if (/kuala lumpur|selangor|penang|johor|malaysia|petaling|subang|puchong|kl|cyberjaya|shah alam/i.test(lastPart)) {
-        location = lastPart;
-      } else {
-        // Otherwise treat as company
-        companyName = lastPart;
-      }
-    }
-    // Try to get company from snippet: "Apply at [Company]" or "... at Company..."
-    if (companyName === 'Unknown Company' && snippet) {
-      const atMatch = snippet.match(/at\s+([A-Z][^\.\,\n]{2,40})[\.\,\s]/);
-      if (atMatch) companyName = atMatch[1].trim();
-    }
-
-  } else if (site === 'JobStreet') {
-    const parts = cleanTitle.split(' - ');
-    if (parts.length >= 3) {
-      jobTitle = parts[0].trim();
-      companyName = parts[1].trim();
-      location = parts.slice(2).join(' - ').trim();
-    } else if (parts.length === 2) {
-      jobTitle = parts[0].trim();
-      companyName = parts[1].trim();
-    } else {
-      jobTitle = cleanTitle;
-    }
-
-  } else if (site === 'LinkedIn') {
-    if (cleanTitle.includes(' hiring ')) {
-      const parts = cleanTitle.split(' hiring ');
-      companyName = parts[0].trim();
-      const subParts = parts[1].split(' in ');
-      jobTitle = subParts[0].trim();
-      if (subParts[1]) location = subParts[1].split(',')[0].trim();
-    } else if (cleanTitle.includes(' at ')) {
-      const parts = cleanTitle.split(' at ');
-      jobTitle = parts[0].trim();
-      companyName = parts[1].trim();
-    } else {
-      jobTitle = cleanTitle;
-    }
-
-  } else if (site === 'JobsDB') {
-    const parts = cleanTitle.split(' - ');
-    if (parts.length >= 2) {
-      jobTitle = parts[0].trim();
-      companyName = parts[1].trim();
-    } else {
-      jobTitle = cleanTitle;
-    }
-  }
-
-  // Cleanup
-  jobTitle = jobTitle.replace(/[\x00-\x1f\x7f]/g, '').trim();
-  companyName = companyName.replace(/[\x00-\x1f\x7f]/g, '').trim();
-  location = location.replace(/[\x00-\x1f\x7f]/g, '').trim();
-
-  // Prevent dates from becoming company names
-  if (/^(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s20\d\d$/.test(companyName)) {
-    companyName = 'Unknown Company';
-  }
-
-  return { jobTitle, companyName, location, site };
-}
-
-// Route: Debug Environment Variables (Development only)
-app.get('/api/debug', async (req, res) => {
-  if (process.env.NODE_ENV === 'production') {
-    return res.status(404).json({ error: 'Not found' });
-  }
-  const info = {
-    hasBraveKey: !!process.env.BRAVE_SEARCH_API_KEY,
-    braveKeyPrefix: process.env.BRAVE_SEARCH_API_KEY ? process.env.BRAVE_SEARCH_API_KEY.substring(0, 8) + '...' : null,
-    braveStatus: null,
-    braveError: null,
-    braveOk: false
-  };
-
-  const apiKey = process.env.BRAVE_SEARCH_API_KEY;
-
-  // Make a minimal test call
-  if (apiKey) {
-    try {
-      const testUrl = `https://api.search.brave.com/res/v1/web/search?q=test&count=1`;
-      const r = await fetch(testUrl, {
-        headers: {
-          'Accept': 'application/json',
-          'X-Subscription-Token': apiKey
-        }
-      });
-      const d = await r.json();
-      info.braveStatus = r.status;
-      info.braveError = d.message || null;
-      info.braveOk = r.ok;
-    } catch (e) {
-      info.braveError = e.message;
-    }
-  }
-  res.json(info);
-});
-
 // Route: Search Job Listings via SerpAPI Google Jobs engine
 app.post('/api/search', requireAuthAndCheckLimits, async (req, res) => {
   res.setHeader('Cache-Control', 'private, no-store'); // be10
@@ -1411,7 +1287,20 @@ app.post('/api/draft', draftLimiter, requireAuthAndCheckLimits, async (req, res)
   }
 
   const profile = req.userData.resumeProfile || null;
-  const hasProfile = !!(profile && (profile.fullName || profile.skills?.length || profile.education || profile.projects));
+  const hasProfile = !!(profile && (
+    (profile.fullName && profile.fullName.trim()) ||
+    (Array.isArray(profile.skills) && profile.skills.length > 0) ||
+    (typeof profile.skills === 'string' && profile.skills.trim()) ||
+    (profile.education && profile.education.trim()) ||
+    (profile.projects && profile.projects.trim())
+  ));
+
+  if (!hasProfile) {
+    return res.status(403).json({
+      error: 'Please set up your profile details first before generating AI cover letters and cold emails.',
+      redirectToProfile: true
+    });
+  }
 
   const candidateName = profile?.fullName?.trim() || '[Your Name]';
   const candidateEdu = profile?.education?.trim() || '';
@@ -1423,9 +1312,9 @@ app.post('/api/draft', draftLimiter, requireAuthAndCheckLimits, async (req, res)
   const candidatePortfolio = profile?.portfolio?.trim() || '';
 
   const contactLine = [candidateEmail, candidatePhone].filter(Boolean).join(' | ') || '[Your Email / Phone]';
-  const linksLine = [candidateLinkedin, candidatePortfolio].filter(Boolean).join(' | ') || (hasProfile ? '' : '[Your Portfolio / LinkedIn]');
+  const linksLine = [candidateLinkedin, candidatePortfolio].filter(Boolean).join(' | ');
 
-  const profileContext = hasProfile ? `
+  const profileContext = `
 Candidate Profile Data (Ground Truth):
 - Full Name: ${candidateName}
 - Education: ${candidateEdu || 'Not specified'}
@@ -1433,7 +1322,7 @@ Candidate Profile Data (Ground Truth):
 - Key Projects / Accomplishments: ${candidateProjects || 'Not specified'}
 - Contact: ${contactLine}
 - Links: ${linksLine || 'Not specified'}
-` : 'Candidate Profile Data: [No profile provided - use clear standard placeholder brackets like [Your Name], [Your Skills], etc.]';
+`;
 
   let systemPrompt = '';
   let userMessage = '';

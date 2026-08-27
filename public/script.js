@@ -1,9 +1,6 @@
 import { initializeApp, getApps, getApp } from "firebase/app";
-import { getAnalytics } from "firebase/analytics";
 import { getAuth, signOut, onAuthStateChanged } from "firebase/auth";
 import { getFirestore, doc, onSnapshot, updateDoc, deleteField } from "firebase/firestore";
-
-// FIX: Resolved SyntaxError (unmatched braces and duplicate declarations) caused by previous edits. (2026-06-26)
 
 const firebaseConfig = {
   apiKey: "AIzaSyBJnS3EYawuCHHnegronWe_WPRH7TPbO1A",
@@ -17,7 +14,6 @@ const firebaseConfig = {
 };
 
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
-const analytics = getAnalytics(app);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
@@ -604,13 +600,6 @@ const filterIndustryMenu = document.getElementById('filterIndustryMenu');
 const filterTypeDropdown = document.getElementById('filterTypeDropdown');
 const filterTypeMenu = document.getElementById('filterTypeMenu');
 
-// Mode toggle elements
-const modeToggle = document.getElementById('modeToggle');
-const fieldJobTitle = document.getElementById('fieldJobTitle');
-const fieldJobLocation = document.getElementById('fieldJobLocation');
-const fieldIndustry = document.getElementById('fieldIndustry');
-const fieldLocation = document.getElementById('fieldLocation');
-const fieldCompanyName = document.getElementById('fieldCompanyName');
 // Use the data-mode attribute set on <html> in each page — immune to URL/pathname edge cases
 let searchMode = document.documentElement.dataset.mode || 'jobs';
 let lastQuery = '';
@@ -715,10 +704,6 @@ function escapeHtml(str) {
   const div = document.createElement('div');
   div.textContent = str;
   return div.innerHTML;
-}
-
-function initials(name) {
-  return name.split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase();
 }
 
 function setLoading(button, isLoading, originalText) {
@@ -1232,6 +1217,24 @@ async function addCompanyRow(place, defaultIndustry, placeIndex = -1, sessionId 
 
 // Email / Cover Letter Draft
 window.generateDraft = async function (companyName, jobTitleOrIndustry) {
+  // Check if profile is complete before opening draft modal
+  const profile = latestSnapshotData?.resumeProfile || userLimits?.resumeProfile;
+  const isProfileSetup = !!(profile && (
+    (profile.fullName && profile.fullName.trim()) ||
+    (Array.isArray(profile.skills) && profile.skills.length > 0) ||
+    (typeof profile.skills === 'string' && profile.skills.trim()) ||
+    (profile.education && profile.education.trim()) ||
+    (profile.projects && profile.projects.trim())
+  ));
+
+  if (!isProfileSetup) {
+    try {
+      sessionStorage.setItem('pendingToast', 'Please complete your profile details before generating AI cover letters and cold emails.');
+    } catch (e) {}
+    window.location.href = '/profile.html';
+    return;
+  }
+
   modal.classList.add('show');
   // Accessibility: move focus into the modal so keyboard users don't interact with the page behind it
   closeBtn.focus();
@@ -1253,10 +1256,17 @@ window.generateDraft = async function (companyName, jobTitleOrIndustry) {
         mode: searchMode
       })
     });
-    if (res.ok) {
-      fetchLimits(); // refresh limits after search
-    }
+    
     const data = await res.json();
+    if (data.redirectToProfile || res.status === 403) {
+      modal.classList.remove('show');
+      try {
+        sessionStorage.setItem('pendingToast', data.error || 'Please complete your profile details before generating AI drafts.');
+      } catch (e) {}
+      window.location.href = '/profile.html';
+      return;
+    }
+
     if (data.error) throw new Error(data.error);
 
     draftTextarea.value = data.draft;
@@ -1618,42 +1628,6 @@ document.addEventListener('DOMContentLoaded', () => {
     window.showToast(pendingToast);
     sessionStorage.removeItem('pendingToast');
   }
-
-  // Theme is locked to Dark Mode for now
-  /*
-  const themeToggleBtn = document.getElementById('themeToggleBtn');
-  const storedTheme = localStorage.getItem('theme');
-  const prefersLight = window.matchMedia('(prefers-color-scheme: light)').matches;
-
-  // Resolve active theme: explicit preference or system default
-  const activeTheme = storedTheme || (prefersLight ? 'light' : 'dark');
-
-  if (activeTheme === 'light') {
-    document.body.classList.add('light-theme');
-  } else {
-    document.body.classList.remove('light-theme');
-  }
-
-  if (themeToggleBtn) {
-    themeToggleBtn.addEventListener('click', () => {
-      const isLight = document.body.classList.toggle('light-theme');
-      localStorage.setItem('theme', isLight ? 'light' : 'dark');
-    });
-  }
-  */
-
-
-  // Restore active search mode tab
-  const savedSearchMode = localStorage.getItem('searchMode');
-  if (savedSearchMode && savedSearchMode !== 'jobs') {
-    const btnToClick = document.querySelector(`.mode-btn[data-mode="${savedSearchMode}"]`);
-    if (btnToClick) {
-      document.querySelector('.mode-btn.active').classList.remove('active');
-      btnToClick.click();
-    }
-  }
-
-  // ponytail: duplicate logout listener removed — the module-level one at the top handles logout correctly
 
   // Attempt to restore from session storage on load
   restoreFromSessionStorage().then(restored => {

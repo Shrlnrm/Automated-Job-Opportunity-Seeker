@@ -5,10 +5,8 @@ import {
   onAuthStateChanged, 
   updatePassword, 
   reauthenticateWithCredential, 
-  EmailAuthProvider, 
-  sendPasswordResetEmail 
+  EmailAuthProvider 
 } from "firebase/auth";
-import { getFirestore, doc, onSnapshot } from "firebase/firestore";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBJnS3EYawuCHHnegronWe_WPRH7TPbO1A",
@@ -23,7 +21,6 @@ const firebaseConfig = {
 
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 const auth = getAuth(app);
-const db = getFirestore(app);
 
 // Toast Notification
 function showToast(message) {
@@ -46,6 +43,17 @@ function showToast(message) {
     toast.addEventListener('transitionend', () => toast.remove());
   }, 3000);
 }
+
+// Check for pending toasts on load
+document.addEventListener('DOMContentLoaded', () => {
+  try {
+    const pendingToast = sessionStorage.getItem('pendingToast');
+    if (pendingToast) {
+      showToast(pendingToast);
+      sessionStorage.removeItem('pendingToast');
+    }
+  } catch (e) {}
+});
 
 // Authenticated Fetch Helper
 async function fetchWithAuth(url, options = {}) {
@@ -87,12 +95,7 @@ const newPasswordInput = document.getElementById('newPassword');
 const confirmPasswordInput = document.getElementById('confirmPassword');
 const updatePasswordBtn = document.getElementById('updatePasswordBtn');
 const googleAuthNotice = document.getElementById('googleAuthNotice');
-
-const themeToggleBtn = document.getElementById('themeToggleBtn');
 const logoutBtn = document.getElementById('logoutBtn');
-const limitsShowcase = document.getElementById('limitsShowcase');
-const limitLabel = document.getElementById('limitLabel');
-const limitBarFill = document.getElementById('limitBarFill');
 
 // Logout
 if (logoutBtn) {
