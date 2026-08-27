@@ -575,17 +575,21 @@ table {
   table-layout: auto;
   border: 1px solid var(--border);
   border-top: none;
+  font-family: var(--font);
+  color: var(--text);
 }
 
 thead {
   position: sticky;
   top: 0;
   z-index: 10;
+  font-family: var(--font);
 }
 
 th {
   background: var(--surface-2);
   color: var(--text);
+  font-family: var(--font);
   font-size: var(--font-size-xs);
   font-weight: 600;
   text-transform: uppercase;
@@ -614,8 +618,9 @@ td {
   padding: 12px 16px;
   border-bottom: 1px solid var(--border);
   border-right: 1px solid var(--border);
+  font-family: var(--font);
   font-size: var(--font-size-sm);
-  color: var(--text-secondary);
+  color: var(--text);
   vertical-align: middle;
 }
 
@@ -632,40 +637,39 @@ tbody tr:hover {
 }
 
 .company-name {
+  font-family: var(--font);
   font-size: var(--font-size-sm);
   font-weight: 500;
   color: var(--text);
   word-break: break-word;
 }
 
-/* ── Tags / Chips (Default Natural Card Styling) ────────── */
+/* ── Tags / Chips (Uniform Font & Text Color) ───────────── */
 .tag {
   display: inline-flex;
   align-items: center;
-  padding: 1px 6px;
+  padding: 2px 7px;
   border-radius: var(--radius-sm);
+  font-family: var(--font);
   font-size: var(--font-size-xs);
   font-weight: 500;
-  border: 1px solid transparent;
+  background: var(--surface-2);
+  color: var(--text);
+  border: 1px solid var(--border);
 }
 
-/* Tag colour variants – cycle through these */
-.tag-0 { background: var(--tag-bg-0); color: var(--tag-color-0); border-color: var(--tag-border-0); }
-.tag-1 { background: var(--tag-bg-1); color: var(--tag-color-1); border-color: var(--tag-border-1); }
-.tag-2 { background: var(--tag-bg-2); color: var(--tag-color-2); border-color: var(--tag-border-2); }
-.tag-3 { background: var(--tag-bg-3); color: var(--tag-color-3); border-color: var(--tag-border-3); }
-.tag-4 { background: var(--tag-bg-4); color: var(--tag-color-4); border-color: var(--tag-border-4); }
-
-/* Company Type Badges (Neutral, uncolored) */
+/* Tag colour variants – uniform font & color */
+.tag-0, .tag-1, .tag-2, .tag-3, .tag-4,
 .col-type .tag,
 .tag-type-mnc,
 .tag-type-sme,
 .tag-type-glc,
 .tag-type-startup,
 .tag-type-default {
+  font-family: var(--font);
   background: var(--surface-2);
-  color: var(--text-secondary);
-  border-color: var(--border);
+  color: var(--text);
+  border: 1px solid var(--border);
 }
 
 /* ── Contact Chips ──────────────────────────────────────── */
@@ -680,25 +684,31 @@ tbody tr:hover {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  padding: 1px 7px;
+  padding: 2px 7px;
   border-radius: var(--radius-sm);
+  font-family: var(--font);
   font-size: var(--font-size-xs);
-  color: var(--text-secondary);
+  font-weight: 500;
+  color: var(--text);
   background: var(--surface-2);
   border: 1px solid var(--border);
   white-space: nowrap;
 }
 
-.contact-chip .chip-icon {
+.contact-chip .chip-icon,
+.contact-chip svg {
   flex-shrink: 0;
-  color: var(--text-muted);
+  color: var(--text);
+  stroke: currentColor;
+  opacity: 0.85;
   display: inline-block;
   vertical-align: middle;
 }
 
 a.social-link,
 a.website-link {
-  color: inherit;
+  font-family: var(--font);
+  color: var(--text);
   text-decoration: none;
 }
 
@@ -710,9 +720,11 @@ a.website-link:hover {
 }
 
 a.external-link {
-  color: var(--accent);
+  font-family: var(--font);
+  color: var(--text);
   text-decoration: none;
   font-size: var(--font-size-xs);
+  font-weight: 500;
   display: inline-flex;
   align-items: center;
   gap: 3px;
@@ -735,36 +747,37 @@ a.external-link:hover {
   display: inline-flex;
   align-items: center;
   gap: 3px;
-  padding: 1px 7px;
+  padding: 2px 7px;
   border-radius: var(--radius-sm);
+  font-family: var(--font);
   font-size: var(--font-size-xs);
   font-weight: 500;
-  color: var(--accent);
+  color: var(--text);
   background: var(--surface-2);
   border: 1px solid var(--border);
   text-decoration: none;
-  transition: all 0.15s ease;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
   white-space: nowrap;
 }
 
 .apply-chip:hover {
   background: var(--surface);
   color: var(--text);
-  border-color: var(--accent);
-  text-decoration: none;
+  border-color: var(--border-focus);
 }
 
 /* ── Address Link ───────────────────────────────────────── */
 a.address-link {
-  color: inherit;
+  font-family: var(--font);
+  color: var(--text);
   text-decoration: none;
   border-bottom: 1px dashed var(--border);
-  transition: all 0.2s;
+  transition: border-color 0.15s;
 }
 
 a.address-link:hover {
-  color: var(--text-main);
-  border-bottom-color: var(--text-muted);
+  color: var(--text);
+  border-bottom-color: var(--text);
 }
 
 /* ── Draft Button (White in Dark Mode, Black in Light Mode) ── */
