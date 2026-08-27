@@ -584,7 +584,8 @@ body.dark-theme .btn-danger:hover:not(:disabled) {
   overflow-x: auto;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
-  padding-bottom: 24px;
+  margin: 0;
+  padding: 0;
 }
 
 table {
@@ -592,10 +593,13 @@ table {
   min-width: 650px;
   border-collapse: collapse;
   table-layout: auto;
-  border: 1px solid var(--border);
+  border-left: none;
+  border-right: none;
   border-top: none;
+  border-bottom: 1px solid var(--border);
   font-family: var(--font);
   color: var(--text);
+  margin: 0;
 }
 
 thead {
@@ -1457,9 +1461,6 @@ body:has(.profile-container) {
   }
   .sub-toolbar {
     padding: 8px 14px;
-  }
-  .table-wrapper {
-    padding-bottom: 32px;
   }
   table {
     min-width: 600px;
