@@ -1,12 +1,17 @@
 # AJOS (Automated Job Opportunity Seeker)
 
-A secure Node.js web application for automated job hunting, lead generation, and cold outreach. AJOS searches for jobs (via Google Jobs) and companies (via Google Places), scrapes contact information directly from company websites, and generates personalized cold emails using AI.
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Deployment: Vercel](https://img.shields.io/badge/Deployed_on-Vercel-000000?logo=vercel&logoColor=white)](https://automated-job-opportunity-seeker.vercel.app/)
+[![Node.js](https://img.shields.io/badge/Node.js-v18+-339933?logo=node.js&logoColor=white)](https://nodejs.org)
+[![Security: Hardened](https://img.shields.io/badge/Security-SSRF_Protected_%7C_Rate_Limited-orange.svg)]()
 
-## Live Application
+A lightweight, secure Node.js application for automated job hunting, company lead generation, and cold outreach. AJOS finds jobs (via Google Jobs) and businesses (via Google Places), extracts verified contact information from company websites, and generates targeted cold emails using AI.
+
+## Live Demo
 
 Deployed on Vercel — requires an authorized account to access (21-user cap).
 
-👉 **[Launch AJOS](https://automated-job-opportunity-seeker.vercel.app/)**
+👉 **[Launch AJOS Live App](https://automated-job-opportunity-seeker.vercel.app/)**
 
 ---
 
@@ -106,3 +111,9 @@ npm run dev
 - `.env` and Firebase Admin SDK JSON are gitignored — never commit them
 - `firestore.rules` enforces server-side data isolation — clients cannot modify their own role or limits
 - All external URLs passed to the scrape endpoint are validated through SSRF protection before fetching
+
+---
+
+## License
+
+This project is licensed under the [MIT License](LICENSE).
