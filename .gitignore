@@ -4,3 +4,5 @@ node_modules/
 *.log
 ajos-544d6-firebase-adminsdk-*.json
 .firebaserc
+scripts/
+public/*.png

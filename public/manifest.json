@@ -1,0 +1,25 @@
+{
+  "name": "AJOS",
+  "short_name": "AJOS",
+  "description": "Find jobs, discover company contacts, and draft tailored outreach in seconds.",
+  "start_url": "/job-search.html",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#111111",
+  "theme_color": "#111111",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ]
+}
