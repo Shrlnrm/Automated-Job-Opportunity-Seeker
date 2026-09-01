@@ -191,15 +191,27 @@ async function extractTextFromPDF(file) {
   
   const arrayBuffer = await file.arrayBuffer();
   const pdf = await window.pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+
+  // ponytail: security — cap pages to prevent PDF bomb looping thousands of pages
+  const maxPages = Math.min(pdf.numPages, 20);
+  if (pdf.numPages > 20) {
+    console.warn(`PDF has ${pdf.numPages} pages, capping extraction at 20`);
+  }
+
   let fullText = '';
-  
-  for (let i = 1; i <= pdf.numPages; i++) {
+  for (let i = 1; i <= maxPages; i++) {
     const page = await pdf.getPage(i);
-    const textContent = await page.getTextContent();
+    // ponytail: security — 5s timeout per page prevents hang on crafted PDFs
+    const textContent = await Promise.race([
+      page.getTextContent(),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('PDF page extraction timed out')), 5000))
+    ]);
     const pageText = textContent.items.map(item => item.str).join(' ');
     fullText += pageText + '\n';
+    // Early-stop if text already exceeds server's 40k char limit
+    if (fullText.length > 50000) break;
   }
-  return fullText.trim();
+  return fullText.slice(0, 50000).trim();
 }
 
 // File Dropzone Handling
@@ -232,6 +244,13 @@ if (dropzone && resumeFileInput) {
 
 async function handleFileSelected(file) {
   if (!file) return;
+
+  // ponytail: security — enforce the 10MB cap the UI promises; prevents browser OOM on giant PDFs
+  if (file.size > 10 * 1024 * 1024) {
+    showToast('File too large. Maximum size is 10MB.');
+    return;
+  }
+
   dropzoneText.textContent = `Selected: ${file.name}`;
   showToast(`Reading ${file.name}...`);
 
