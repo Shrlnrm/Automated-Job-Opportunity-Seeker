@@ -131,6 +131,19 @@
 
   <script>
     document.addEventListener('DOMContentLoaded', () => {
+      // Dynamic link adaptation if capacity is reached
+      fetch('/api/registered-users-count')
+        .then(res => res.json())
+        .then(data => {
+          if (data && data.isFull) {
+            const signupLink = document.querySelector('a[href="register.html"]');
+            if (signupLink && signupLink.parentElement) {
+              signupLink.parentElement.innerHTML = `Don't have an account? <a href="register.html">Join waitlist</a>`;
+            }
+          }
+        })
+        .catch(() => {});
+
       const btn = document.getElementById('themeToggleBtn');
       if (btn) {
         // Initial setup

@@ -21,5 +21,10 @@ service cloud.firestore {
     match /globalCounters/{doc} {
       allow read, write: if false;
     }
+
+    // Waitlist collection is backend-only (Admin SDK bypasses rules).
+    match /waitlist/{doc} {
+      allow read, write: if false;
+    }
   }
 }

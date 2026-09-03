@@ -123,7 +123,7 @@
       </div>
 
       <div class="bento-grid">
-        <!-- Feature 1 -->
+        <!-- Feature 1: Real Job Search Table Preview -->
         <div class="bento-card">
           <div class="bento-icon">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -135,9 +135,43 @@
           <p class="bento-card-desc">
             Search live job listings from Google Jobs and top career sites. Filter easily by remote work, experience level, and job title.
           </p>
+          <div class="real-preview-container">
+            <div class="mini-table-wrapper">
+              <table class="mini-table">
+                <thead>
+                  <tr>
+                    <th>Job Title</th>
+                    <th>Company</th>
+                    <th>Location</th>
+                    <th>Job Link</th>
+                    <th>AI Cover Letter</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><span class="company-name">Senior Frontend Engineer</span></td>
+                    <td>Grab Malaysia</td>
+                    <td>Kuala Lumpur</td>
+                    <td>
+                      <div class="apply-options-container">
+                        <span class="apply-chip">LinkedIn</span>
+                        <span class="apply-chip">JobStreet</span>
+                      </div>
+                    </td>
+                    <td>
+                      <button class="draft-btn" type="button" tabindex="-1">
+                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 1 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>
+                        Draft
+                      </button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
 
-        <!-- Feature 2 -->
+        <!-- Feature 2: Real Company Search Table Preview -->
         <div class="bento-card">
           <div class="bento-icon">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -149,9 +183,42 @@
           <p class="bento-card-desc">
             Find company websites, office locations, and direct contact details so you know who you are applying to.
           </p>
+          <div class="real-preview-container">
+            <div class="mini-table-wrapper">
+              <table class="mini-table">
+                <thead>
+                  <tr>
+                    <th>Company</th>
+                    <th>Industry</th>
+                    <th>Type</th>
+                    <th>Address</th>
+                    <th>Website</th>
+                    <th>Contacts</th>
+                    <th>Cold Email</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><span class="company-name">Petronas Digital</span></td>
+                    <td><span class="tag tag-0">Technology</span></td>
+                    <td><span class="tag tag-type-glc">GLC</span></td>
+                    <td><span class="address-link">Tower 1, KLCC, KL</span></td>
+                    <td><span class="external-link">Visit</span></td>
+                    <td><div class="contacts-inner"><span class="contact-chip">contact@petronas.com.my</span></div></td>
+                    <td>
+                      <button class="draft-btn" type="button" tabindex="-1">
+                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 1 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>
+                        Draft
+                      </button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
 
-        <!-- Feature 3 -->
+        <!-- Feature 3: Real Resume Upload Card from profile.html -->
         <div class="bento-card">
           <div class="bento-icon">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -164,11 +231,30 @@
           </div>
           <h3 class="bento-card-title">Instant Resume Skill Reader</h3>
           <p class="bento-card-desc">
-            Upload your resume as a PDF or text file. It reads your skills and experience directly on your device so your file stays private.
+            Upload your resume as a PDF or text file. It reads your skills directly on your device so your file stays private.
           </p>
+          <div class="real-preview-container">
+            <div class="mini-profile-card">
+              <div class="mini-dropzone">
+                <svg class="dropzone-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                  <polyline points="17 8 12 3 7 8"/>
+                  <line x1="12" y1="3" x2="12" y2="15"/>
+                </svg>
+                <div class="dropzone-text">Click or Drag & Drop Resume (PDF or TXT)</div>
+                <div class="dropzone-subtext">Max file size: 10MB</div>
+              </div>
+              <div class="mini-card-actions">
+                <button class="mini-action-btn" type="button" tabindex="-1">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                  Extract Info with AI
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
 
-        <!-- Feature 4 -->
+        <!-- Feature 4: Real AI Draft Panel from job-search.html -->
         <div class="bento-card">
           <div class="bento-icon">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -179,6 +265,22 @@
           <p class="bento-card-desc">
             Create personalized cover letters matched to any job description with a single click.
           </p>
+          <div class="real-preview-container">
+            <div class="mini-draft-panel">
+              <div class="mini-draft-header">
+                <div>
+                  <p class="mini-draft-label">AI Draft</p>
+                  <p class="mini-draft-subtitle">Senior Frontend Engineer @ Grab Malaysia</p>
+                </div>
+              </div>
+              <div class="mini-draft-textarea">Dear Hiring Team,
+
+I am writing to express my strong interest in the Senior Frontend Engineer role at Grab. With proven experience delivering performant React and TypeScript applications in high-scale environments, I am excited to bring my skill set to your engineering team...</div>
+              <div class="mini-draft-footer">
+                <button class="mini-action-btn" type="button" tabindex="-1">Copy to clipboard</button>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </section>
@@ -220,84 +322,92 @@
       </div>
     </section>
 
-    <!-- Early Access & Capacity Section -->
+    <!-- Early Access & Limits Section (Pattern 2: Dual Metric & Spec Cards — Strict Monochrome) -->
     <section id="early-access" class="landing-section">
       <div class="section-header">
         <span class="section-eyebrow">Early Access</span>
-        <h2 class="section-title">Currently open to 20 users</h2>
+        <h2 class="section-title">Open to 20 users</h2>
         <p class="section-subtitle">
-          We are keeping early access small to make sure the site runs fast and smoothly for everyone.
+          We are keeping early access small to make sure the search runs fast and smoothly for everyone.
         </p>
-
-        <div class="slots-badge-wrapper" style="margin-top: 1.5rem; margin-bottom: 0;">
-          <div class="slots-badge" id="slotsBadge">
-            <span>Early Access: <b id="slotsCount">--/20</b> spots taken</span>
-          </div>
-        </div>
       </div>
 
-      <div class="quota-grid">
-        <div class="quota-card">
-          <h3>20 Early User Spots</h3>
-          <p>Registration is open for the first 20 people. Once full, sign-ups will temporarily close.</p>
-          <ul class="quota-list">
-            <li>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <polyline points="20 6 9 17 4 12"></polyline>
-              </svg>
-              Live counter of open spots
-            </li>
-            <li>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <polyline points="20 6 9 17 4 12"></polyline>
-              </svg>
-              Full access to all search tools
-            </li>
-            <li>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <polyline points="20 6 9 17 4 12"></polyline>
-              </svg>
-              No waitlist once registered
-            </li>
-          </ul>
+      <div class="dual-cards-grid">
+        <!-- Card 1: Spots & Progress -->
+        <div class="metric-card">
+          <div class="metric-card-top">
+            <h3 class="metric-card-title">Registered Users</h3>
+          </div>
+
+          <div class="metric-display">
+            <span class="metric-big" id="spotsRegisteredNum">0</span>
+            <span class="metric-slash">/ 20</span>
+          </div>
+
+          <div class="metric-track">
+            <div class="metric-fill" id="spotsFill" style="width: 0%;"></div>
+          </div>
+
+          <div class="metric-footer-text">
+            <span id="spotsPercentText">0% filled</span>
+            <span id="spotsRemainingText">20 spots left</span>
+          </div>
+
+          <div class="metric-note">
+            Registration pauses automatically once 20 spots are filled.
+          </div>
         </div>
 
-        <div class="quota-card">
-          <h3>Monthly Usage Limits</h3>
-          <p>Every user gets a generous monthly allowance that resets every 30 days.</p>
-          <ul class="quota-list">
-            <li>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <polyline points="20 6 9 17 4 12"></polyline>
-              </svg>
-              10 job searches each month
-            </li>
-            <li>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <polyline points="20 6 9 17 4 12"></polyline>
-              </svg>
-              3,000 company lookups each month
-            </li>
-            <li>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <polyline points="20 6 9 17 4 12"></polyline>
-              </svg>
-              Limits reset automatically every 30 days
-            </li>
-          </ul>
+        <!-- Card 2: Limits & What's Included -->
+        <div class="metric-card">
+          <div class="metric-card-top">
+            <h3 class="metric-card-title">Monthly Limits & Features</h3>
+          </div>
+
+          <div class="spec-table">
+            <div class="spec-row">
+              <span class="spec-label">Job searches</span>
+              <span class="spec-val">10 / month</span>
+            </div>
+            <div class="spec-row">
+              <span class="spec-label">Company searches</span>
+              <span class="spec-val">3,000 / month</span>
+            </div>
+            <div class="spec-row">
+              <span class="spec-label">Resume reader</span>
+              <span class="spec-val">AI-powered, your data stays in your account</span>
+            </div>
+            <div class="spec-row">
+              <span class="spec-label">Cover letters</span>
+              <span class="spec-val">1-click draft per job</span>
+            </div>
+            <div class="spec-row">
+              <span class="spec-label">Cost</span>
+              <span class="spec-val">Free (no credit card needed)</span>
+            </div>
+            <div class="spec-row">
+              <span class="spec-label">Limits refresh</span>
+              <span class="spec-val">Every 30 days</span>
+            </div>
+          </div>
         </div>
       </div>
     </section>
 
-    <!-- Bottom CTA Section (Borderless) -->
+    <!-- Bottom CTA Section (Borderless with Ambient Image) -->
     <section class="landing-section cta-section">
-      <h2 class="section-title" style="font-size: 2.25rem;">Ready to start your job search?</h2>
-      <p class="section-subtitle" style="max-width: 520px; margin: 0.75rem auto 2.25rem auto;">
-        Create an account today before the 20 early access spots fill up.
-      </p>
-      <div class="hero-actions">
-        <a href="register.html" class="hero-btn-primary">Get Started</a>
-        <a href="login.html" class="hero-btn-secondary">Sign In</a>
+      <div class="cta-bg-wrapper" aria-hidden="true">
+        <img src="cta-bg.jpg" alt="" class="cta-bg-image" loading="lazy">
+      </div>
+      <div class="cta-content">
+        <h2 class="section-title" style="font-size: 2.25rem;">Ready to start your job search?</h2>
+        <p class="section-subtitle" style="max-width: 520px; margin: 0.75rem auto 2.25rem auto;">
+          Create an account today before the 20 early access spots fill up.
+        </p>
+        <div class="hero-actions">
+          <a href="register.html" class="hero-btn-primary">Get Started</a>
+          <a href="login.html" class="hero-btn-secondary">Sign In</a>
+        </div>
       </div>
     </section>
   </main>
@@ -337,13 +447,53 @@
         });
       }
 
-      // Fetch Live Registered Users Count
+      // Fetch Live Registered Users Count for Early Access Cards
       fetch('/api/registered-users-count')
         .then(res => res.json())
         .then(data => {
-          const countEl = document.getElementById('slotsCount');
-          if (countEl && data.display) {
-            countEl.textContent = data.display;
+          const registered = data.registered !== undefined ? data.registered : 0;
+          const max = data.max || 20;
+          const remaining = Math.max(0, max - registered);
+          const percent = Math.min(100, Math.round((registered / max) * 100));
+
+          const numEl = document.getElementById('spotsRegisteredNum');
+          if (numEl) {
+            numEl.textContent = registered;
+          }
+
+          const fillEl = document.getElementById('spotsFill');
+          if (fillEl) {
+            fillEl.style.width = percent + '%';
+          }
+
+          const percentEl = document.getElementById('spotsPercentText');
+          if (percentEl) {
+            percentEl.textContent = `${percent}% filled`;
+          }
+
+          const remainingEl = document.getElementById('spotsRemainingText');
+          if (remainingEl) {
+            remainingEl.textContent = data.isFull ? '0 spots left • Waitlist open' : `${remaining} spots left`;
+          }
+
+          if (data.isFull) {
+            // Dynamically adapt all register CTA buttons to Waitlist
+            document.querySelectorAll('a[href="register.html"]').forEach(btn => {
+              const svg = btn.querySelector('svg');
+              if (svg) {
+                btn.innerHTML = `Join Waitlist ${svg.outerHTML}`;
+              } else {
+                btn.textContent = 'Join Waitlist';
+              }
+            });
+            const bottomSub = document.querySelector('.cta-section .section-subtitle');
+            if (bottomSub) {
+              bottomSub.textContent = 'All 20 early access spots are taken. Join the waitlist to get notified.';
+            }
+            const noteEl = document.querySelector('.metric-note');
+            if (noteEl) {
+              noteEl.textContent = 'All spots are filled. Join the waitlist below.';
+            }
           }
         })
         .catch(() => {});

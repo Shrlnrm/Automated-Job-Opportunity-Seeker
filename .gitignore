@@ -1,8 +1,61 @@
+# Dependencies
 node_modules/
+.pnp
+.pnp.js
+
+# Environment & Secret Keys
 .env
-.DS_Store
-*.log
+.env.*
+*.env
+*.local
 ajos-544d6-firebase-adminsdk-*.json
+*service-account*.json
+*credentials*.json
+
+# Firebase & Deployment Artifacts
+.firebase/
 .firebaserc
+firebase-debug.log*
+firestore-debug.log*
+ui-debug.log*
+
+# Logs & Diagnostics
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# OS & System Junk Files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Desktop.ini
+
+# IDE & Editor Directories
+.vscode/
+.idea/
+*.sublime-workspace
+*.sublime-project
+*.swp
+*.swo
+*~
+
+# Temporary, Scratch & Local Test Artifacts
+scratch/
+tmp/
+temp/
+*.tmp
+*.bak
 scripts/
 public/*.png
+
+# Local AI Assistant / IDE Metadata
+.gemini/
+.agents/
+.claude/

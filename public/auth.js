@@ -216,29 +216,87 @@ async function initUserOnBackend(turnstileToken, idToken) {
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Failed to verify');
-    return true;
+    return data;
   } catch (err) {
     throw err;
   }
 }
 
-// Register Form
+// Check capacity for Register Page: adapt dynamically to Waitlist mode if full
+let _isRegistrationFull = false;
 const registerForm = document.getElementById('registerForm');
 if (registerForm) {
+  fetch('/api/registered-users-count')
+    .then(res => res.json())
+    .then(data => {
+      if (data && data.isFull) {
+        _isRegistrationFull = true;
+        const authTitle = document.querySelector('.auth-title');
+        const authSubtitle = document.querySelector('.auth-subtitle');
+        const googleBtn = document.getElementById('googleBtn');
+        const divider = document.querySelector('.divider');
+        const passInput = document.getElementById('password');
+        const confirmPassInput = document.getElementById('confirmPassword');
+        const submitBtn = document.getElementById('submitBtn');
+
+        if (authTitle) authTitle.textContent = 'Early access is full';
+        if (authSubtitle) authSubtitle.textContent = 'Join the waitlist to get notified when the next spots open.';
+        if (googleBtn) googleBtn.style.display = 'none';
+        if (divider) divider.style.display = 'none';
+        if (passInput) {
+          passInput.removeAttribute('required');
+          passInput.closest('.input-group')?.style.setProperty('display', 'none');
+        }
+        if (confirmPassInput) {
+          confirmPassInput.removeAttribute('required');
+          confirmPassInput.closest('.input-group')?.style.setProperty('display', 'none');
+        }
+        if (submitBtn) submitBtn.textContent = 'Join Waitlist';
+      }
+    })
+    .catch(() => {});
+
   registerForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     hideError();
-    const email = document.getElementById('email').value;
+    const email = document.getElementById('email').value.trim();
+    let turnstileToken = document.querySelector('[name="cf-turnstile-response"]')?.value;
+
+    const submitBtn = document.getElementById('submitBtn');
+
+    if (_isRegistrationFull) {
+      // ── Waitlist Submission Mode ──
+      if (!turnstileToken) return showError("Please complete the bot verification");
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Joining waitlist...';
+
+      try {
+        const res = await fetch('/api/waitlist', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, turnstileToken })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Failed to join waitlist');
+
+        renderWaitlistSuccess(email, data.position, data.alreadyWaitlisted ? data.message : null);
+      } catch (err) {
+        showError(err.message || "Failed to join waitlist. Please try again.");
+        if (window.turnstile) turnstile.reset();
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Join Waitlist';
+      }
+      return;
+    }
+
+    // ── Normal Registration Mode ──
     const password = document.getElementById('password').value;
     const confirmPassword = document.getElementById('confirmPassword').value;
-    
-    // Get Turnstile response
-    let turnstileToken = document.querySelector('[name="cf-turnstile-response"]')?.value;
     
     if (password !== confirmPassword) return showError("Passwords do not match");
     if (!turnstileToken) return showError("Please complete the bot verification");
 
-    const submitBtn = document.getElementById('submitBtn');
     submitBtn.disabled = true;
     submitBtn.textContent = 'Creating account...';
 
@@ -247,7 +305,14 @@ if (registerForm) {
       const actionCodeSettings = { url: window.location.origin + '/login.html' };
       await sendEmailVerification(userCred.user, actionCodeSettings);
       const idToken = await userCred.user.getIdToken();
-      await initUserOnBackend(turnstileToken, idToken);
+      const initRes = await initUserOnBackend(turnstileToken, idToken);
+
+      if (initRes && initRes.waitlisted) {
+        // Fallback: If capacity filled during registration race condition
+        renderWaitlistSuccess(email, initRes.position, initRes.message);
+        return;
+      }
+
       window.location.href = '/verify-email.html';
     } catch (error) {
       // If backend init failed, sign them out locally so they aren't stuck in limbo
@@ -256,14 +321,54 @@ if (registerForm) {
       if (error.code === 'auth/too-many-requests') {
         showError("Too many attempts. Please try again later.");
       } else {
-        // Display the specific backend error (e.g., limit reached) if available, otherwise generic
         showError(error.message || "Registration failed. Please try again.");
       }
-      turnstile.reset();
+      if (window.turnstile) turnstile.reset();
       submitBtn.disabled = false;
       submitBtn.textContent = 'Create account';
     }
   });
+}
+
+function renderWaitlistSuccess(email, position, customMsg) {
+  const targetUrl = customMsg && customMsg.includes('already have an active')
+    ? 'waitlist-status.html?status=alreadyUser'
+    : `waitlist-status.html?position=${encodeURIComponent(position || 1)}&email=${encodeURIComponent(email || '')}`;
+
+  // Attempt smooth redirect to dedicated status page
+  try {
+    window.location.href = targetUrl;
+  } catch {}
+
+  // Fallback in case redirect is blocked or delayed
+  const container = document.querySelector('.auth-container');
+  if (!container) return;
+  container.innerHTML = `
+    <div style="text-align: left;">
+      <a href="index.html" class="policy-back-btn">
+        <svg width="12" height="12" viewBox="0 0 14 14" fill="none">
+          <path d="M9 1L3 7l6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        Back to Home
+      </a>
+    </div>
+    <div class="icon-badge" style="margin-top: 1rem;">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"></circle>
+        <polyline points="12 6 12 12 16 14"></polyline>
+      </svg>
+    </div>
+    <div class="auth-title">You're on the waitlist</div>
+    <div class="auth-subtitle" style="margin-bottom: 1.5rem; line-height: 1.6;">
+      ${customMsg ? customMsg : `Early access is currently capped at 20 accounts. You are <b>#${position || 1}</b> in line. We will email you at <b>${email}</b> as soon as early access opens.`}
+    </div>
+    <div style="text-align: center; margin-top: 1.25rem;">
+      <a href="${targetUrl}" class="btn btn-primary" style="display: inline-block; text-decoration: none; padding: 0.75rem 1.5rem;">View Status Page</a>
+    </div>
+    <div class="footer-links" style="margin-top: 1.25rem;">
+      <div>Already have an account? <a href="login.html">Log in</a></div>
+    </div>
+  `;
 }
 
 // Login Form
