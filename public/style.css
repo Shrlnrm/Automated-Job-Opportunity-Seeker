@@ -1028,6 +1028,15 @@ body, .topbar, .toolbar, .mode-toggle, .field-group, .btn, table, th, td, tbody 
   border-color: var(--border-hover, var(--border));
 }
 
+.theme-toggle-btn svg {
+  display: block;
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.15s ease;
+}
+
+.theme-toggle-btn:active svg {
+  transform: scale(0.85);
+}
+
 html:not(.dark-theme) .sun-icon { display: none; }
 html.dark-theme .moon-icon { display: none; }
 

@@ -49,20 +49,20 @@
 
       <div class="nav-actions">
         <button id="themeToggleBtn" class="theme-toggle-btn" aria-label="Toggle theme" data-tooltip="Toggle dark mode">
-          <svg class="sun-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="12" r="5"></circle>
-            <line x1="12" y1="1" x2="12" y2="3"></line>
-            <line x1="12" y1="21" x2="12" y2="23"></line>
-            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
-            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
-            <line x1="1" y1="12" x2="3" y2="12"></line>
-            <line x1="21" y1="12" x2="23" y2="12"></line>
-            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
-            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
-          </svg>
-          <svg class="moon-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
-          </svg>
+          <svg class="sun-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="4.5" fill="currentColor"></circle>
+        <line x1="12" y1="2" x2="12" y2="4.5"></line>
+        <line x1="12" y1="19.5" x2="12" y2="22"></line>
+        <line x1="4.93" y1="4.93" x2="6.7" y2="6.7"></line>
+        <line x1="17.3" y1="17.3" x2="19.07" y2="19.07"></line>
+        <line x1="2" y1="12" x2="4.5" y2="12"></line>
+        <line x1="19.5" y1="12" x2="22" y2="12"></line>
+        <line x1="4.93" y1="19.07" x2="6.7" y2="17.3"></line>
+        <line x1="17.3" y1="6.7" x2="19.07" y2="4.93"></line>
+      </svg>
+      <svg class="moon-icon" width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M21.64 13a1 1 0 0 0-1.05-.14 8.05 8.05 0 0 1-3.37.73A8.15 8.15 0 0 1 9.08 5.49a8.59 8.59 0 0 1 .25-2A1 1 0 0 0 8 2.36a10.14 10.14 0 1 0 14 11.69 1 1 0 0 0-.36-1.05z"></path>
+      </svg>
         </button>
         <a href="login.html" class="btn-nav-login">Log In</a>
         <a href="register.html" class="btn-nav-register">Get Started</a>
@@ -314,6 +314,12 @@
         <a href="#top">Back to top ↑</a>
       </div>
     </div>
+
+    <!-- Dot-Matrix "AJOS" Canvas Watermark (Landing Page Only) -->
+    <div class="dot-matrix-container" aria-hidden="true">
+      <div class="dot-matrix-fade"></div>
+      <canvas id="dotMatrixCanvas" class="dot-matrix-canvas"></canvas>
+    </div>
   </footer>
 
   <script>
@@ -341,6 +347,268 @@
           }
         })
         .catch(() => {});
+
+      // Dot-Matrix "AJOS" Canvas Watermark (Landing Page Only)
+      // ponytail: smooth lerped ambient matrix, batched 8-bucket render, lightweight & chill
+      function initDotMatrix() {
+        const container = document.querySelector('.dot-matrix-container');
+        const canvas = document.getElementById('dotMatrixCanvas');
+        if (!container || !canvas) return;
+
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
+
+        let width = 0;
+        let height = 0;
+        let cols = 0;
+        let rows = 0;
+        let squareSize = 2;
+        let gridGap = 3;
+        let step = 5;
+        let currentOpacities = null;
+        let targetOpacities = null;
+        let speeds = null;
+        let isTextMask = null;
+        let animId = null;
+        let lastTime = performance.now();
+        let lastFrameTime = 0;
+        let isInView = false;
+        let isTabVisible = !document.hidden;
+        let mouse = { x: -9999, y: -9999, active: false };
+
+        // 8 batch buckets to reduce draw calls to only 8 fills per frame
+        const BUCKET_COUNT = 8;
+        const buckets = Array.from({ length: BUCKET_COUNT }, () => []);
+
+        function buildGrid() {
+          const rect = container.getBoundingClientRect();
+          if (rect.width === 0 || rect.height === 0) return;
+
+          // Cap DPR at 1.5 to save mobile GPU & battery while staying razor-sharp
+          const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+          width = rect.width;
+          height = rect.height;
+
+          canvas.width = Math.floor(width * dpr);
+          canvas.height = Math.floor(height * dpr);
+          canvas.style.width = width + 'px';
+          canvas.style.height = height + 'px';
+          ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+          // Proportional mobile & desktop grid spacing
+          const isMobile = width < 768;
+          squareSize = isMobile ? 2 : 2.5;
+          gridGap = isMobile ? 2.5 : 3.5;
+          step = squareSize + gridGap;
+
+          cols = Math.ceil(width / step);
+          rows = Math.ceil(height / step);
+          const total = cols * rows;
+
+          currentOpacities = new Float32Array(total);
+          targetOpacities = new Float32Array(total);
+          speeds = new Float32Array(total);
+          isTextMask = new Uint8Array(total);
+
+          // Offscreen rasterization to sample the "AJOS" typography
+          const offscreen = document.createElement('canvas');
+          offscreen.width = Math.floor(width);
+          offscreen.height = Math.floor(height);
+          const offCtx = offscreen.getContext('2d', { willReadFrequently: true });
+          if (!offCtx) return;
+
+          // Natural, unified "AJOS" word typography (not split or gapped)
+          const fontSize = isMobile ? Math.min(height * 0.52, width / 4.8, 75) : Math.min(height * 0.58, 120);
+          offCtx.fillStyle = '#ffffff';
+          offCtx.font = `900 ${fontSize}px "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`;
+          offCtx.textAlign = 'center';
+          offCtx.textBaseline = 'middle';
+          offCtx.fillText('AJOS', width / 2, height / 2 + fontSize * 0.06);
+
+          // Sample pixel data to populate text mask
+          const imgData = offCtx.getImageData(0, 0, offscreen.width, offscreen.height).data;
+          for (let c = 0; c < cols; c++) {
+            for (let r = 0; r < rows; r++) {
+              const px = Math.floor(c * step + squareSize / 2);
+              const py = Math.floor(r * step + squareSize / 2);
+              const idx = c * rows + r;
+              if (px >= 0 && px < offscreen.width && py >= 0 && py < offscreen.height) {
+                const pixelIdx = (py * offscreen.width + px) * 4;
+                if (imgData[pixelIdx + 3] > 60) {
+                  isTextMask[idx] = 1;
+                }
+              }
+
+              const isText = isTextMask[idx] === 1;
+              const initAlpha = isText ? (0.50 + Math.random() * 0.25) : (0.03 + Math.random() * 0.12);
+              currentOpacities[idx] = initAlpha;
+              targetOpacities[idx] = initAlpha;
+              // Chill, slow transition speeds
+              speeds[idx] = isText ? (0.02 + Math.random() * 0.015) : (0.012 + Math.random() * 0.012);
+            }
+          }
+        }
+
+        function startLoop() {
+          if (!animId && isInView && isTabVisible) {
+            lastTime = performance.now();
+            animId = requestAnimationFrame(render);
+          }
+        }
+
+        function stopLoop() {
+          if (animId) {
+            cancelAnimationFrame(animId);
+            animId = null;
+          }
+        }
+
+        function render(now) {
+          if (!isInView || !isTabVisible) {
+            animId = null;
+            return;
+          }
+
+          // Frame governor: throttle to ~36 FPS (every ~27ms) to preserve battery & stay silky chill
+          if (now - lastFrameTime < 26) {
+            animId = requestAnimationFrame(render);
+            return;
+          }
+
+          const dt = Math.min((now - lastTime) / 1000, 0.08);
+          lastTime = now;
+          lastFrameTime = now;
+
+          // Clear buckets for batched rendering
+          for (let b = 0; b < BUCKET_COUNT; b++) {
+            buckets[b].length = 0;
+          }
+
+          const total = cols * rows;
+
+          // Smooth lerp: dots gently drift to new targets instead of sudden flickering
+          for (let i = 0; i < total; i++) {
+            const isText = isTextMask[i] === 1;
+
+            // Smooth interpolation
+            currentOpacities[i] += (targetOpacities[i] - currentOpacities[i]) * (speeds[i] * dt * 60);
+
+            // Re-target gently when close
+            if (Math.abs(targetOpacities[i] - currentOpacities[i]) < 0.02) {
+              if (isText) {
+                targetOpacities[i] = 0.45 + Math.random() * 0.32;
+              } else {
+                targetOpacities[i] = 0.02 + Math.random() * 0.14;
+              }
+            }
+
+            const c = Math.floor(i / rows);
+            const r = i % rows;
+            const x = c * step;
+            const y = r * step;
+
+            // Interactive proximity boost
+            let boost = 0;
+            if (mouse.active) {
+              const dx = x - mouse.x;
+              const dy = y - mouse.y;
+              const dist = Math.sqrt(dx * dx + dy * dy);
+              if (dist < 80) {
+                boost = (1 - dist / 80) * 0.4;
+              }
+            }
+
+            // Subtle, calm global breathing wave
+            const wave = Math.sin(now * 0.0012 + (c * 0.08) + (r * 0.04)) * 0.03;
+            const finalAlpha = Math.min(1, Math.max(0.01, currentOpacities[i] + boost + (isText ? wave : 0)));
+
+            // Quantize into bucket
+            const b = Math.min(BUCKET_COUNT - 1, Math.max(0, Math.floor(finalAlpha * BUCKET_COUNT)));
+            buckets[b].push(x, y);
+          }
+
+          // Batched drawing: only BUCKET_COUNT (8) draw calls per frame total!
+          ctx.clearRect(0, 0, width, height);
+
+          const isDark = document.documentElement.classList.contains('dark-theme');
+          const rgb = isDark ? '218, 224, 233' : '75, 85, 99';
+
+          for (let b = 0; b < BUCKET_COUNT; b++) {
+            const list = buckets[b];
+            if (list.length === 0) continue;
+
+            const alpha = (b + 0.6) / BUCKET_COUNT;
+            ctx.fillStyle = `rgba(${rgb}, ${Math.min(1, alpha).toFixed(3)})`;
+            ctx.beginPath();
+            for (let k = 0; k < list.length; k += 2) {
+              ctx.rect(list[k], list[k + 1], squareSize, squareSize);
+            }
+            ctx.fill();
+          }
+
+          animId = requestAnimationFrame(render);
+        }
+
+        // Mouse listeners for smooth proximity glow
+        canvas.addEventListener('mousemove', (e) => {
+          const rect = canvas.getBoundingClientRect();
+          mouse.x = e.clientX - rect.left;
+          mouse.y = e.clientY - rect.top;
+          mouse.active = true;
+        });
+
+        canvas.addEventListener('mouseleave', () => {
+          mouse.active = false;
+        });
+
+        // Touch support on mobile
+        canvas.addEventListener('touchmove', (e) => {
+          if (e.touches.length > 0) {
+            const rect = canvas.getBoundingClientRect();
+            mouse.x = e.touches[0].clientX - rect.left;
+            mouse.y = e.touches[0].clientY - rect.top;
+            mouse.active = true;
+          }
+        }, { passive: true });
+
+        canvas.addEventListener('touchend', () => {
+          mouse.active = false;
+        });
+
+        // IntersectionObserver: only animate when in view
+        const observer = new IntersectionObserver((entries) => {
+          isInView = entries[0].isIntersecting;
+          if (isInView) {
+            startLoop();
+          } else {
+            stopLoop();
+          }
+        }, { threshold: 0.05 });
+
+        observer.observe(container);
+
+        // Pause animation when tab is in background
+        document.addEventListener('visibilitychange', () => {
+          isTabVisible = !document.hidden;
+          if (isTabVisible) {
+            startLoop();
+          } else {
+            stopLoop();
+          }
+        });
+
+        let resizeTimer = null;
+        window.addEventListener('resize', () => {
+          clearTimeout(resizeTimer);
+          resizeTimer = setTimeout(() => {
+            buildGrid();
+          }, 120);
+        });
+
+        buildGrid();
+      }
+
+      initDotMatrix();
     });
   </script>
 
